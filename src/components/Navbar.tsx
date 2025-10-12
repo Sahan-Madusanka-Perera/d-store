@@ -3,6 +3,12 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useCartStore } from '@/store/cart';
+import UserProfile from './UserProfile';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Separator } from '@/components/ui/separator';
+import { ShoppingCart, Menu, Store } from 'lucide-react';
 
 export default function Navbar() {
   const [totalItems, setTotalItems] = useState(0);
@@ -13,97 +19,104 @@ export default function Navbar() {
   }, [cartTotalItems]);
 
   return (
-    <nav className="bg-white shadow-md border-b">
+    <nav className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center">
-            <span className="text-2xl font-bold text-gray-900">D-Store</span>
-            <span className="text-sm text-gray-500 ml-2">SL</span>
+          <Link href="/" className="flex items-center space-x-2 group">
+            <div className="relative">
+              <Store className="h-6 w-6 text-primary transition-transform group-hover:scale-110" />
+              <div className="absolute -inset-2 rounded-full bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-2xl font-bold text-primary">D-Store</span>
+              <Badge variant="secondary" className="text-xs">
+                SL 🇱🇰
+              </Badge>
+            </div>
           </Link>
 
-          {/* Navigation Links */}
-          <div className="hidden md:flex items-center space-x-8">
-            <Link 
-              href="/manga" 
-              className="text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              Manga
-            </Link>
-            <Link 
-              href="/figures" 
-              className="text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              Figures
-            </Link>
-            <Link 
-              href="/tshirts" 
-              className="text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              T-Shirts
-            </Link>
-            <Link 
-              href="/products" 
-              className="text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              All Products
-            </Link>
+          {/* Navigation Links - Desktop */}
+          <div className="hidden md:flex items-center space-x-1">
+            <Button variant="ghost" asChild>
+              <Link href="/manga">Manga</Link>
+            </Button>
+            <Button variant="ghost" asChild>
+              <Link href="/figures">Figures</Link>
+            </Button>
+            <Button variant="ghost" asChild>
+              <Link href="/tshirts">T-Shirts</Link>
+            </Button>
+            <Button variant="ghost" asChild>
+              <Link href="/products">All Products</Link>
+            </Button>
           </div>
 
-          {/* Cart */}
-          <Link 
-            href="/cart" 
-            className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            <svg 
-              className="w-6 h-6" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5-2.5M7 13l2.5 2.5m4.5 0a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0z" 
-              />
-            </svg>
-            {totalItems > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                {totalItems}
-              </span>
-            )}
-          </Link>
-        </div>
-      </div>
+          {/* Right side - Cart and Auth */}
+                    {/* Right side - Cart and Auth */}
+          <div className="flex items-center space-x-2">
+            {/* Cart */}
+            <Button variant="outline" size="sm" asChild className="relative">
+              <Link href="/cart" className="flex items-center space-x-1">
+                <ShoppingCart className="h-4 w-4" />
+                <span className="hidden sm:inline">Cart</span>
+                {totalItems > 0 && (
+                  <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                    {totalItems}
+                  </Badge>
+                )}
+              </Link>
+            </Button>
 
-      {/* Mobile menu */}
-      <div className="md:hidden border-t bg-gray-50">
-        <div className="px-2 pt-2 pb-3 space-y-1">
-          <Link 
-            href="/manga" 
-            className="block px-3 py-2 text-gray-600 hover:text-gray-900"
-          >
-            Manga
-          </Link>
-          <Link 
-            href="/figures" 
-            className="block px-3 py-2 text-gray-600 hover:text-gray-900"
-          >
-            Figures
-          </Link>
-          <Link 
-            href="/tshirts" 
-            className="block px-3 py-2 text-gray-600 hover:text-gray-900"
-          >
-            T-Shirts
-          </Link>
-          <Link 
-            href="/products" 
-            className="block px-3 py-2 text-gray-600 hover:text-gray-900"
-          >
-            All Products
-          </Link>
+            {/* User Profile */}
+            <UserProfile />
+
+            {/* Mobile menu */}
+            <div className="md:hidden">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[300px]">
+                  <div className="flex flex-col space-y-4 mt-8">
+                    <Link href="/" className="flex items-center space-x-2 mb-6">
+                      <Store className="h-6 w-6 text-primary" />
+                      <span className="text-xl font-bold text-primary">D-Store</span>
+                      <Badge variant="secondary" className="text-xs">SL</Badge>
+                    </Link>
+                    
+                    <Separator />
+                    
+                    <div className="flex flex-col space-y-2">
+                      <Button variant="ghost" asChild className="justify-start">
+                        <Link href="/manga">📚 Manga</Link>
+                      </Button>
+                      <Button variant="ghost" asChild className="justify-start">
+                        <Link href="/figures">🎎 Figures</Link>
+                      </Button>
+                      <Button variant="ghost" asChild className="justify-start">
+                        <Link href="/tshirts">👕 T-Shirts</Link>
+                      </Button>
+                      <Button variant="ghost" asChild className="justify-start">
+                        <Link href="/products">🛍️ All Products</Link>
+                      </Button>
+                    </div>
+                    
+                    <Separator />
+                    
+                    <Button asChild className="w-full">
+                      <Link href="/cart">
+                        <ShoppingCart className="h-4 w-4 mr-2" />
+                        Cart ({totalItems})
+                      </Link>
+                    </Button>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+          </div>
         </div>
       </div>
     </nav>

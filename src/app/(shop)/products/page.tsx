@@ -1,83 +1,73 @@
 import ProductCard from '@/components/ProductCard';
 import { Product } from '@/types/product';
+import { createClient } from '@/utils/supabase/server';
 
-// Sample data - replace with actual database queries
-const sampleProducts: Product[] = [
-  {
-    id: '1',
-    name: 'Naruto Volume 1',
-    description: 'The first volume of the legendary ninja manga series',
-    price: 1500,
-    category: 'manga',
-    images: ['/placeholder.svg'],
-    stock: 10,
+function mapDatabaseProduct(dbProduct: any): Product {
+  // Handle both single image (image_url) and multiple images (image_urls)
+  let images: string[] = [];
+  
+  if (dbProduct.image_urls && Array.isArray(dbProduct.image_urls) && dbProduct.image_urls.length > 0) {
+    // Use multiple images if available
+    images = dbProduct.image_urls;
+  } else if (dbProduct.image_url) {
+    // Fall back to single image
+    images = [dbProduct.image_url];
+  } else {
+    // Default placeholder
+    images = ['/placeholder.svg'];
+  }
+
+  return {
+    id: dbProduct.id.toString(),
+    name: dbProduct.name,
+    description: dbProduct.description || '',
+    price: dbProduct.price,
+    category: dbProduct.category,
+    images: images,
+    stock: dbProduct.stock,
     isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-    author: 'Masashi Kishimoto',
-    publisher: 'Viz Media',
-    language: 'english'
-  },
-  {
-    id: '2',
-    name: 'Luffy Gear 5 Figure',
-    description: 'Premium quality Monkey D. Luffy Gear 5 transformation figure',
-    price: 8500,
-    category: 'figures',
-    images: ['/placeholder.svg'],
-    stock: 5,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-    brand: 'Banpresto',
-    series: 'One Piece',
+    createdAt: dbProduct.created_at,
+    updatedAt: dbProduct.updated_at,
+    author: dbProduct.author,
+    brand: dbProduct.brand,
+    sizes: dbProduct.sizes,
+    colors: dbProduct.colors,
+    fabricMaterial: '100% Cotton',
+    publisher: 'Various',
+    language: 'english',
+    series: 'Various',
     scale: '1/8',
     height: '20cm'
-  },
-  {
-    id: '3',
-    name: 'Anime Graphic Tee',
-    description: 'Custom printed anime graphic t-shirt with high-quality design',
-    price: 2500,
-    category: 'tshirts',
-    images: ['/placeholder.svg'],
-    stock: 25,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-    sizes: ['S', 'M', 'L', 'XL'],
-    colors: ['Black', 'White', 'Navy'],
-    fabricMaterial: '100% Cotton',
-    printType: 'screen-print'
+  };
+}
+
+export default async function ProductsPage() {
+  const supabase = await createClient();
+  
+  const { data: dbProducts, error } = await supabase
+    .from('products')
+    .select('*, image_url, image_urls')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching products:', error);
   }
-];
 
-export default function ProductsPage() {
+  const products: Product[] = dbProducts?.map(mapDatabaseProduct) || [];
+
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">All Products</h1>
-        <p className="text-gray-600">
-          Discover our collection of manga, figures, and custom t-shirts
-        </p>
-      </div>
-
-      {/* Filters - Placeholder for now */}
-      <div className="mb-8 p-4 bg-white rounded-lg shadow-sm">
-        <div className="flex flex-wrap gap-4">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">
+          All Products ({products.length})
+        </h1>
+        
+        <div className="flex flex-wrap gap-4 mb-8">
           <select className="border border-gray-300 rounded-md px-3 py-2">
-            <option value="">All Categories</option>
+            <option>All Categories</option>
             <option value="manga">Manga</option>
             <option value="figures">Figures</option>
             <option value="tshirts">T-Shirts</option>
-          </select>
-          
-          <select className="border border-gray-300 rounded-md px-3 py-2">
-            <option value="">Price Range</option>
-            <option value="0-2000">Under LKR 2,000</option>
-            <option value="2000-5000">LKR 2,000 - 5,000</option>
-            <option value="5000-10000">LKR 5,000 - 10,000</option>
-            <option value="10000+">Above LKR 10,000</option>
           </select>
           
           <input 
@@ -86,22 +76,23 @@ export default function ProductsPage() {
             className="border border-gray-300 rounded-md px-3 py-2 flex-1 min-w-[200px]"
           />
         </div>
-      </div>
 
-      {/* Products Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {sampleProducts.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
-
-      {/* Empty state when no products */}
-      {sampleProducts.length === 0 && (
-        <div className="text-center py-12">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-          <p className="text-gray-500">Try adjusting your filters or search terms</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
         </div>
-      )}
+
+        {products.length === 0 && (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">📦</div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+            <p className="text-gray-500">
+              {error ? 'Error loading products. Please try again later.' : 'Add some products in the admin dashboard!'}
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

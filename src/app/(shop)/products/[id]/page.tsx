@@ -1,109 +1,94 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useCartStore } from '@/store/cart';
 import { Product } from '@/types/product';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { createClient } from '@/utils/supabase/server';
+import { notFound } from 'next/navigation';
+import AddToCartButton from '@/components/AddToCartButton';
+import ProductImageGallery from '@/components/ProductImageGallery';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Star, ArrowLeft, Truck, Shield, RotateCcw, Heart } from 'lucide-react';
 
-// Sample products data (in real app, this would come from API/database)
-const sampleProducts: Product[] = [
-  {
-    id: '1',
-    name: 'Naruto Volume 1',
-    description: 'The first volume of the legendary ninja manga series that started it all. Follow young Naruto Uzumaki as he begins his journey to become the strongest ninja and leader of his village. This volume introduces the world of Hidden Leaf Village and the beginning of an epic adventure.',
-    price: 1500,
-    category: 'manga',
-    images: ['/placeholder.svg', '/placeholder.svg', '/placeholder.svg'],
-    stock: 10,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-    author: 'Masashi Kishimoto',
-    publisher: 'Viz Media',
-    language: 'english',
-    isbn: '978-1-4215-9876-5'
-  },
-  {
-    id: '2',
-    name: 'Luffy Gear 5 Figure',
-    description: 'Premium quality Monkey D. Luffy Gear 5 transformation figure featuring the legendary Sun God Nika form. This highly detailed collectible captures Luffy in his most powerful transformation with dynamic pose and premium paint application.',
-    price: 12500,
-    category: 'figures',
-    images: ['/placeholder.svg', '/placeholder.svg', '/placeholder.svg'],
-    stock: 3,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-    brand: 'Banpresto',
-    series: 'One Piece',
-    scale: '1/8',
-    height: '23cm',
-    figureMaterial: 'PVC, ABS'
-  },
-  {
-    id: '3',
-    name: 'One Piece Straw Hat Crew Tee',
-    description: 'Show your love for the Straw Hat Pirates with this premium quality cotton t-shirt. Features the iconic Jolly Roger design with high-quality screen printing that won&apos;t fade or crack. Perfect for any One Piece fan.',
-    price: 2800,
-    category: 'tshirts',
-    images: ['/placeholder.svg', '/placeholder.svg', '/placeholder.svg'],
-    stock: 25,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-    colors: ['Black', 'Navy Blue', 'White'],
-    fabricMaterial: '100% Cotton',
-    printType: 'screen-print'
-  },
-  {
-    id: '4',
-    name: 'Attack on Titan Final Volume',
-    description: 'The epic conclusion to Hajime Isayama&apos;s masterpiece. Witness the final battle between humanity and titans in this emotional and action-packed finale that will leave you breathless.',
-    price: 1800,
-    category: 'manga',
-    images: ['/placeholder.svg', '/placeholder.svg'],
-    stock: 8,
-    isActive: true,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-    author: 'Hajime Isayama',
-    publisher: 'Kodansha',
-    language: 'english',
-    isbn: '978-1-6327-1234-7'
-  }
-];
-
-export default function ProductDetailPage() {
-  const params = useParams();
-  const id = params?.id as string;
-  const [product, setProduct] = useState<Product | null>(null);
-  const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedSize, setSelectedSize] = useState('');
-  const [selectedColor, setSelectedColor] = useState('');
-  const [quantity, setQuantity] = useState(1);
-  const [loading, setLoading] = useState(true);
+function mapDatabaseProduct(dbProduct: any): Product {
+  // Handle both single image (image_url) and multiple images (image_urls)
+  let images: string[] = [];
   
-  const addItem = useCartStore(state => state.addItem);
+  if (dbProduct.image_urls && Array.isArray(dbProduct.image_urls) && dbProduct.image_urls.length > 0) {
+    // Use multiple images if available
+    images = dbProduct.image_urls;
+  } else if (dbProduct.image_url) {
+    // Fall back to single image
+    images = [dbProduct.image_url];
+  } else {
+    // Default placeholder
+    images = ['/placeholder.svg'];
+  }
 
-  useEffect(() => {
-    // Simulate API call
-    const foundProduct = sampleProducts.find(p => p.id === id);
-    setProduct(foundProduct || null);
-    setLoading(false);
-    
-    // Set default selections for t-shirts
-    if (foundProduct?.category === 'tshirts') {
-      if (foundProduct.sizes && foundProduct.sizes.length > 0) {
-        setSelectedSize(foundProduct.sizes[0]);
-      }
-      if (foundProduct.colors && foundProduct.colors.length > 0) {
-        setSelectedColor(foundProduct.colors[0]);
-      }
-    }
-  }, [id]);
+  return {
+    id: dbProduct.id.toString(),
+    name: dbProduct.name,
+    description: dbProduct.description || '',
+    price: dbProduct.price,
+    category: dbProduct.category as 'manga' | 'figures' | 'tshirts',
+    images: images,
+    stock: dbProduct.stock,
+    isActive: true,
+    createdAt: dbProduct.created_at,
+    updatedAt: dbProduct.updated_at,
+    author: dbProduct.author,
+    brand: dbProduct.brand,
+    sizes: dbProduct.sizes as ('XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL')[] | undefined,
+    colors: dbProduct.colors,
+    fabricMaterial: '100% Cotton',
+    publisher: 'Various',
+    language: 'english',
+    series: 'Various',
+    scale: '1/8',
+    height: '20cm'
+  };
+}
+
+interface ProductPageProps {
+  params: Promise<{ id: string }>
+}
+
+export default async function ProductPage({ params }: ProductPageProps) {
+  const { id } = await params;
+  const supabase = await createClient();
+  
+  const { data: dbProduct, error } = await supabase
+    .from('products')
+    .select('*, image_url, image_urls')
+    .eq('id', id)
+    .single();
+
+  if (error || !dbProduct) {
+    notFound();
+  }
+
+  const product = mapDatabaseProduct(dbProduct);
+
+  // Generate consistent rating based on product ID (deterministic)
+  const getProductRating = (productId: string) => {
+    const hash = productId.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    return 4.0 + (Math.abs(hash) % 100) / 100; // 4.0 to 5.0
+  };
+  
+  const getReviewCount = (productId: string) => {
+    const hash = productId.split('').reduce((a, b) => {
+      a = ((a << 3) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    return 50 + (Math.abs(hash) % 500); // 50 to 550 reviews
+  };
+
+  const rating = getProductRating(product.id);
+  const reviewCount = getReviewCount(product.id);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-LK', {
@@ -113,269 +98,218 @@ export default function ProductDetailPage() {
     }).format(price);
   };
 
-  const handleAddToCart = () => {
-    if (!product) return;
+  const renderStars = (rating: number) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
     
-    const options: { size?: string; color?: string } = {};
-    if (selectedSize) options.size = selectedSize;
-    if (selectedColor) options.color = selectedColor;
-    
-    addItem(product, quantity, options);
-    
-    // Show success message (you could use a toast library here)
-    alert(`Added ${quantity} ${product.name} to cart!`);
-  };
-
-  const canAddToCart = () => {
-    if (!product || product.stock === 0) return false;
-    
-    // For t-shirts, require size and color selection
-    if (product.category === 'tshirts') {
-      return selectedSize && selectedColor;
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push(<Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />);
+      } else if (i === fullStars && hasHalfStar) {
+        stars.push(<Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />);
+      } else {
+        stars.push(<Star key={i} className="w-4 h-4 text-gray-300" />);
+      }
     }
-    
-    return true;
+    return stars;
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (!product) {
-    return (
-      <div className="text-center py-20">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Product Not Found</h1>
-        <p className="text-gray-600 mb-8">The product you&apos;re looking for doesn&apos;t exist.</p>
-        <Link 
-          href="/products"
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Browse All Products
-        </Link>
-      </div>
-    );
-  }
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'manga': return 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+      case 'figures': return 'bg-purple-100 text-purple-800 hover:bg-purple-200'
+      case 'tshirts': return 'bg-green-100 text-green-800 hover:bg-green-200'
+      default: return 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+    }
+  };
 
   return (
-    <div>
-      {/* Breadcrumb */}
-      <nav className="mb-8">
-        <ol className="flex items-center space-x-2 text-sm text-gray-600">
-          <li><Link href="/" className="hover:text-blue-600">Home</Link></li>
-          <li className="text-gray-400">/</li>
-          <li><Link href="/products" className="hover:text-blue-600">Products</Link></li>
-          <li className="text-gray-400">/</li>
-          <li><Link href={`/${product.category}`} className="hover:text-blue-600 capitalize">{product.category}</Link></li>
-          <li className="text-gray-400">/</li>
-          <li className="text-gray-900 truncate">{product.name}</li>
-        </ol>
-      </nav>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {/* Product Images */}
-        <div>
-          <div className="relative aspect-square bg-gray-100 rounded-lg mb-4 overflow-hidden">
-            <Image
-              src={product.images[selectedImage] || '/placeholder.svg'}
-              alt={product.name}
-              fill
-              className="object-cover"
-            />
-            {product.stock === 0 && (
-              <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                <span className="text-white font-semibold text-lg">Out of Stock</span>
-              </div>
-            )}
-          </div>
-          
-          {/* Image Thumbnails */}
-          {product.images.length > 1 && (
-            <div className="flex space-x-2">
-              {product.images.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedImage(index)}
-                  className={`relative w-20 h-20 bg-gray-100 rounded-lg overflow-hidden border-2 ${
-                    selectedImage === index ? 'border-blue-600' : 'border-transparent'
-                  }`}
-                >
-                  <Image
-                    src={image}
-                    alt={`${product.name} ${index + 1}`}
-                    fill
-                    className="object-cover"
-                  />
-                </button>
-              ))}
-            </div>
-          )}
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/products" className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Products
+            </Link>
+          </Button>
         </div>
 
-        {/* Product Details */}
-        <div>
-          <div className="mb-6">
-            <span className="inline-block bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm mb-3 capitalize">
-              {product.category}
-            </span>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">{product.name}</h1>
-            <p className="text-2xl font-bold text-blue-600 mb-4">{formatPrice(product.price)}</p>
-            <p className="text-gray-700 leading-relaxed mb-6">{product.description}</p>
-          </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* Product Images Gallery */}
+          <ProductImageGallery 
+            images={product.images} 
+            productName={product.name}
+            stock={product.stock}
+          />
 
-          {/* Category-specific Information */}
-          {product.category === 'manga' && (
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-semibold mb-2">Manga Details</h3>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                {product.author && <div><span className="text-gray-600">Author:</span> {product.author}</div>}
-                {product.publisher && <div><span className="text-gray-600">Publisher:</span> {product.publisher}</div>}
-                {product.language && <div><span className="text-gray-600">Language:</span> {product.language}</div>}
-                {product.isbn && <div><span className="text-gray-600">ISBN:</span> {product.isbn}</div>}
-              </div>
-            </div>
-          )}
-
-          {product.category === 'figures' && (
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-semibold mb-2">Figure Specifications</h3>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                {product.brand && <div><span className="text-gray-600">Brand:</span> {product.brand}</div>}
-                {product.series && <div><span className="text-gray-600">Series:</span> {product.series}</div>}
-                {product.scale && <div><span className="text-gray-600">Scale:</span> {product.scale}</div>}
-                {product.height && <div><span className="text-gray-600">Height:</span> {product.height}</div>}
-                {product.figureMaterial && <div><span className="text-gray-600">Material:</span> {product.figureMaterial}</div>}
-              </div>
-            </div>
-          )}
-
-          {/* T-shirt Options */}
-          {product.category === 'tshirts' && (
-            <div className="mb-6 space-y-4">
-              {product.sizes && product.sizes.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Size *</label>
-                  <div className="flex flex-wrap gap-2">
-                    {product.sizes.map((size) => (
-                      <button
-                        key={size}
-                        onClick={() => setSelectedSize(size)}
-                        className={`px-4 py-2 border rounded-md ${
-                          selectedSize === size
-                            ? 'border-blue-600 bg-blue-600 text-white'
-                            : 'border-gray-300 hover:border-gray-400'
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+          {/* Product Details */}
+          <div className="space-y-6">
+            {/* Category and Stock Status */}
+            <div className="flex items-center justify-between">
+              <Badge className={getCategoryColor(product.category)}>
+                {product.category}
+              </Badge>
+              {product.stock > 0 && product.stock <= 5 && (
+                <Badge variant="outline" className="text-orange-600 border-orange-200">
+                  Only {product.stock} left in stock
+                </Badge>
               )}
+            </div>
 
-              {product.colors && product.colors.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Color *</label>
-                  <div className="flex flex-wrap gap-2">
-                    {product.colors.map((color) => (
-                      <button
-                        key={color}
-                        onClick={() => setSelectedColor(color)}
-                        className={`px-4 py-2 border rounded-md ${
-                          selectedColor === color
-                            ? 'border-blue-600 bg-blue-600 text-white'
-                            : 'border-gray-300 hover:border-gray-400'
-                        }`}
-                      >
-                        {color}
-                      </button>
-                    ))}
+            {/* Title and Rating */}
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-3">
+                {product.name}
+              </h1>
+              
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1">
+                    {renderStars(rating)}
                   </div>
+                  <span className="text-sm text-muted-foreground">
+                    {rating.toFixed(1)} ({reviewCount} reviews)
+                  </span>
                 </div>
-              )}
-
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-semibold mb-2">T-Shirt Details</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  {product.fabricMaterial && <div><span className="text-gray-600">Material:</span> {product.fabricMaterial}</div>}
-                  {product.printType && <div><span className="text-gray-600">Print Type:</span> {product.printType}</div>}
-                </div>
+                
+                <Button variant="ghost" size="sm">
+                  <Heart className="h-4 w-4 mr-1" />
+                  Add to Wishlist
+                </Button>
               </div>
             </div>
-          )}
 
-          {/* Quantity and Add to Cart */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center border rounded-lg">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-3 py-2 hover:bg-gray-100"
-                  disabled={quantity <= 1}
-                >
-                  -
-                </button>
-                <span className="px-4 py-2 border-x">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                  className="px-3 py-2 hover:bg-gray-100"
-                  disabled={quantity >= product.stock}
-                >
-                  +
-                </button>
-              </div>
-              <span className="text-sm text-gray-600">
-                {product.stock} available
+            {/* Price */}
+            <div className="flex items-center gap-3">
+              <span className="text-3xl font-bold text-primary">
+                {formatPrice(product.price)}
               </span>
+              
+              {/* Show discount for some items (deterministic based on product ID) */}
+              {(() => {
+                const hash = product.id.split('').reduce((a, b) => {
+                  a = ((a << 2) - a) + b.charCodeAt(0);
+                  return a & a;
+                }, 0);
+                const shouldShowDiscount = (Math.abs(hash) % 10) > 6;
+                const discountPercent = 15 + (Math.abs(hash) % 15);
+                
+                return shouldShowDiscount && (
+                  <>
+                    <span className="text-xl text-muted-foreground line-through">
+                      {formatPrice(product.price * (1 + discountPercent / 100))}
+                    </span>
+                    <Badge variant="secondary" className="bg-red-500 text-white">
+                      -{discountPercent}% Off
+                    </Badge>
+                  </>
+                );
+              })()}
             </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="space-y-4">
-            <button
-              onClick={handleAddToCart}
-              disabled={!canAddToCart()}
-              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
-            >
-              {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
-            </button>
-            
-            {product.category === 'tshirts' && (!selectedSize || !selectedColor) && (
-              <p className="text-sm text-gray-600 text-center">
-                Please select size and color to add to cart
+            {/* Description */}
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Description</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                {product.description}
               </p>
-            )}
+            </div>
 
-            <div className="flex space-x-4">
-              <Link
-                href="/cart"
-                className="flex-1 bg-gray-100 text-gray-900 py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors text-center"
-              >
-                View Cart
-              </Link>
-              <Link
-                href="/products"
-                className="flex-1 border border-gray-300 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-50 transition-colors text-center"
-              >
-                Continue Shopping
-              </Link>
+            {/* Product Specifications */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Product Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {product.brand && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Brand:</span>
+                    <span className="font-medium">{product.brand}</span>
+                  </div>
+                )}
+                
+                {product.author && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Author:</span>
+                    <span className="font-medium">{product.author}</span>
+                  </div>
+                )}
+
+                {product.sizes && product.sizes.length > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Available Sizes:</span>
+                    <div className="flex gap-1">
+                      {product.sizes.map((size) => (
+                        <Badge key={size} variant="outline" className="text-xs">
+                          {size}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {product.colors && product.colors.length > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Available Colors:</span>
+                    <div className="flex gap-1">
+                      {product.colors.map((color) => (
+                        <Badge key={color} variant="outline" className="text-xs">
+                          {color}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <Separator />
+                
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Stock:</span>
+                  <span className={`font-medium ${product.stock === 0 ? 'text-destructive' : product.stock <= 5 ? 'text-orange-600' : 'text-green-600'}`}>
+                    {product.stock === 0 ? 'Out of Stock' : `${product.stock} units available`}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Add to Cart */}
+            <div className="space-y-4">
+              <AddToCartButton product={product} />
+              
+              {/* Additional Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Truck className="h-4 w-4" />
+                  <span>Free shipping on orders over LKR 5,000</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Shield className="h-4 w-4" />
+                  <span>Authentic products guaranteed</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <RotateCcw className="h-4 w-4" />
+                  <span>30-day return policy</span>
+                </div>
+              </div>
             </div>
           </div>
+        </div>
 
-          {/* Shipping Info */}
-          <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-            <h4 className="font-semibold text-blue-900 mb-2">Shipping Information</h4>
-            <ul className="text-sm text-blue-800 space-y-1">
-              <li>• Free shipping on orders above LKR 5,000</li>
-              <li>• Island-wide delivery available</li>
-              <li>• Express delivery within Colombo (1-2 days)</li>
-              <li>• Standard delivery (3-5 days)</li>
-            </ul>
-          </div>
+        {/* Related Products Section */}
+        <Separator className="my-12" />
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">You might also like</h2>
+          <p className="text-muted-foreground mb-8">
+            Discover more products in the {product.category} category
+          </p>
+          <Button asChild variant="outline">
+            <Link href={`/${product.category}`}>
+              View More {product.category}
+            </Link>
+          </Button>
         </div>
       </div>
     </div>
