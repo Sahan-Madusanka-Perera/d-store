@@ -161,7 +161,7 @@ export const useCartStore = create<CartStore>()(
         const { items, availableDiscounts, totalAmount } = get();
 
         let newDiscountTotal = 0;
-        let newAppliedDiscounts: any[] = [];
+        const newAppliedDiscounts: any[] = [];
 
         if (items.length === 0 || availableDiscounts.length === 0) {
           set({ discountTotal: 0, appliedDiscounts: [] });
