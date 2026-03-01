@@ -24,7 +24,7 @@ export function Footer() {
                             We have products that suit your otaku lifestyle and which you're proud to wear. From hoodies to figures.
                         </p>
                         <div className="flex gap-4">
-                            {[Twitter, Facebook, Instagram, Github].map((Icon, i) => (
+                            {[Twitter, Facebook, Instagram].map((Icon, i) => (
                                 <a key={i} href="#" className="w-8 h-8 rounded-full bg-white border border-black/10 flex items-center justify-center hover:bg-black hover:text-white transition-colors">
                                     <Icon className="w-4 h-4" />
                                 </a>
@@ -79,7 +79,7 @@ export function Footer() {
                 {/* Bottom Bar */}
                 <div className="pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
                     <p className="text-sm text-muted-foreground">
-                        D-Store © 2000-2026, All Rights Reserved
+                        D-Store © 2026, All Rights Reserved
                     </p>
                     <div className="flex gap-4 opacity-60 grayscale">
                         {/* Placeholder for payment icons */}
