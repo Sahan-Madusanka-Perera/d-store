@@ -1,21 +1,22 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Oswald, Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { Footer } from "@/components/Footer";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const oswald = Oswald({
+  variable: "--font-heading",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const inter = Inter({
+  variable: "--font-sans",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "D-Store | Premium Anime Merchandise Store",
-  description: "Discover authentic anime manga, figures, and t-shirts from your favorite series. Free shipping on orders over LKR 5,000. Shop now at D-Store Sri Lanka!",
+  title: "D-STORE | Premium Otaku Lifestyle",
+  description: "Authentic Anime Merchandise, Figures, and Streetwear.",
 };
 
 export default function RootLayout({
@@ -26,9 +27,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${oswald.variable} ${inter.variable} antialiased`}
       >
         {children}
+        <Footer />
         <Toaster />
       </body>
     </html>

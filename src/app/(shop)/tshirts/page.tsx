@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import ProductCard from '@/components/ProductCard';
 import { Product } from '@/types/product';
+import { Shirt, Package } from 'lucide-react';
 
 function mapDatabaseProduct(dbProduct: any): Product {
   return {
@@ -29,7 +30,7 @@ function mapDatabaseProduct(dbProduct: any): Product {
 
 export default async function TshirtsPage() {
   const supabase = await createClient();
-  
+
   const { data: products, error } = await supabase
     .from('products')
     .select('*')
@@ -39,11 +40,11 @@ export default async function TshirtsPage() {
   if (error) {
     console.error('Error fetching tshirts:', error);
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-teal-50 to-blue-50">
+      <div className="min-h-screen">
         <div className="container mx-auto px-4 py-16">
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-8">Error Loading T-Shirts</h1>
-            <p className="text-gray-600">Please try again later.</p>
+            <h1 className="text-4xl font-bold text-foreground mb-4">Error Loading T-Shirts</h1>
+            <p className="text-muted-foreground">Please try again later.</p>
           </div>
         </div>
       </div>
@@ -51,65 +52,58 @@ export default async function TshirtsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-teal-50 to-blue-50">
-      {/* Animated Background Elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-green-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-teal-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute top-40 left-1/2 w-80 h-80 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
-      </div>
-
-      <div className="relative z-10 container mx-auto px-4 py-16">
-        {/* Header Section */}
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500 to-blue-500 rounded-2xl mb-6 shadow-xl">
-            <span className="text-3xl">👕</span>
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center">
+      <div className="w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-12 md:py-20">
+        {/* Modern Minimal Header */}
+        <div className="flex flex-col items-center text-center mb-16 md:mb-24">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-white border border-gray-200 rounded-full mb-8 shadow-sm">
+            <Shirt className="h-6 w-6 text-zinc-900" strokeWidth={1.5} />
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-green-600 via-teal-600 to-blue-600 bg-clip-text text-transparent mb-6">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-zinc-900 tracking-tighter uppercase mb-6">
             Anime T-Shirts
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Express your anime passion with our stylish collection of premium t-shirts. 
+          <p className="text-base sm:text-lg text-zinc-500 max-w-2xl mx-auto font-medium leading-relaxed">
+            Express your anime passion with our stylish collection of premium t-shirts.
             Comfortable, durable, and featuring designs from your favorite series.
           </p>
-          
-          {/* Stats */}
-          <div className="flex justify-center gap-8 mt-8">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-green-600">{products?.length || 0}</div>
-              <div className="text-sm text-gray-500 uppercase tracking-wide">T-Shirt Designs</div>
+
+          {/* Minimalist Stats Cards */}
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-12 w-full">
+            <div className="flex flex-col items-center justify-center bg-white border border-gray-200 rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
+              <div className="text-4xl font-black text-zinc-900 tracking-tight pb-1">{products?.length || 0}</div>
+              <div className="text-xs text-zinc-500 font-semibold uppercase tracking-widest">Designs</div>
             </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-teal-600">Premium</div>
-              <div className="text-sm text-gray-500 uppercase tracking-wide">Cotton</div>
+            <div className="flex flex-col items-center justify-center bg-white border border-gray-200 rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
+              <div className="text-4xl font-black text-zinc-900 tracking-tight pb-1">Premium</div>
+              <div className="text-xs text-zinc-500 font-semibold uppercase tracking-widest">Cotton</div>
             </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600">All Sizes</div>
-              <div className="text-sm text-gray-500 uppercase tracking-wide">Available</div>
+            <div className="flex flex-col items-center justify-center bg-white border border-gray-200 rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
+              <div className="text-4xl font-black text-zinc-900 tracking-tight pb-1">All Sizes</div>
+              <div className="text-xs text-zinc-500 font-semibold uppercase tracking-widest">Available</div>
             </div>
           </div>
         </div>
 
         {/* Products Grid */}
         {products && products.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
             {products.map((dbProduct) => {
               const product = mapDatabaseProduct(dbProduct);
               return (
-                <div key={product.id} className="transform hover:scale-105 transition-transform duration-300">
+                <div key={product.id} className="group">
                   <ProductCard product={product} />
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="text-center py-16">
-            <div className="inline-flex items-center justify-center w-24 h-24 bg-gray-100 rounded-full mb-6">
-              <span className="text-4xl text-gray-400">👔</span>
+          <div className="flex flex-col items-center justify-center py-24 px-4 bg-white border border-gray-200 rounded-3xl shadow-sm text-center">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-50 border border-gray-100 rounded-full mb-6">
+              <Shirt className="h-8 w-8 text-zinc-300" strokeWidth={1.5} />
             </div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">No T-Shirts Available</h2>
-            <p className="text-gray-600 max-w-md mx-auto">
-              We&apos;re designing awesome anime t-shirts. Stay tuned for fresh styles!
+            <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight mb-3">No T-Shirts Available</h2>
+            <p className="text-zinc-500 font-medium max-w-md">
+              We're currently designing awesome new anime t-shirts. Stay tuned for fresh styles!
             </p>
           </div>
         )}

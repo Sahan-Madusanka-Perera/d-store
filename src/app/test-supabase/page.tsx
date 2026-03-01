@@ -1,15 +1,15 @@
-import { createClient } from '@/utils/supabase/server'
-
+import { createClient } from '@/utils/supabase/server';
+import { Check, X } from 'lucide-react';
 export default async function Page() {
   const supabase = await createClient()
 
   try {
     // Test basic connection
     const { data: products, error } = await supabase.from('products').select('*')
-    
+
     // Get user info
     const { data: { user }, error: userError } = await supabase.auth.getUser()
-    
+
     // Get user profile if logged in
     let profile = null
     if (user) {
@@ -24,12 +24,26 @@ export default async function Page() {
     return (
       <div className="p-8 max-w-4xl mx-auto">
         <h1 className="text-2xl font-bold mb-4">Supabase Connection Test</h1>
-        
+
         <div className="mb-6">
           <h2 className="text-lg font-semibold mb-2">Environment Variables:</h2>
           <div className="bg-gray-100 p-4 rounded">
-            <p>Supabase URL: {process.env.NEXT_PUBLIC_SUPABASE_URL ? '✅ Set' : '❌ Missing'}</p>
-            <p>Supabase Key: {process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '✅ Set' : '❌ Missing'}</p>
+            <p className="flex items-center gap-2">
+              Supabase URL:
+              {process.env.NEXT_PUBLIC_SUPABASE_URL ? (
+                <><Check className="h-4 w-4 text-green-600" /> Set</>
+              ) : (
+                <><X className="h-4 w-4 text-red-600" /> Missing</>
+              )}
+            </p>
+            <p className="flex items-center gap-2">
+              Supabase Key:
+              {process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? (
+                <><Check className="h-4 w-4 text-green-600" /> Set</>
+              ) : (
+                <><X className="h-4 w-4 text-red-600" /> Missing</>
+              )}
+            </p>
           </div>
         </div>
 

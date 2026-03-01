@@ -1,17 +1,34 @@
 import { Product } from '@/types/product';
-import Image from 'next/image';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import AddToCartButton from '@/components/AddToCartButton';
 import ProductImageGallery from '@/components/ProductImageGallery';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import ProductInfoAssistant from '@/components/ProductInfoAssistant';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Star, ArrowLeft, Truck, Shield, RotateCcw, Heart } from 'lucide-react';
+import { Star, ArrowLeft, Truck, Shield, RotateCcw, Heart, Sparkles } from 'lucide-react';
 
-function mapDatabaseProduct(dbProduct: any): Product {
+interface DatabaseProduct {
+  id: number;
+  name: string;
+  description?: string;
+  price: number;
+  category: 'manga' | 'figures' | 'tshirts';
+  stock: number;
+  created_at: string;
+  updated_at: string;
+  author?: string;
+  brand?: string;
+  sizes?: ('XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL')[];
+  colors?: string[];
+  image_url?: string;
+  image_urls?: string[];
+}
+
+function mapDatabaseProduct(dbProduct: DatabaseProduct): Product {
   // Handle both single image (image_url) and multiple images (image_urls)
   let images: string[] = [];
   
@@ -117,19 +134,19 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'manga': return 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-      case 'figures': return 'bg-purple-100 text-purple-800 hover:bg-purple-200'
-      case 'tshirts': return 'bg-green-100 text-green-800 hover:bg-green-200'
-      default: return 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+      case 'manga': return 'bg-gradient-to-r from-indigo-500 to-blue-500 text-white border-0'
+      case 'figures': return 'bg-gradient-to-r from-violet-500 to-purple-500 text-white border-0'
+      case 'tshirts': return 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0'
+      default: return 'bg-gradient-to-r from-slate-500 to-gray-500 text-white border-0'
     }
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-          <Button variant="ghost" size="sm" asChild>
+        {/* Breadcrumb - Refined */}
+        <div className="mb-8">
+          <Button variant="ghost" size="sm" asChild className="hover:bg-primary/5">
             <Link href="/products" className="flex items-center gap-2">
               <ArrowLeft className="h-4 w-4" />
               Back to Products
@@ -146,14 +163,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
           />
 
           {/* Product Details */}
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Category and Stock Status */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
               <Badge className={getCategoryColor(product.category)}>
                 {product.category}
               </Badge>
               {product.stock > 0 && product.stock <= 5 && (
-                <Badge variant="outline" className="text-orange-600 border-orange-200">
+                <Badge className="bg-amber-500/10 text-amber-600 border-amber-200">
                   Only {product.stock} left in stock
                 </Badge>
               )}
@@ -161,30 +178,30 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
             {/* Title and Rating */}
             <div>
-              <h1 className="text-3xl font-bold text-foreground mb-3">
+              <h1 className="text-4xl font-bold text-foreground mb-4 leading-tight">
                 {product.name}
               </h1>
               
-              <div className="flex items-center gap-4 mb-4">
+              <div className="flex flex-wrap items-center gap-6">
                 <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
+                  <div className="flex gap-0.5">
                     {renderStars(rating)}
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    {rating.toFixed(1)} ({reviewCount} reviews)
+                  <span className="text-sm text-muted-foreground font-medium">
+                    {rating.toFixed(1)} <span className="text-muted-foreground/60">({reviewCount} reviews)</span>
                   </span>
                 </div>
                 
-                <Button variant="ghost" size="sm">
-                  <Heart className="h-4 w-4 mr-1" />
+                <Button variant="ghost" size="sm" className="hover:bg-primary/5">
+                  <Heart className="h-4 w-4 mr-2" />
                   Add to Wishlist
                 </Button>
               </div>
             </div>
 
-            {/* Price */}
-            <div className="flex items-center gap-3">
-              <span className="text-3xl font-bold text-primary">
+            {/* Price - Elegant */}
+            <div className="flex items-baseline gap-4">
+              <span className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 {formatPrice(product.price)}
               </span>
               
@@ -199,10 +216,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 
                 return shouldShowDiscount && (
                   <>
-                    <span className="text-xl text-muted-foreground line-through">
+                    <span className="text-xl text-muted-foreground/70 line-through">
                       {formatPrice(product.price * (1 + discountPercent / 100))}
                     </span>
-                    <Badge variant="secondary" className="bg-red-500 text-white">
+                    <Badge className="bg-gradient-to-r from-rose-500 to-pink-600 text-white border-0">
                       -{discountPercent}% Off
                     </Badge>
                   </>
@@ -210,40 +227,57 @@ export default async function ProductPage({ params }: ProductPageProps) {
               })()}
             </div>
 
-            {/* Description */}
+            {/* Description - Elegant */}
             <div>
-              <h3 className="font-semibold text-lg mb-2">Description</h3>
-              <p className="text-muted-foreground leading-relaxed">
+              <h3 className="font-semibold text-xl mb-3 text-foreground">Description</h3>
+              <p className="text-muted-foreground leading-relaxed text-base">
                 {product.description}
               </p>
             </div>
 
-            {/* Product Specifications */}
-            <Card>
+            {/* AI Character Assistant */}
+            <div className="bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10 rounded-xl p-5">
+              <div className="flex items-start gap-4">
+                <ProductInfoAssistant 
+                  productName={product.name}
+                  productDescription={product.description}
+                  category={product.category}
+                />
+                <div className="flex-1">
+                  <p className="text-muted-foreground flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <span className="font-medium">New to anime? Get character info powered by AI!</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Product Specifications - Elegant */}
+            <Card className="border-border/50">
               <CardHeader>
-                <CardTitle className="text-lg">Product Details</CardTitle>
+                <CardTitle className="text-xl">Product Details</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
                 {product.brand && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Brand:</span>
-                    <span className="font-medium">{product.brand}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground font-medium">Brand:</span>
+                    <span className="font-semibold text-foreground">{product.brand}</span>
                   </div>
                 )}
                 
                 {product.author && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Author:</span>
-                    <span className="font-medium">{product.author}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground font-medium">Author:</span>
+                    <span className="font-semibold text-foreground">{product.author}</span>
                   </div>
                 )}
 
                 {product.sizes && product.sizes.length > 0 && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Available Sizes:</span>
-                    <div className="flex gap-1">
+                  <div className="flex justify-between items-start">
+                    <span className="text-muted-foreground font-medium">Sizes:</span>
+                    <div className="flex flex-wrap gap-2 justify-end">
                       {product.sizes.map((size) => (
-                        <Badge key={size} variant="outline" className="text-xs">
+                        <Badge key={size} variant="secondary" className="text-xs font-semibold">
                           {size}
                         </Badge>
                       ))}
@@ -252,11 +286,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 )}
 
                 {product.colors && product.colors.length > 0 && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Available Colors:</span>
-                    <div className="flex gap-1">
+                  <div className="flex justify-between items-start">
+                    <span className="text-muted-foreground font-medium">Colors:</span>
+                    <div className="flex flex-wrap gap-2 justify-end">
                       {product.colors.map((color) => (
-                        <Badge key={color} variant="outline" className="text-xs">
+                        <Badge key={color} variant="secondary" className="text-xs font-semibold capitalize">
                           {color}
                         </Badge>
                       ))}
@@ -266,31 +300,37 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
                 <Separator />
                 
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Stock:</span>
-                  <span className={`font-medium ${product.stock === 0 ? 'text-destructive' : product.stock <= 5 ? 'text-orange-600' : 'text-green-600'}`}>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground font-medium">Availability:</span>
+                  <span className={`font-semibold ${
+                    product.stock === 0 
+                      ? 'text-destructive' 
+                      : product.stock <= 5 
+                        ? 'text-amber-600' 
+                        : 'text-emerald-600'
+                  }`}>
                     {product.stock === 0 ? 'Out of Stock' : `${product.stock} units available`}
                   </span>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Add to Cart */}
-            <div className="space-y-4">
+            {/* Add to Cart - Elegant */}
+            <div className="space-y-5">
               <AddToCartButton product={product} />
               
-              {/* Additional Info */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Truck className="h-4 w-4" />
+              {/* Additional Info - Refined */}
+              <div className="grid grid-cols-1 gap-3 pt-2">
+                <div className="flex items-center gap-3 text-sm text-muted-foreground p-3 bg-primary/5 rounded-lg">
+                  <Truck className="h-5 w-5 text-primary flex-shrink-0" />
                   <span>Free shipping on orders over LKR 5,000</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Shield className="h-4 w-4" />
+                <div className="flex items-center gap-3 text-sm text-muted-foreground p-3 bg-primary/5 rounded-lg">
+                  <Shield className="h-5 w-5 text-primary flex-shrink-0" />
                   <span>Authentic products guaranteed</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <RotateCcw className="h-4 w-4" />
+                <div className="flex items-center gap-3 text-sm text-muted-foreground p-3 bg-primary/5 rounded-lg">
+                  <RotateCcw className="h-5 w-5 text-primary flex-shrink-0" />
                   <span>30-day return policy</span>
                 </div>
               </div>
@@ -298,14 +338,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </div>
         </div>
 
-        {/* Related Products Section */}
-        <Separator className="my-12" />
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">You might also like</h2>
-          <p className="text-muted-foreground mb-8">
+        {/* Related Products Section - Elegant */}
+        <Separator className="my-16" />
+        <div className="text-center max-w-2xl mx-auto">
+          <h2 className="text-3xl font-bold text-foreground mb-4">You might also like</h2>
+          <p className="text-muted-foreground mb-8 text-lg">
             Discover more products in the {product.category} category
           </p>
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" size="lg" className="shadow-sm hover:shadow-md">
             <Link href={`/${product.category}`}>
               View More {product.category}
             </Link>

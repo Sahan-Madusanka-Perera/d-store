@@ -7,7 +7,7 @@ import { useCartStore } from '@/store/cart';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Star, Eye, Heart, Sparkles } from 'lucide-react';
+import { ShoppingCart, Star, Eye, Heart, Sparkles, BookOpen, Shirt, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ProductCardProps {
@@ -75,19 +75,19 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'manga': return 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
-      case 'figures': return 'bg-gradient-to-r from-purple-500 to-pink-600 text-white'
-      case 'tshirts': return 'bg-gradient-to-r from-green-500 to-emerald-600 text-white'
-      default: return 'bg-gradient-to-r from-gray-500 to-slate-600 text-white'
+      case 'manga': return 'bg-gradient-to-r from-indigo-500 to-blue-500 text-white border-0'
+      case 'figures': return 'bg-gradient-to-r from-violet-500 to-purple-500 text-white border-0'
+      case 'tshirts': return 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0'
+      default: return 'bg-gradient-to-r from-slate-500 to-gray-500 text-white border-0'
     }
   };
 
-  const getCategoryEmoji = (category: string) => {
-    switch (category) {
-      case 'manga': return '📚'
-      case 'figures': return '🎎'
-      case 'tshirts': return '👕'
-      default: return '🛍️'
+  const getCategoryIcon = (category: string) => {
+    switch (category.toLowerCase()) {
+      case 'figures': return <Sparkles className="h-4 w-4" />
+      case 'manga': return <BookOpen className="h-4 w-4" />
+      case 'tshirts': return <Shirt className="h-4 w-4" />
+      default: return <ShoppingBag className="h-4 w-4" />
     }
   };
 
@@ -101,27 +101,27 @@ export default function ProductCard({ product }: ProductCardProps) {
   const originalPrice = shouldShowDiscount ? product.price / (1 - discountPercent / 100) : product.price;
 
   return (
-    <Card className="group relative overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col">
+    <Card className="group relative overflow-hidden border border-border/50 hover:border-primary/30 shadow-sm hover:shadow-2xl transition-all duration-500 h-full flex flex-col bg-card/80 backdrop-blur-sm">
       {/* Product Image */}
-      <div className="relative aspect-square overflow-hidden">
+      <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-muted/30 to-muted/10">
         <Link href={`/products/${product.id}`}>
           <Image
             src={(product.images && product.images[0]) || '/placeholder.svg'}
             alt={product.name}
             fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="object-cover transition-all duration-500 group-hover:scale-110"
           />
         </Link>
         
-        {/* Overlay Actions */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <div className="flex gap-2">
-            <Button size="sm" variant="secondary" asChild className="bg-white/90 hover:bg-white">
+        {/* Elegant Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-all duration-500">
+          <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-3">
+            <Button size="sm" variant="secondary" asChild className="bg-white/95 hover:bg-white shadow-lg backdrop-blur-md border-0">
               <Link href={`/products/${product.id}`}>
                 <Eye className="h-4 w-4" />
               </Link>
             </Button>
-            <Button size="sm" variant="secondary" className="bg-white/90 hover:bg-white">
+            <Button size="sm" variant="secondary" className="bg-white/95 hover:bg-white shadow-lg backdrop-blur-md border-0">
               <Heart className="h-4 w-4" />
             </Button>
           </div>
@@ -129,79 +129,84 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* Stock Badge */}
         {product.stock === 0 && (
-          <Badge variant="destructive" className="absolute top-2 left-2">
+          <Badge variant="destructive" className="absolute top-3 left-3 shadow-lg backdrop-blur-sm">
             Out of Stock
           </Badge>
         )}
         
         {/* Low Stock Warning */}
         {product.stock > 0 && product.stock <= 5 && (
-          <Badge className="absolute top-2 left-2 bg-orange-500 text-white">
+          <Badge className="absolute top-3 left-3 bg-amber-500/90 text-white shadow-lg backdrop-blur-sm border-0">
             Only {product.stock} left!
           </Badge>
         )}
         
-        {/* Category Badge */}
-        <Badge className={`absolute top-2 right-2 ${getCategoryColor(product.category)}`}>
-          {product.category}
+        {/* Category Badge - More elegant */}
+        <Badge className={`absolute top-3 right-3 shadow-md backdrop-blur-sm ${getCategoryColor(product.category)}`}>
+          <span className="flex items-center gap-1.5">
+            {getCategoryIcon(product.category)}
+            {product.category}
+          </span>
         </Badge>
         
-        {/* Discount Badge */}
+        {/* Discount Badge - Refined */}
         {shouldShowDiscount && (
-          <Badge className="absolute bottom-2 left-2 bg-red-500 text-white">
+          <Badge className="absolute bottom-3 left-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-lg border-0">
             -{discountPercent}% OFF
           </Badge>
         )}
       </div>
 
       {/* Product Details */}
-      <CardContent className="p-4 flex-1 flex flex-col">
+      <CardContent className="p-5 flex-1 flex flex-col">
         {/* Rating */}
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-3">
           <div className="flex gap-0.5">
             {renderStars(rating)}
           </div>
-          <span className="text-xs text-muted-foreground">
-            {rating.toFixed(1)} ({reviewCount})
+          <span className="text-xs text-muted-foreground font-medium">
+            {rating.toFixed(1)} <span className="text-muted-foreground/60">({reviewCount})</span>
           </span>
         </div>
 
         {/* Product Name */}
         <Link href={`/products/${product.id}`}>
-          <h3 className="font-semibold text-sm text-foreground mb-2 line-clamp-2 hover:text-primary transition-colors group-hover:text-primary">
+          <h3 className="font-semibold text-base text-foreground mb-3 line-clamp-2 hover:text-primary transition-colors leading-tight">
             {product.name}
           </h3>
         </Link>
 
+        {/* Additional Info */}
+        {(product.brand || product.author) && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+            {product.brand && (
+              <span className="px-2 py-1 bg-muted/50 rounded-md font-medium">{product.brand}</span>
+            )}
+            {product.author && (
+              <span className="italic truncate">{product.author}</span>
+            )}
+          </div>
+        )}
+
         {/* Price */}
-        <div className="flex items-center gap-2 mb-3 mt-auto">
-          <span className="text-lg font-bold text-primary">
+        <div className="flex items-baseline gap-2 mb-4 mt-auto">
+          <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             {formatPrice(product.price)}
           </span>
           {shouldShowDiscount && (
-            <span className="text-sm text-muted-foreground line-through">
+            <span className="text-sm text-muted-foreground/70 line-through">
               {formatPrice(originalPrice)}
             </span>
-          )}
-        </div>
-
-        {/* Additional Info */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-          {product.brand && (
-            <span className="font-medium">{product.brand}</span>
-          )}
-          {product.author && (
-            <span className="italic">by {product.author}</span>
           )}
         </div>
       </CardContent>
 
       {/* Footer */}
-      <CardFooter className="p-4 pt-0">
+      <CardFooter className="p-5 pt-0">
         <Button 
           onClick={handleAddToCart}
           disabled={product.stock === 0}
-          className="w-full"
+          className="w-full shadow-sm hover:shadow-md transition-all font-medium"
         >
           <ShoppingCart className="h-4 w-4 mr-2" />
           {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
