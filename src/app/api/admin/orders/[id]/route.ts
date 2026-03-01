@@ -4,10 +4,11 @@ import { requireAdmin } from '@/lib/auth';
 
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         await requireAdmin();
+        const resolvedParams = await params;
         const supabase = await createClient();
         const { status } = await request.json();
 
@@ -23,7 +24,7 @@ export async function PATCH(
         const { data, error } = await supabase
             .from('orders')
             .update({ status })
-            .eq('id', params.id)
+            .eq('id', resolvedParams.id)
             .select('*')
             .single();
 

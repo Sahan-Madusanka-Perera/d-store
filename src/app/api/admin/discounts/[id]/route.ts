@@ -4,18 +4,19 @@ import { NextResponse } from 'next/server'
 
 export async function PUT(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         await requireAdmin()
 
+        const resolvedParams = await params
         const supabase = await createClient()
         const body = await request.json()
 
         const { data: discount, error } = await supabase
             .from('quantity_discounts')
             .update(body)
-            .eq('id', params.id)
+            .eq('id', resolvedParams.id)
             .select()
             .single()
 
@@ -33,17 +34,18 @@ export async function PUT(
 
 export async function DELETE(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         await requireAdmin()
 
+        const resolvedParams = await params
         const supabase = await createClient()
 
         const { error } = await supabase
             .from('quantity_discounts')
             .delete()
-            .eq('id', params.id)
+            .eq('id', resolvedParams.id)
 
         if (error) throw error
 
