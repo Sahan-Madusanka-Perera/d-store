@@ -177,25 +177,45 @@ export default function ProductCard({ product }: ProductCardProps) {
           </h3>
         </Link>
 
-        {/* Author / Brand */}
-        {(product.author || product.brand) && (
-          <p className="text-xs text-muted-foreground truncate">
-            {product.author || product.brand}
-          </p>
+        {/* Author / Brand / Publisher — clickable */}
+        {(product.author || product.brand || product.publisher) && (
+          <div className="flex items-center gap-1 text-xs text-muted-foreground truncate">
+            {product.category === 'manga' && product.publisher && (
+              <Link href={`/manga?publisher=${encodeURIComponent(product.publisher)}`} className="hover:text-foreground transition-colors underline decoration-muted-foreground/30 hover:decoration-foreground/50 truncate">
+                {product.publisher}
+              </Link>
+            )}
+            {product.category === 'manga' && product.publisher && product.author && (
+              <span className="text-muted-foreground/40 mx-0.5">·</span>
+            )}
+            {product.author && (
+              <span className="italic truncate">{product.author}</span>
+            )}
+            {product.category === 'figures' && product.brand && (
+              <Link href={`/figures?brand=${encodeURIComponent(product.brand)}`} className="hover:text-foreground transition-colors underline decoration-muted-foreground/30 hover:decoration-foreground/50 truncate">
+                {product.brand}
+              </Link>
+            )}
+            {product.category === 'tshirts' && product.brand && (
+              <Link href={`/tshirts?search=${encodeURIComponent(product.brand)}`} className="hover:text-foreground transition-colors underline decoration-muted-foreground/30 hover:decoration-foreground/50 truncate">
+                {product.brand}
+              </Link>
+            )}
+          </div>
         )}
 
         {/* Tags: series + characters */}
         {((product.series && product.series !== 'Various') || (product.characterNames && product.characterNames.length > 0)) && (
           <div className="flex flex-wrap gap-1 mt-0.5">
             {product.series && product.series !== 'Various' && (
-              <Link href={`/products?search=${encodeURIComponent(product.series)}`}>
+              <Link href={`/${product.category}?search=${encodeURIComponent(product.series)}`}>
                 <span className="inline-block text-[10px] font-semibold uppercase tracking-wider text-primary bg-primary/10 hover:bg-primary/15 transition-colors rounded px-1.5 py-0.5 max-w-[110px] truncate cursor-pointer">
                   {product.series}
                 </span>
               </Link>
             )}
             {product.characterNames?.slice(0, 2).map((char, idx) => (
-              <Link key={idx} href={`/products?search=${encodeURIComponent(char)}`}>
+              <Link key={idx} href={`/${product.category}?search=${encodeURIComponent(char)}`}>
                 <span className="inline-block text-[10px] font-medium text-muted-foreground bg-muted/60 hover:bg-muted transition-colors rounded px-1.5 py-0.5 max-w-[90px] truncate cursor-pointer">
                   {char}
                 </span>

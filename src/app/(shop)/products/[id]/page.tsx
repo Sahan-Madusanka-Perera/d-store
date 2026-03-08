@@ -235,15 +235,25 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 {product.brand && (
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground font-medium">Brand:</span>
-                    <span className="font-semibold text-foreground">{product.brand}</span>
+                    <Link href={`/figures?brand=${encodeURIComponent(product.brand)}`}>
+                      <span className="font-semibold text-foreground hover:text-primary transition-colors underline decoration-transparent hover:decoration-primary/50">{product.brand}</span>
+                    </Link>
                   </div>
                 )}
 
-                {/* Newly mapped attributes */}
+                {product.category === 'manga' && product.publisher && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground font-medium">Publisher:</span>
+                    <Link href={`/manga?publisher=${encodeURIComponent(product.publisher)}`}>
+                      <span className="font-semibold text-foreground hover:text-primary transition-colors underline decoration-transparent hover:decoration-primary/50">{product.publisher}</span>
+                    </Link>
+                  </div>
+                )}
+
                 {product.series && product.series !== 'Various' && (
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground font-medium">Series:</span>
-                    <Link href={`/products?search=${encodeURIComponent(product.series)}`}>
+                    <Link href={`/${product.category}?search=${encodeURIComponent(product.series)}`}>
                       <Badge title={product.series} variant="outline" className="border-primary/20 bg-primary/5 text-primary uppercase font-bold tracking-wider max-w-[200px] truncate block text-center hover:bg-primary/10 transition-colors cursor-pointer">
                         {product.series}
                       </Badge>
@@ -256,7 +266,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     <span className="text-muted-foreground font-medium">Characters:</span>
                     <div className="flex flex-wrap gap-2 justify-end max-w-[60%]">
                       {product.characterNames.map((char) => (
-                        <Link key={char} href={`/products?search=${encodeURIComponent(char)}`}>
+                        <Link key={char} href={`/${product.category}?search=${encodeURIComponent(char)}`}>
                           <Badge title={char} variant="secondary" className="font-semibold px-2 max-w-[150px] truncate block text-center hover:bg-muted transition-colors cursor-pointer">
                             {char}
                           </Badge>
@@ -269,7 +279,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 {product.author && (
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground font-medium">Author:</span>
-                    <span className="font-semibold text-foreground">{product.author}</span>
+                    <Link href={`/manga?search=${encodeURIComponent(product.author)}`}>
+                      <span className="font-semibold text-foreground hover:text-primary transition-colors underline decoration-transparent hover:decoration-primary/50">{product.author}</span>
+                    </Link>
                   </div>
                 )}
 
