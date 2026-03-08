@@ -9,21 +9,27 @@ export interface Product {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  
+
+  // Tagging & Ratings
+  tags?: string[];
+  series?: string;
+  characterNames?: string[];
+  externalRating?: number;
+  externalRatingCount?: number;
+
   // Category-specific fields
   // For manga
   author?: string;
   publisher?: string;
   isbn?: string;
   language?: 'english' | 'japanese' | 'sinhala';
-  
+
   // For figures
   brand?: string;
-  series?: string;
   scale?: string;
   height?: string;
   figureMaterial?: string;
-  
+
   // For t-shirts
   sizes?: ('XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL')[];
   colors?: string[];

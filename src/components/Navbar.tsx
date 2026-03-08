@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
+import UniversalSearch from './UniversalSearch';
 import { ShoppingCart, Menu, Store, BookOpen, Sparkles, Shirt, ShoppingBag } from 'lucide-react';
 
 export default function Navbar() {
@@ -49,6 +50,11 @@ export default function Navbar() {
 
           {/* Right side - Cart and Auth */}
           <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* Search */}
+            <div className="hidden sm:block">
+              <UniversalSearch />
+            </div>
+
             {/* Cart */}
             <Button variant="ghost" size="icon" asChild className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full text-zinc-300 hover:text-white hover:bg-white/10 transition-all duration-200">
               <Link href="/cart" className="flex items-center justify-center">
@@ -109,6 +115,11 @@ export default function Navbar() {
                           All Products
                         </Link>
                       </Button>
+                      <div className="px-4 py-2">
+                        <div className="relative border border-white/10 rounded-xl overflow-hidden focus-within:border-white/30 transition-colors">
+                          <UniversalSearch />
+                        </div>
+                      </div>
                     </div>
 
                     {/* Mobile Footer Area */}

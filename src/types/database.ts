@@ -1,6 +1,6 @@
 // Shared database product interface for all pages
 export interface DatabaseProduct {
-  id: number;
+  id: number | string; // Assuming id can be string or numeric based on usage, but originally number
   name: string;
   description?: string;
   price: number;
@@ -8,12 +8,22 @@ export interface DatabaseProduct {
   stock: number;
   created_at: string;
   updated_at: string;
+
+  // existing optional fields
   author?: string;
+  publisher?: string;
   brand?: string;
   sizes?: ('XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL')[];
   colors?: string[];
   image_url?: string;
   image_urls?: string[];
+
+  // new fields: tagging & ratings
+  tags?: string[];
+  character_names?: string[];
+  series?: string;
+  external_rating?: number;
+  external_rating_count?: number;
 }
 
 export interface CarouselSlide {
@@ -37,6 +47,14 @@ export interface QuantityDiscount {
   min_quantity: number;
   discount_percentage?: number;
   discount_fixed?: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface PublisherDiscount {
+  id: string;
+  publisher: string;
+  discount_percentage: number;
   is_active: boolean;
   created_at: string;
 }

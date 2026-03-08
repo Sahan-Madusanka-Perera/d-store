@@ -17,6 +17,7 @@ export const useCartStore = create<CartStore>()(
       discountTotal: 0,
       appliedDiscounts: [],
       availableDiscounts: [],
+      availablePublisherDiscounts: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
 
@@ -142,70 +143,105 @@ export const useCartStore = create<CartStore>()(
       fetchAvailableDiscounts: async () => {
         try {
           const supabase = createClient();
-          const { data, error } = await supabase
+          const { data: qtyData, error: qtyError } = await supabase
             .from('quantity_discounts')
             .select('*')
             .eq('is_active', true)
             .order('min_quantity', { ascending: false }); // Highest quantity threshold first
 
-          if (!error && data) {
-            set({ availableDiscounts: data });
-            get().evaluateDiscounts();
+          const { data: pubData, error: pubError } = await supabase
+            .from('publisher_discounts')
+            .select('*')
+            .eq('is_active', true);
+
+          if (!qtyError && qtyData) {
+            set({ availableDiscounts: qtyData });
           }
+          if (!pubError && pubData) {
+            set({ availablePublisherDiscounts: pubData });
+          }
+
+          get().evaluateDiscounts();
         } catch (error) {
           console.error("Failed to fetch available discounts:", error);
         }
       },
 
       evaluateDiscounts: () => {
-        const { items, availableDiscounts, totalAmount } = get();
+        const { items, availableDiscounts, availablePublisherDiscounts, totalAmount } = get();
 
         let newDiscountTotal = 0;
         const newAppliedDiscounts: any[] = [];
 
-        if (items.length === 0 || availableDiscounts.length === 0) {
+        if (items.length === 0) {
           set({ discountTotal: 0, appliedDiscounts: [] });
           return;
         }
 
-        // Group items by category to count quantities and sub-totals
-        const categoryStats = items.reduce((acc, item) => {
-          const cat = item.product.category;
-          if (!acc[cat]) acc[cat] = { quantity: 0, totalValue: 0 };
-          acc[cat].quantity += item.quantity;
-          acc[cat].totalValue += (item.priceAtTime * item.quantity);
-          return acc;
-        }, {} as Record<string, { quantity: number, totalValue: number }>);
+        // --- 1. Evaluate Quantity Discounts ---
+        if (availableDiscounts && availableDiscounts.length > 0) {
+          // Group items by category to count quantities and sub-totals
+          const categoryStats = items.reduce((acc, item) => {
+            const cat = item.product.category;
+            if (!acc[cat]) acc[cat] = { quantity: 0, totalValue: 0 };
+            acc[cat].quantity += item.quantity;
+            acc[cat].totalValue += (item.priceAtTime * item.quantity);
+            return acc;
+          }, {} as Record<string, { quantity: number, totalValue: number }>);
 
-        // For each category that has active items, find the BEST applicable discount
-        Object.entries(categoryStats).forEach(([category, stats]) => {
-          // Discounts are already ordered by highest min_quantity first
-          const applicableDiscount = availableDiscounts.find(
-            d => d.category === category && stats.quantity >= d.min_quantity
-          );
+          // For each category that has active items, find the BEST applicable discount
+          Object.entries(categoryStats).forEach(([category, stats]) => {
+            // Discounts are already ordered by highest min_quantity first
+            const applicableDiscount = availableDiscounts.find(
+              d => d.category === category && stats.quantity >= d.min_quantity
+            );
 
-          if (applicableDiscount) {
-            let amountOff = 0;
-            let description = '';
+            if (applicableDiscount) {
+              let amountOff = 0;
+              let description = '';
 
-            if (applicableDiscount.discount_percentage) {
-              amountOff = (stats.totalValue * applicableDiscount.discount_percentage) / 100;
-              description = `${applicableDiscount.discount_percentage}% off on ${category}`;
-            } else if (applicableDiscount.discount_fixed) {
-              amountOff = applicableDiscount.discount_fixed;
-              description = `LKR ${applicableDiscount.discount_fixed} off on ${category}`;
+              if (applicableDiscount.discount_percentage) {
+                amountOff = (stats.totalValue * applicableDiscount.discount_percentage) / 100;
+                description = `${applicableDiscount.discount_percentage}% off on ${category}`;
+              } else if (applicableDiscount.discount_fixed) {
+                amountOff = applicableDiscount.discount_fixed;
+                description = `LKR ${applicableDiscount.discount_fixed} off on ${category}`;
+              }
+
+              if (amountOff > 0) {
+                newDiscountTotal += amountOff;
+                newAppliedDiscounts.push({
+                  discountId: applicableDiscount.id,
+                  description,
+                  amountOff
+                });
+              }
             }
+          });
+        }
 
-            if (amountOff > 0) {
-              newDiscountTotal += amountOff;
-              newAppliedDiscounts.push({
-                discountId: applicableDiscount.id,
-                description,
-                amountOff
-              });
+        // --- 2. Evaluate Publisher Discounts ---
+        if (availablePublisherDiscounts && availablePublisherDiscounts.length > 0) {
+          items.forEach(item => {
+            if (item.product.category === 'manga' && item.product.publisher) {
+              const applicableDiscount = availablePublisherDiscounts.find(
+                d => d.publisher.toLowerCase() === item.product.publisher?.toLowerCase()
+              );
+
+              if (applicableDiscount) {
+                const itemTotal = item.priceAtTime * item.quantity;
+                const amountOff = (itemTotal * applicableDiscount.discount_percentage) / 100;
+
+                newDiscountTotal += amountOff;
+                newAppliedDiscounts.push({
+                  discountId: applicableDiscount.id,
+                  description: `${applicableDiscount.discount_percentage}% off on ${applicableDiscount.publisher} items`,
+                  amountOff
+                });
+              }
             }
-          }
-        });
+          });
+        }
 
         set({
           discountTotal: newDiscountTotal,

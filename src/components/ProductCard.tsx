@@ -16,15 +16,16 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore(state => state.addItem);
+  const availablePublisherDiscounts = useCartStore(state => state.availablePublisherDiscounts);
 
   const handleAddToCart = () => {
     addItem(product, 1);
     toast.success(`Added ${product.name} to cart!`, {
-      description: "Item successfully added to your cart",
+      description: 'Item successfully added to your cart',
       action: {
-        label: "View Cart",
-        onClick: () => window.location.href = '/cart'
-      }
+        label: 'View Cart',
+        onClick: () => (window.location.href = '/cart'),
+      },
     });
   };
 
@@ -36,21 +37,20 @@ export default function ProductCard({ product }: ProductCardProps) {
     }).format(price);
   };
 
-  // Generate consistent rating based on product ID (deterministic)
   const getProductRating = (productId: string) => {
     const hash = productId.split('').reduce((a, b) => {
       a = ((a << 5) - a) + b.charCodeAt(0);
       return a & a;
     }, 0);
-    return 4.0 + (Math.abs(hash) % 100) / 100; // 4.0 to 5.0
+    return 4.0 + (Math.abs(hash) % 100) / 100;
   };
-  
+
   const getReviewCount = (productId: string) => {
     const hash = productId.split('').reduce((a, b) => {
       a = ((a << 3) - a) + b.charCodeAt(0);
       return a & a;
     }, 0);
-    return 50 + (Math.abs(hash) % 500); // 50 to 550 reviews
+    return 50 + (Math.abs(hash) % 500);
   };
 
   const rating = getProductRating(product.id.toString());
@@ -60,155 +60,176 @@ export default function ProductCard({ product }: ProductCardProps) {
     const stars = [];
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 >= 0.5;
-    
+
     for (let i = 0; i < 5; i++) {
       if (i < fullStars) {
-        stars.push(<Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />);
+        stars.push(<Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />);
       } else if (i === fullStars && hasHalfStar) {
-        stars.push(<Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />);
+        stars.push(<Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />);
       } else {
-        stars.push(<Star key={i} className="w-3 h-3 text-gray-300" />);
+        stars.push(<Star key={i} className="w-3 h-3 text-muted-foreground/30" />);
       }
     }
     return stars;
   };
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'manga': return 'bg-gradient-to-r from-indigo-500 to-blue-500 text-white border-0'
-      case 'figures': return 'bg-gradient-to-r from-violet-500 to-purple-500 text-white border-0'
-      case 'tshirts': return 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0'
-      default: return 'bg-gradient-to-r from-slate-500 to-gray-500 text-white border-0'
-    }
-  };
-
   const getCategoryIcon = (category: string) => {
     switch (category.toLowerCase()) {
-      case 'figures': return <Sparkles className="h-4 w-4" />
-      case 'manga': return <BookOpen className="h-4 w-4" />
-      case 'tshirts': return <Shirt className="h-4 w-4" />
-      default: return <ShoppingBag className="h-4 w-4" />
+      case 'figures': return <Sparkles className="h-3 w-3" />;
+      case 'manga': return <BookOpen className="h-3 w-3" />;
+      case 'tshirts': return <Shirt className="h-3 w-3" />;
+      default: return <ShoppingBag className="h-3 w-3" />;
     }
   };
 
-  // Generate discount based on product ID
-  const hash = product.id.toString().split('').reduce((a, b) => {
-    a = ((a << 2) - a) + b.charCodeAt(0);
-    return a & a;
-  }, 0);
-  const shouldShowDiscount = (Math.abs(hash) % 10) > 6;
-  const discountPercent = 10 + (Math.abs(hash) % 20);
-  const originalPrice = shouldShowDiscount ? product.price / (1 - discountPercent / 100) : product.price;
+  const getCategoryStyle = (category: string) => {
+    switch (category) {
+      case 'manga': return 'bg-indigo-500/90 text-white';
+      case 'figures': return 'bg-violet-500/90 text-white';
+      case 'tshirts': return 'bg-amber-500/90 text-white';
+      default: return 'bg-slate-500/90 text-white';
+    }
+  };
+
+  const applicableDiscount =
+    product.category === 'manga' && product.publisher
+      ? availablePublisherDiscounts.find(
+          d => d.publisher.toLowerCase() === product.publisher?.toLowerCase()
+        )
+      : null;
+
+  const shouldShowDiscount = !!applicableDiscount;
+  const discountPercent = applicableDiscount ? applicableDiscount.discount_percentage : 0;
+  const originalPrice = product.price;
+  const displayPrice = shouldShowDiscount ? originalPrice * (1 - discountPercent / 100) : originalPrice;
 
   return (
-    <Card className="group relative overflow-hidden border border-border/50 hover:border-primary/30 shadow-sm hover:shadow-2xl transition-all duration-500 h-full flex flex-col bg-card/80 backdrop-blur-sm">
-      {/* Product Image */}
-      <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-muted/30 to-muted/10">
+    <Card className="group relative overflow-hidden border border-border/40 hover:border-primary/20 shadow-sm hover:shadow-xl transition-all duration-300 h-full flex flex-col bg-card p-0 gap-0">
+      {/* Image */}
+      <div className="relative aspect-[3/4] overflow-hidden bg-muted/20">
         <Link href={`/products/${product.id}`}>
           <Image
             src={(product.images && product.images[0]) || '/placeholder.svg'}
             alt={product.name}
             fill
-            className="object-cover transition-all duration-500 group-hover:scale-110"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
         </Link>
-        
-        {/* Elegant Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-all duration-500">
-          <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-3">
-            <Button size="sm" variant="secondary" asChild className="bg-white/95 hover:bg-white shadow-lg backdrop-blur-md border-0">
-              <Link href={`/products/${product.id}`}>
-                <Eye className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button size="sm" variant="secondary" className="bg-white/95 hover:bg-white shadow-lg backdrop-blur-md border-0">
-              <Heart className="h-4 w-4" />
-            </Button>
-          </div>
+
+        {/* Persistent bottom gradient for text/badge readability */}
+        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+
+        {/* Hover overlay */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 pointer-events-none" />
+        <div className="absolute inset-0 flex items-center justify-center gap-2.5 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 z-10">
+          <Button size="icon" variant="secondary" asChild className="h-9 w-9 rounded-full bg-white/90 hover:bg-white shadow-md border-0">
+            <Link href={`/products/${product.id}`}>
+              <Eye className="h-4 w-4 text-foreground" />
+            </Link>
+          </Button>
+          <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full bg-white/90 hover:bg-white shadow-md border-0">
+            <Heart className="h-4 w-4 text-foreground" />
+          </Button>
         </div>
 
-        {/* Stock Badge */}
-        {product.stock === 0 && (
-          <Badge variant="destructive" className="absolute top-3 left-3 shadow-lg backdrop-blur-sm">
-            Out of Stock
-          </Badge>
-        )}
-        
-        {/* Low Stock Warning */}
-        {product.stock > 0 && product.stock <= 5 && (
-          <Badge className="absolute top-3 left-3 bg-amber-500/90 text-white shadow-lg backdrop-blur-sm border-0">
-            Only {product.stock} left!
-          </Badge>
-        )}
-        
-        {/* Category Badge - More elegant */}
-        <Badge className={`absolute top-3 right-3 shadow-md backdrop-blur-sm ${getCategoryColor(product.category)}`}>
-          <span className="flex items-center gap-1.5">
+        {/* Top-left: stock + discount stacked */}
+        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5 z-10">
+          {product.stock === 0 && (
+            <Badge variant="destructive" className="text-[11px] px-2 py-0.5 shadow-md">
+              Out of Stock
+            </Badge>
+          )}
+          {product.stock > 0 && product.stock <= 5 && (
+            <Badge className="text-[11px] px-2 py-0.5 bg-amber-500 text-white shadow-md border-0">
+              Only {product.stock} left
+            </Badge>
+          )}
+          {shouldShowDiscount && (
+            <Badge className="text-[11px] px-2 py-0.5 bg-rose-500 text-white shadow-md border-0">
+              -{discountPercent}%
+            </Badge>
+          )}
+        </div>
+
+        {/* Top-right: category */}
+        <Badge className={`absolute top-2.5 right-2.5 z-10 text-[11px] px-2 py-0.5 shadow-md border-0 ${getCategoryStyle(product.category)}`}>
+          <span className="flex items-center gap-1">
             {getCategoryIcon(product.category)}
             {product.category}
           </span>
         </Badge>
-        
-        {/* Discount Badge - Refined */}
-        {shouldShowDiscount && (
-          <Badge className="absolute bottom-3 left-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-lg border-0">
-            -{discountPercent}% OFF
-          </Badge>
-        )}
       </div>
 
-      {/* Product Details */}
-      <CardContent className="p-5 flex-1 flex flex-col">
+      {/* Content */}
+      <CardContent className="p-4 flex-1 flex flex-col gap-2">
         {/* Rating */}
-        <div className="flex items-center gap-2 mb-3">
-          <div className="flex gap-0.5">
-            {renderStars(rating)}
-          </div>
-          <span className="text-xs text-muted-foreground font-medium">
-            {rating.toFixed(1)} <span className="text-muted-foreground/60">({reviewCount})</span>
+        <div className="flex items-center gap-1.5">
+          <div className="flex gap-0.5">{renderStars(rating)}</div>
+          <span className="text-[11px] text-muted-foreground">
+            {rating.toFixed(1)} ({reviewCount})
           </span>
         </div>
 
-        {/* Product Name */}
+        {/* Name */}
         <Link href={`/products/${product.id}`}>
-          <h3 className="font-semibold text-base text-foreground mb-3 line-clamp-2 hover:text-primary transition-colors leading-tight">
+          <h3 className="font-semibold text-sm text-foreground line-clamp-2 hover:text-primary transition-colors leading-snug">
             {product.name}
           </h3>
         </Link>
 
-        {/* Additional Info */}
-        {(product.brand || product.author) && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-            {product.brand && (
-              <span className="px-2 py-1 bg-muted/50 rounded-md font-medium">{product.brand}</span>
+        {/* Author / Brand */}
+        {(product.author || product.brand) && (
+          <p className="text-xs text-muted-foreground truncate">
+            {product.author || product.brand}
+          </p>
+        )}
+
+        {/* Tags: series + characters */}
+        {((product.series && product.series !== 'Various') || (product.characterNames && product.characterNames.length > 0)) && (
+          <div className="flex flex-wrap gap-1 mt-0.5">
+            {product.series && product.series !== 'Various' && (
+              <Link href={`/products?search=${encodeURIComponent(product.series)}`}>
+                <span className="inline-block text-[10px] font-semibold uppercase tracking-wider text-primary bg-primary/10 hover:bg-primary/15 transition-colors rounded px-1.5 py-0.5 max-w-[110px] truncate cursor-pointer">
+                  {product.series}
+                </span>
+              </Link>
             )}
-            {product.author && (
-              <span className="italic truncate">{product.author}</span>
+            {product.characterNames?.slice(0, 2).map((char, idx) => (
+              <Link key={idx} href={`/products?search=${encodeURIComponent(char)}`}>
+                <span className="inline-block text-[10px] font-medium text-muted-foreground bg-muted/60 hover:bg-muted transition-colors rounded px-1.5 py-0.5 max-w-[90px] truncate cursor-pointer">
+                  {char}
+                </span>
+              </Link>
+            ))}
+            {product.characterNames && product.characterNames.length > 2 && (
+              <span className="text-[10px] text-muted-foreground/60 self-center">
+                +{product.characterNames.length - 2}
+              </span>
             )}
           </div>
         )}
 
         {/* Price */}
-        <div className="flex items-baseline gap-2 mb-4 mt-auto">
-          <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            {formatPrice(product.price)}
+        <div className="flex items-baseline gap-2 mt-auto pt-2">
+          <span className="text-lg font-bold text-foreground">
+            {formatPrice(displayPrice)}
           </span>
           {shouldShowDiscount && (
-            <span className="text-sm text-muted-foreground/70 line-through">
+            <span className="text-xs text-muted-foreground/60 line-through">
               {formatPrice(originalPrice)}
             </span>
           )}
         </div>
       </CardContent>
 
-      {/* Footer */}
-      <CardFooter className="p-5 pt-0">
-        <Button 
+      {/* Add to Cart */}
+      <CardFooter className="px-4 pb-4 pt-0">
+        <Button
           onClick={handleAddToCart}
           disabled={product.stock === 0}
-          className="w-full shadow-sm hover:shadow-md transition-all font-medium"
+          className="w-full h-9 text-sm font-medium shadow-sm hover:shadow transition-all"
         >
-          <ShoppingCart className="h-4 w-4 mr-2" />
+          <ShoppingCart className="h-3.5 w-3.5 mr-1.5" />
           {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
         </Button>
       </CardFooter>

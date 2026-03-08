@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Star, ArrowLeft, Truck, Shield, RotateCcw, Heart, Sparkles } from 'lucide-react';
+import ExternalRating from '@/components/ExternalRating';
 
 interface DatabaseProduct {
   id: number;
@@ -26,12 +27,15 @@ interface DatabaseProduct {
   colors?: string[];
   image_url?: string;
   image_urls?: string[];
+  publisher?: string;
+  series?: string;
+  character_names?: string[];
 }
 
 function mapDatabaseProduct(dbProduct: DatabaseProduct): Product {
   // Handle both single image (image_url) and multiple images (image_urls)
   let images: string[] = [];
-  
+
   if (dbProduct.image_urls && Array.isArray(dbProduct.image_urls) && dbProduct.image_urls.length > 0) {
     // Use multiple images if available
     images = dbProduct.image_urls;
@@ -59,9 +63,10 @@ function mapDatabaseProduct(dbProduct: DatabaseProduct): Product {
     sizes: dbProduct.sizes as ('XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL')[] | undefined,
     colors: dbProduct.colors,
     fabricMaterial: '100% Cotton',
-    publisher: 'Various',
+    publisher: dbProduct.publisher,
     language: 'english',
-    series: 'Various',
+    series: dbProduct.series || 'Various',
+    characterNames: dbProduct.character_names,
     scale: '1/8',
     height: '20cm'
   };
@@ -74,7 +79,7 @@ interface ProductPageProps {
 export default async function ProductPage({ params }: ProductPageProps) {
   const { id } = await params;
   const supabase = await createClient();
-  
+
   const { data: dbProduct, error } = await supabase
     .from('products')
     .select('*, image_url, image_urls')
@@ -87,25 +92,23 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   const product = mapDatabaseProduct(dbProduct);
 
-  // Generate consistent rating based on product ID (deterministic)
-  const getProductRating = (productId: string) => {
-    const hash = productId.split('').reduce((a, b) => {
-      a = ((a << 5) - a) + b.charCodeAt(0);
-      return a & a;
-    }, 0);
-    return 4.0 + (Math.abs(hash) % 100) / 100; // 4.0 to 5.0
-  };
-  
-  const getReviewCount = (productId: string) => {
-    const hash = productId.split('').reduce((a, b) => {
-      a = ((a << 3) - a) + b.charCodeAt(0);
-      return a & a;
-    }, 0);
-    return 50 + (Math.abs(hash) % 500); // 50 to 550 reviews
-  };
+  let discountPercent = 0;
+  if (product.category === 'manga' && product.publisher) {
+    const { data: discountData } = await supabase
+      .from('publisher_discounts')
+      .select('discount_percentage')
+      .ilike('publisher', product.publisher)
+      .eq('is_active', true)
+      .maybeSingle();
 
-  const rating = getProductRating(product.id);
-  const reviewCount = getReviewCount(product.id);
+    if (discountData) {
+      discountPercent = discountData.discount_percentage;
+    }
+  }
+
+  const shouldShowDiscount = discountPercent > 0;
+  const originalPrice = product.price;
+  const displayPrice = shouldShowDiscount ? originalPrice * (1 - discountPercent / 100) : originalPrice;
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-LK', {
@@ -113,23 +116,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
       currency: 'LKR',
       minimumFractionDigits: 0,
     }).format(price);
-  };
-
-  const renderStars = (rating: number) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
-    
-    for (let i = 0; i < 5; i++) {
-      if (i < fullStars) {
-        stars.push(<Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />);
-      } else if (i === fullStars && hasHalfStar) {
-        stars.push(<Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />);
-      } else {
-        stars.push(<Star key={i} className="w-4 h-4 text-gray-300" />);
-      }
-    }
-    return stars;
   };
 
   const getCategoryColor = (category: string) => {
@@ -154,10 +140,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </Button>
         </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Images Gallery */}
-          <ProductImageGallery 
-            images={product.images} 
+          <ProductImageGallery
+            images={product.images}
             productName={product.name}
             stock={product.stock}
           />
@@ -176,24 +162,21 @@ export default async function ProductPage({ params }: ProductPageProps) {
               )}
             </div>
 
-            {/* Title and Rating */}
-            <div>
-              <h1 className="text-4xl font-bold text-foreground mb-4 leading-tight">
+            {/* Title and External Rating */}
+            <div className="space-y-4">
+              <h1 className="text-4xl font-bold text-foreground leading-tight">
                 {product.name}
               </h1>
-              
-              <div className="flex flex-wrap items-center gap-6">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-0.5">
-                    {renderStars(rating)}
-                  </div>
-                  <span className="text-sm text-muted-foreground font-medium">
-                    {rating.toFixed(1)} <span className="text-muted-foreground/60">({reviewCount} reviews)</span>
-                  </span>
-                </div>
-                
-                <Button variant="ghost" size="sm" className="hover:bg-primary/5">
-                  <Heart className="h-4 w-4 mr-2" />
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <ExternalRating
+                  productId={product.id}
+                  initialRating={dbProduct.external_rating}
+                  initialCount={dbProduct.external_rating_count}
+                />
+
+                <Button variant="ghost" size="sm" className="hover:bg-primary/5 sm:ml-auto w-fit">
+                  <Heart className="h-4 w-4 mr-2 text-rose-500 fill-rose-500/10" />
                   Add to Wishlist
                 </Button>
               </div>
@@ -201,30 +184,21 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
             {/* Price - Elegant */}
             <div className="flex items-baseline gap-4">
-              <span className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                {formatPrice(product.price)}
+              <span className="text-4xl font-bold text-foreground">
+                {formatPrice(displayPrice)}
               </span>
-              
-              {/* Show discount for some items (deterministic based on product ID) */}
-              {(() => {
-                const hash = product.id.split('').reduce((a, b) => {
-                  a = ((a << 2) - a) + b.charCodeAt(0);
-                  return a & a;
-                }, 0);
-                const shouldShowDiscount = (Math.abs(hash) % 10) > 6;
-                const discountPercent = 15 + (Math.abs(hash) % 15);
-                
-                return shouldShowDiscount && (
-                  <>
-                    <span className="text-xl text-muted-foreground/70 line-through">
-                      {formatPrice(product.price * (1 + discountPercent / 100))}
-                    </span>
-                    <Badge className="bg-gradient-to-r from-rose-500 to-pink-600 text-white border-0">
-                      -{discountPercent}% Off
-                    </Badge>
-                  </>
-                );
-              })()}
+
+              {/* Show discount if applicable */}
+              {shouldShowDiscount && (
+                <>
+                  <span className="text-xl text-muted-foreground/70 line-through">
+                    {formatPrice(originalPrice)}
+                  </span>
+                  <Badge className="bg-gradient-to-r from-rose-500 to-pink-600 text-white border-0">
+                    -{discountPercent}% Off
+                  </Badge>
+                </>
+              )}
             </div>
 
             {/* Description - Elegant */}
@@ -238,7 +212,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             {/* AI Character Assistant */}
             <div className="bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10 rounded-xl p-5">
               <div className="flex items-start gap-4">
-                <ProductInfoAssistant 
+                <ProductInfoAssistant
                   productName={product.name}
                   productDescription={product.description}
                   category={product.category}
@@ -264,7 +238,34 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     <span className="font-semibold text-foreground">{product.brand}</span>
                   </div>
                 )}
-                
+
+                {/* Newly mapped attributes */}
+                {product.series && product.series !== 'Various' && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground font-medium">Series:</span>
+                    <Link href={`/products?search=${encodeURIComponent(product.series)}`}>
+                      <Badge title={product.series} variant="outline" className="border-primary/20 bg-primary/5 text-primary uppercase font-bold tracking-wider max-w-[200px] truncate block text-center hover:bg-primary/10 transition-colors cursor-pointer">
+                        {product.series}
+                      </Badge>
+                    </Link>
+                  </div>
+                )}
+
+                {product.characterNames && product.characterNames.length > 0 && (
+                  <div className="flex justify-between items-start">
+                    <span className="text-muted-foreground font-medium">Characters:</span>
+                    <div className="flex flex-wrap gap-2 justify-end max-w-[60%]">
+                      {product.characterNames.map((char) => (
+                        <Link key={char} href={`/products?search=${encodeURIComponent(char)}`}>
+                          <Badge title={char} variant="secondary" className="font-semibold px-2 max-w-[150px] truncate block text-center hover:bg-muted transition-colors cursor-pointer">
+                            {char}
+                          </Badge>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {product.author && (
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground font-medium">Author:</span>
@@ -299,16 +300,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 )}
 
                 <Separator />
-                
+
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground font-medium">Availability:</span>
-                  <span className={`font-semibold ${
-                    product.stock === 0 
-                      ? 'text-destructive' 
-                      : product.stock <= 5 
-                        ? 'text-amber-600' 
-                        : 'text-emerald-600'
-                  }`}>
+                  <span className={`font-semibold ${product.stock === 0
+                    ? 'text-destructive'
+                    : product.stock <= 5
+                      ? 'text-amber-600'
+                      : 'text-emerald-600'
+                    }`}>
                     {product.stock === 0 ? 'Out of Stock' : `${product.stock} units available`}
                   </span>
                 </div>
@@ -318,7 +318,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             {/* Add to Cart - Elegant */}
             <div className="space-y-5">
               <AddToCartButton product={product} />
-              
+
               {/* Additional Info - Refined */}
               <div className="grid grid-cols-1 gap-3 pt-2">
                 <div className="flex items-center gap-3 text-sm text-muted-foreground p-3 bg-primary/5 rounded-lg">

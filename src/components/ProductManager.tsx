@@ -23,7 +23,11 @@ interface Product {
   price: number
   category: string
   author?: string
+  publisher?: string
   brand?: string
+  series?: string
+  tags?: string[]
+  character_names?: string[]
   stock: number
   image_url?: string  // Keep for backward compatibility
   image_urls?: string[]  // New field for multiple images
@@ -46,7 +50,11 @@ export default function ProductManager() {
     price: '',
     category: '',
     author: '',
+    publisher: '',
     brand: '',
+    series: '',
+    tags: '',
+    character_names: '',
     stock: '',
     sizes: '',
     colors: '',
@@ -55,6 +63,12 @@ export default function ProductManager() {
 
   // Preview images state
   const [previewImages, setPreviewImages] = useState<string[]>([])
+
+  // Autocomplete states
+  const [uniqueSeries, setUniqueSeries] = useState<string[]>([])
+  const [uniqueCharacters, setUniqueCharacters] = useState<string[]>([])
+  const [characterSearch, setCharacterSearch] = useState('')
+  const [showCharacterSuggestions, setShowCharacterSuggestions] = useState(false)
 
   // Fetch products
   const fetchProducts = async () => {
@@ -74,6 +88,20 @@ export default function ProductManager() {
         image_urls: product.image_urls || (product.image_url ? [product.image_url] : [])
       })) || []
       setProducts(processedProducts)
+
+      // Compute unique series and characters for autocomplete
+      const seriesSet = new Set<string>()
+      const charsSet = new Set<string>()
+
+      data?.forEach(p => {
+        if (p.series) seriesSet.add(p.series.trim())
+        if (p.character_names && Array.isArray(p.character_names)) {
+          p.character_names.forEach((c: string) => charsSet.add(c.trim()))
+        }
+      })
+
+      setUniqueSeries(Array.from(seriesSet).filter(Boolean).sort())
+      setUniqueCharacters(Array.from(charsSet).filter(Boolean).sort())
     }
     setIsLoading(false)
   }
@@ -167,7 +195,11 @@ export default function ProductManager() {
       price: '',
       category: '',
       author: '',
+      publisher: '',
       brand: '',
+      series: '',
+      tags: '',
+      character_names: '',
       stock: '',
       sizes: '',
       colors: '',
@@ -177,6 +209,8 @@ export default function ProductManager() {
     // Clean up preview URLs
     previewImages.forEach(url => URL.revokeObjectURL(url))
     setPreviewImages([])
+    setCharacterSearch('')
+    setShowCharacterSuggestions(false)
 
     setEditingProduct(null)
     setShowAddForm(false)
@@ -215,7 +249,11 @@ export default function ProductManager() {
         price: parseFloat(formData.price),
         category: formData.category,
         author: formData.author || null,
+        publisher: formData.publisher || null,
         brand: formData.brand || null,
+        series: formData.series || null,
+        tags: formData.tags ? formData.tags.split(',').map(t => t.trim()) : null,
+        character_names: formData.character_names ? formData.character_names.split(',').map(c => c.trim()) : null,
         stock: parseInt(formData.stock),
         // Support both single image_url and multiple image_urls for backward compatibility
         image_url: imageUrls.length > 0 ? imageUrls[0] : null,
@@ -267,7 +305,11 @@ export default function ProductManager() {
       price: product.price.toString(),
       category: product.category,
       author: product.author || '',
+      publisher: product.publisher || '',
       brand: product.brand || '',
+      series: product.series || '',
+      tags: product.tags?.join(', ') || '',
+      character_names: product.character_names?.join(', ') || '',
       stock: product.stock.toString(),
       sizes: product.sizes?.join(', ') || '',
       colors: product.colors?.join(', ') || '',
@@ -411,15 +453,27 @@ export default function ProductManager() {
                 {/* Category-specific fields */}
                 <div className="space-y-5">
                   {formData.category === 'manga' && (
-                    <div>
-                      <Label htmlFor="author" className="text-gray-900 font-bold mb-1.5 block">Author</Label>
-                      <Input
-                        id="author"
-                        value={formData.author}
-                        onChange={(e) => handleInputChange('author', e.target.value)}
-                        placeholder="Author name"
-                        className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 rounded-xl h-11"
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="author" className="text-gray-900 font-bold mb-1.5 block">Author</Label>
+                        <Input
+                          id="author"
+                          value={formData.author}
+                          onChange={(e) => handleInputChange('author', e.target.value)}
+                          placeholder="Author name"
+                          className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 rounded-xl h-11"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="publisher" className="text-gray-900 font-bold mb-1.5 block">Publisher</Label>
+                        <Input
+                          id="publisher"
+                          value={formData.publisher}
+                          onChange={(e) => handleInputChange('publisher', e.target.value)}
+                          placeholder="e.g. Viz Media, Kodansha"
+                          className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 rounded-xl h-11"
+                        />
+                      </div>
                     </div>
                   )}
 
@@ -476,6 +530,131 @@ export default function ProductManager() {
                   placeholder="Enter product description..."
                   className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 resize-none rounded-xl"
                 />
+              </div>
+
+              {/* Tagging & Classification (Global/Optional) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-5">
+                  <div>
+                    <Label htmlFor="series" className="text-gray-900 font-bold mb-1.5 block">Series Title (e.g. One Piece)</Label>
+                    <Input
+                      id="series"
+                      list="series-list"
+                      value={formData.series}
+                      onChange={(e) => handleInputChange('series', e.target.value)}
+                      placeholder="Series name"
+                      className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 rounded-xl h-11"
+                    />
+                    <datalist id="series-list">
+                      {uniqueSeries.map((series, idx) => (
+                        <option key={idx} value={series} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div>
+                    <Label htmlFor="tags" className="text-gray-900 font-bold mb-1.5 block">Tags</Label>
+                    <Input
+                      id="tags"
+                      value={formData.tags}
+                      onChange={(e) => handleInputChange('tags', e.target.value)}
+                      placeholder="e.g. shonen, limited edition"
+                      className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 rounded-xl h-11"
+                    />
+                    <p className="text-xs text-gray-500 mt-1.5 font-medium">Separate tags with commas</p>
+                  </div>
+                </div>
+                <div className="space-y-5">
+                  <div className="relative">
+                    <Label htmlFor="character_names" className="text-gray-900 font-bold mb-1.5 block flex justify-between items-center">
+                      <span>Character Names</span>
+                      {formData.character_names && (
+                        <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                          {formData.character_names.split(',').filter(c => c.trim()).length} added
+                        </span>
+                      )}
+                    </Label>
+                    <Input
+                      id="character_names"
+                      value={formData.character_names}
+                      onChange={(e) => {
+                        handleInputChange('character_names', e.target.value);
+
+                        // Extract just the latest typing part to filter suggestions
+                        const parts = e.target.value.split(',');
+                        const lastPart = parts[parts.length - 1].trim();
+                        setCharacterSearch(lastPart);
+                        setShowCharacterSuggestions(lastPart.length > 0);
+                      }}
+                      onFocus={(e) => {
+                        const parts = e.target.value.split(',');
+                        const lastPart = parts[parts.length - 1].trim();
+                        setCharacterSearch(lastPart);
+                        setShowCharacterSuggestions(true);
+                      }}
+                      onBlur={() => {
+                        // Delay hiding slightly to allow clicks on suggestions
+                        setTimeout(() => setShowCharacterSuggestions(false), 200);
+                      }}
+                      placeholder="e.g. Luffy, Zoro"
+                      className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 rounded-xl h-11"
+                    />
+
+                    {/* Character Autocomplete Dropdown */}
+                    {showCharacterSuggestions && uniqueCharacters.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-auto">
+                        {uniqueCharacters
+                          .filter(char => char.toLowerCase().includes(characterSearch.toLowerCase()))
+                          .filter(char => {
+                            // Don't show characters already explicitly in the input list
+                            const currentChars = formData.character_names.split(',').map(c => c.trim().toLowerCase());
+                            return !currentChars.includes(char.toLowerCase());
+                          })
+                          .map((char, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm focus:outline-none focus:bg-gray-50 border-b border-gray-50 last:border-b-0"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+
+                                const currentParts = formData.character_names.split(',');
+                                // Replace the last (incomplete) part with the selected character
+                                if (currentParts.length > 0) {
+                                  currentParts[currentParts.length - 1] = ' ' + char;
+                                } else {
+                                  currentParts.push(char);
+                                }
+
+                                // Clean up and build the new string
+                                const newValue = currentParts
+                                  .map(p => p.trim())
+                                  .filter(Boolean)
+                                  .join(', ') + ', ';
+
+                                handleInputChange('character_names', newValue);
+
+                                // Keep focus but hide suggestions momentarily
+                                document.getElementById('character_names')?.focus();
+                                setCharacterSearch('');
+                                setShowCharacterSuggestions(false);
+                              }}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{char}</span>
+                                <Plus className="h-3 w-3 text-gray-400 ml-auto" />
+                              </div>
+                            </button>
+                          ))}
+                        {uniqueCharacters.filter(char => char.toLowerCase().includes(characterSearch.toLowerCase()) && !formData.character_names.split(',').map(c => c.trim().toLowerCase()).includes(char.toLowerCase())).length === 0 && (
+                          <div className="px-4 py-2 text-sm text-gray-500 italic">No matching new characters found.</div>
+                        )}
+                      </div>
+                    )}
+
+                    <p className="text-xs text-gray-500 mt-1.5 font-medium">Separate characters with commas. Click suggestions to quick-add.</p>
+                  </div>
+                </div>
               </div>
 
               {/* Multiple Image Upload */}
