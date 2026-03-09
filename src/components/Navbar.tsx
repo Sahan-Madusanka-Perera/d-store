@@ -88,6 +88,7 @@ export default function Navbar() {
                   variant="ghost"
                   size="icon"
                   onClick={() => setMobileOpen(true)}
+                  onPointerDown={() => setMobileOpen(true)}
                   className="w-9 h-9 sm:w-10 sm:h-10 rounded-full text-zinc-300 hover:text-white hover:bg-white/10 transition-all duration-200"
                 >
                   <Menu className="h-5 w-5" strokeWidth={1.5} />
@@ -101,15 +102,18 @@ export default function Navbar() {
       {/* Full-screen Mobile Menu Overlay */}
       <div
         className={`fixed inset-0 z-[100] md:hidden transition-all duration-500 ${mobileOpen ? 'visible' : 'invisible'}`}
+        onClick={() => setMobileOpen(false)}
       >
         {/* Backdrop */}
         <div
           className={`absolute inset-0 bg-black transition-opacity duration-500 ${mobileOpen ? 'opacity-100' : 'opacity-0'}`}
-          onClick={() => setMobileOpen(false)}
         />
 
         {/* Content */}
-        <div className={`relative z-10 h-full flex flex-col justify-between px-8 py-6 transition-all duration-500 ${mobileOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+        <div
+          className={`relative z-10 h-full flex flex-col justify-between px-8 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] transition-all duration-500 ${mobileOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Top bar: Logo + Close */}
           <div className="flex items-center justify-between">
             <Link href="/" onClick={() => setMobileOpen(false)} className="h-8 w-24 relative">
@@ -117,7 +121,16 @@ export default function Navbar() {
             </Link>
             <button
               onClick={() => setMobileOpen(false)}
-              className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                setMobileOpen(false);
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                setMobileOpen(false);
+              }}
+              aria-label="Close menu"
+              className="relative z-20 w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-white hover:bg-white/10 transition-colors touch-manipulation"
             >
               <X className="w-5 h-5" strokeWidth={1.5} />
             </button>
