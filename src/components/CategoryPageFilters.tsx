@@ -78,7 +78,7 @@ export default function CategoryPageFilters({ basePath, isMobile = false, extraF
   const hasActiveFilters = minPrice || maxPrice || Object.values(extraState).some(v => v !== 'all');
 
   return (
-    <div className={`bg-white rounded-2xl border border-gray-200 p-6 shadow-sm ${isMobile ? '' : 'sticky top-24'}`}>
+    <div className={isMobile ? 'px-2 py-2' : 'bg-white rounded-2xl border border-gray-200 p-6 shadow-sm sticky top-24'}>
       <h3 className="font-bold text-xl text-zinc-900 mb-6">Filters</h3>
 
       {/* Extra category-specific filters */}

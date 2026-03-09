@@ -4,9 +4,9 @@ import { Twitter, Facebook, Instagram, Github, CreditCard } from "lucide-react";
 
 export function Footer() {
     return (
-        <footer className="relative mt-20 md:mt-32 bg-[#F0F0F0] pt-40 pb-10">
+        <footer className="relative mt-32 sm:mt-36 md:mt-40 bg-[#F0F0F0] pt-28 sm:pt-32 md:pt-40 pb-10">
             {/* Newsletter Pill - Absolute Positioned to overlap */}
-            <div className="absolute -top-20 left-0 right-0 px-4 md:px-8 max-w-7xl mx-auto w-full">
+            <div className="absolute -top-24 sm:-top-22 md:-top-20 left-0 right-0 px-4 md:px-8 max-w-7xl mx-auto w-full">
                 <ConditionalNewsletter />
             </div>
 

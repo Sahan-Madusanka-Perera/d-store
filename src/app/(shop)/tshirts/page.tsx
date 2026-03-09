@@ -160,7 +160,7 @@ export default async function TshirtsPage(props: TshirtsPageProps) {
                     <SlidersHorizontal size={16} /> Filters
                   </button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[300px] sm:w-[400px] overflow-y-auto">
+                <SheetContent side="left" className="w-[85vw] sm:w-[400px] overflow-y-auto bg-white p-6">
                   <SheetHeader className="mb-6">
                     <SheetTitle className="text-left font-bold text-2xl">Filters</SheetTitle>
                   </SheetHeader>

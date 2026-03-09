@@ -73,7 +73,7 @@ export default function ProductFilters({ isMobile = false }: ProductFiltersProps
     ];
 
     return (
-        <div className={`bg-card rounded-2xl border border-border/60 p-6 shadow-sm ${isMobile ? '' : 'sticky top-24'}`}>
+        <div className={isMobile ? 'px-2 py-2' : 'bg-card rounded-2xl border border-border/60 p-6 shadow-sm sticky top-24'}>
             <h3 className="font-bold text-xl mb-6">Filters</h3>
 
             {/* Category Filter */}
