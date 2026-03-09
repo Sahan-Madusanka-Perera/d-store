@@ -13,7 +13,10 @@ interface HeroCarouselProps {
 }
 
 export function HeroCarousel({ initialSlides }: HeroCarouselProps) {
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [Autoplay({ delay: 5000 })]);
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    { loop: true, duration: 30, skipSnaps: false },
+    [Autoplay({ delay: 5000 })]
+  );
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const scrollPrev = useCallback(() => {
@@ -39,7 +42,7 @@ export function HeroCarousel({ initialSlides }: HeroCarouselProps) {
   return (
     <section className="relative w-full border-b border-border overflow-hidden">
       <div className="embla h-full" ref={emblaRef}>
-        <div className="flex h-[70vh] min-h-[480px] md:h-[95vh] md:min-h-[750px]">
+        <div className="flex h-[70vh] min-h-[480px] md:h-[95vh] md:min-h-[750px] will-change-transform">
           {initialSlides.map((slide, index) => (
             <div
               key={slide.id}
@@ -62,7 +65,7 @@ export function HeroCarousel({ initialSlides }: HeroCarouselProps) {
                 </div>
               )}
 
-              <div className="max-w-7xl mx-auto px-5 sm:px-6 w-full grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center pb-24 md:pb-20 z-10">
+              <div className="max-w-7xl mx-auto px-5 sm:px-6 w-full grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center pt-24 sm:pt-28 md:pt-0 pb-24 md:pb-20 z-10">
 
                 {/* Content */}
                 <div className={`space-y-4 md:space-y-8 text-center ${slide.image_alignment === 'left' ? 'md:text-right md:order-last' : 'md:text-left'}`}>
@@ -97,7 +100,7 @@ export function HeroCarousel({ initialSlides }: HeroCarouselProps) {
                     {/* Actual Custom Image or Fallback */}
                     <div className="z-10 flex items-center justify-center w-full h-full relative">
                       {slide.image_url ? (
-                        <div className="w-[180px] h-[180px] sm:w-[240px] sm:h-[240px] md:w-[700px] md:h-[700px] relative animate-float opacity-95">
+                        <div className="w-[180px] h-[180px] sm:w-[240px] sm:h-[240px] md:w-[700px] md:h-[700px] relative opacity-95">
                           <Image
                             src={slide.image_url}
                             alt={slide.title}
@@ -106,7 +109,7 @@ export function HeroCarousel({ initialSlides }: HeroCarouselProps) {
                           />
                         </div>
                       ) : index === 0 ? (
-                        <div className="w-[140px] h-[140px] sm:w-[200px] sm:h-[200px] md:w-[500px] md:h-[500px] relative animate-float">
+                        <div className="w-[140px] h-[140px] sm:w-[200px] sm:h-[200px] md:w-[500px] md:h-[500px] relative">
                           <Image
                             src="/Logo.Trns.png"
                             alt="D-Store Official Logo"
@@ -115,7 +118,7 @@ export function HeroCarousel({ initialSlides }: HeroCarouselProps) {
                           />
                         </div>
                       ) : (
-                        <div className="text-[5rem] sm:text-[7rem] md:text-[12rem] animate-float transform rotate-[-10deg]">
+                        <div className="text-[5rem] sm:text-[7rem] md:text-[12rem] transform rotate-[-10deg]">
                           {index === 1 && "👒"}
                           {index === 2 && "📚"}
                           {index > 2 && "✨"}
