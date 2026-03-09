@@ -9,13 +9,24 @@ import { Search, X, Loader2, ArrowRight } from 'lucide-react'
 import type { DatabaseProduct } from '@/types/database'
 import Image from 'next/image'
 
-export default function UniversalSearch() {
+interface UniversalSearchProps {
+    onOpen?: () => void;
+}
+
+export default function UniversalSearch({ onOpen }: UniversalSearchProps = {}) {
     const [open, setOpen] = useState(false)
     const [query, setQuery] = useState('')
     const [results, setResults] = useState<DatabaseProduct[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const router = useRouter()
     const debounceTimer = useRef<NodeJS.Timeout | null>(null)
+
+    const handleOpenChange = (newOpen: boolean) => {
+        setOpen(newOpen)
+        if (newOpen && onOpen) {
+            onOpen()
+        }
+    }
 
     useEffect(() => {
         if (!open) {
@@ -68,9 +79,9 @@ export default function UniversalSearch() {
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full text-zinc-300 hover:text-white hover:bg-white/10 transition-all duration-200">
+                <Button variant="ghost" size="icon" className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full text-zinc-300 hover:text-white hover:bg-white/10 transition-all duration-200 touch-manipulation">
                     <Search className="h-5 w-5" strokeWidth={1.5} />
                 </Button>
             </DialogTrigger>

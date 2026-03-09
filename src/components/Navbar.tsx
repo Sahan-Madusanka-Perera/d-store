@@ -162,7 +162,7 @@ export default function Navbar() {
           {/* Bottom section: Search + Cart */}
           <div className="space-y-4 pb-4">
             <div className="border border-white/10 rounded-2xl overflow-hidden">
-              <UniversalSearch />
+              <UniversalSearch onOpen={() => setMobileOpen(false)} />
             </div>
             <Link
               href="/cart"
