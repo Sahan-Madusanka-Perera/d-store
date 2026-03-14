@@ -33,6 +33,7 @@ interface Product {
   image_urls?: string[]  // New field for multiple images
   sizes?: string[]
   colors?: string[]
+  status?: string
 }
 
 export default function ProductManager() {
@@ -58,6 +59,7 @@ export default function ProductManager() {
     stock: '',
     sizes: '',
     colors: '',
+    status: 'available',
     images: [] as File[]
   })
 
@@ -203,6 +205,7 @@ export default function ProductManager() {
       stock: '',
       sizes: '',
       colors: '',
+      status: 'available',
       images: []
     })
 
@@ -260,6 +263,7 @@ export default function ProductManager() {
         image_urls: imageUrls.length > 0 ? imageUrls : null,
         sizes: formData.sizes ? formData.sizes.split(',').map(s => s.trim()) : null,
         colors: formData.colors ? formData.colors.split(',').map(c => c.trim()) : null,
+        status: formData.status || 'available',
       }
 
       console.log('Preparing to save product data:', productData)
@@ -313,6 +317,7 @@ export default function ProductManager() {
       stock: product.stock.toString(),
       sizes: product.sizes?.join(', ') || '',
       colors: product.colors?.join(', ') || '',
+      status: product.status || 'available',
       images: []
     })
     setShowAddForm(true)
@@ -447,6 +452,22 @@ export default function ProductManager() {
                         className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 rounded-xl h-11"
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="status" className="text-gray-900 font-bold mb-1.5 block">Product Status</Label>
+                    <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                      <SelectTrigger className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black rounded-xl h-11">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-200 text-black rounded-xl">
+                        <SelectItem value="available" className="focus:bg-gray-50 focus:text-black cursor-pointer">Available</SelectItem>
+                        <SelectItem value="coming_soon" className="focus:bg-gray-50 focus:text-black cursor-pointer">Coming Soon</SelectItem>
+                        <SelectItem value="pre_order" className="focus:bg-gray-50 focus:text-black cursor-pointer">Pre-order</SelectItem>
+                        <SelectItem value="out_of_stock" className="focus:bg-gray-50 focus:text-black cursor-pointer">Out of Stock</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-500 mt-1.5 font-medium">Controls how the product appears to customers</p>
                   </div>
                 </div>
 
@@ -809,15 +830,15 @@ export default function ProductManager() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <Table>
+              <Table className="table-fixed w-full">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Stock</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead className="w-[280px]">Product</TableHead>
+                    <TableHead className="w-[100px]">Category</TableHead>
+                    <TableHead className="w-[100px]">Price</TableHead>
+                    <TableHead className="w-[90px]">Stock</TableHead>
+                    <TableHead className="w-[110px]">Status</TableHead>
+                    <TableHead className="w-[160px] text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -825,7 +846,7 @@ export default function ProductManager() {
                     <TableRow key={product.id} className="hover:bg-gray-50/50">
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="relative w-12 h-12 bg-gray-100 rounded-lg overflow-hidden">
+                          <div className="relative w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                             {product.image_urls?.[0] ? (
                               <Image
                                 src={product.image_urls[0]}
@@ -847,14 +868,14 @@ export default function ProductManager() {
                               </Badge>
                             )}
                           </div>
-                          <div>
-                            <div className="font-medium text-gray-900">{product.name}</div>
-                            <div className="text-sm text-gray-500 line-clamp-1">{product.description}</div>
+                          <div className="min-w-0">
+                            <div className="font-medium text-gray-900 truncate">{product.name}</div>
+                            <div className="text-sm text-gray-500 truncate">{product.description}</div>
                             {product.author && (
-                              <div className="text-xs text-gray-400">by {product.author}</div>
+                              <div className="text-xs text-gray-400 truncate">by {product.author}</div>
                             )}
                             {product.brand && (
-                              <div className="text-xs text-gray-400">{product.brand}</div>
+                              <div className="text-xs text-gray-400 truncate">{product.brand}</div>
                             )}
                           </div>
                         </div>
@@ -881,14 +902,21 @@ export default function ProductManager() {
                       </TableCell>
                       <TableCell>
                         <Badge
-                          variant={product.stock > 0 ? 'default' : 'secondary'}
-                          className={product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
+                          className={
+                            product.status === 'coming_soon' ? 'bg-blue-100 text-blue-800' :
+                              product.status === 'pre_order' ? 'bg-violet-100 text-violet-800' :
+                                product.status === 'out_of_stock' ? 'bg-red-100 text-red-800' :
+                                  product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }
                         >
-                          {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
+                          {product.status === 'coming_soon' ? 'Coming Soon' :
+                            product.status === 'pre_order' ? 'Pre-order' :
+                              product.status === 'out_of_stock' ? 'Out of Stock' :
+                                product.stock > 0 ? 'Available' : 'Out of Stock'}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
+                      <TableCell className="text-right">
+                        <div className="flex items-center gap-2 justify-end">
                           <Button
                             variant="outline"
                             size="sm"

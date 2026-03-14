@@ -34,6 +34,7 @@ function mapDatabaseProduct(dbProduct: any): Product {
     language: 'english',
     series: dbProduct.series || undefined,
     characterNames: dbProduct.character_names || undefined,
+    status: dbProduct.status || 'available',
     scale: '1/8',
     height: '20cm'
   };

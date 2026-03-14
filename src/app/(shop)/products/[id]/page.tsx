@@ -9,8 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Star, ArrowLeft, Truck, Shield, RotateCcw, Heart, Sparkles } from 'lucide-react';
+import { Star, ArrowLeft, Truck, Shield, RotateCcw, Heart, Sparkles, Clock, Zap, Bell } from 'lucide-react';
 import ExternalRating from '@/components/ExternalRating';
+import WishlistButton from '@/components/WishlistButton';
 
 interface DatabaseProduct {
   id: number;
@@ -30,6 +31,7 @@ interface DatabaseProduct {
   publisher?: string;
   series?: string;
   character_names?: string[];
+  status?: string;
 }
 
 function mapDatabaseProduct(dbProduct: DatabaseProduct): Product {
@@ -67,6 +69,7 @@ function mapDatabaseProduct(dbProduct: DatabaseProduct): Product {
     language: 'english',
     series: dbProduct.series || 'Various',
     characterNames: dbProduct.character_names,
+    status: (dbProduct.status as 'available' | 'coming_soon' | 'pre_order' | 'out_of_stock') || 'available',
     scale: '1/8',
     height: '20cm'
   };
@@ -151,11 +154,28 @@ export default async function ProductPage({ params }: ProductPageProps) {
           {/* Product Details */}
           <div className="space-y-8">
             {/* Category and Stock Status */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <Badge className={getCategoryColor(product.category)}>
                 {product.category}
               </Badge>
-              {product.stock > 0 && product.stock <= 5 && (
+              {product.status === 'coming_soon' && (
+                <Badge className="bg-blue-500/10 text-blue-600 border-blue-200">
+                  <Clock className="h-3 w-3 mr-1" />
+                  Coming Soon
+                </Badge>
+              )}
+              {product.status === 'pre_order' && (
+                <Badge className="bg-violet-500/10 text-violet-600 border-violet-200">
+                  <Zap className="h-3 w-3 mr-1" />
+                  Pre-order Available
+                </Badge>
+              )}
+              {product.status === 'out_of_stock' && (
+                <Badge className="bg-red-500/10 text-red-600 border-red-200">
+                  Out of Stock
+                </Badge>
+              )}
+              {product.status === 'available' && product.stock > 0 && product.stock <= 5 && (
                 <Badge className="bg-amber-500/10 text-amber-600 border-amber-200">
                   Only {product.stock} left in stock
                 </Badge>
@@ -175,10 +195,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   initialCount={dbProduct.external_rating_count}
                 />
 
-                <Button variant="ghost" size="sm" className="hover:bg-primary/5 sm:ml-auto w-fit">
-                  <Heart className="h-4 w-4 mr-2 text-rose-500 fill-rose-500/10" />
-                  Add to Wishlist
-                </Button>
+                <WishlistButton productId={product.id} variant="full" />
               </div>
             </div>
 

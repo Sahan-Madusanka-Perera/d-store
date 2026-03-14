@@ -7,8 +7,9 @@ import { useCartStore } from '@/store/cart';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Star, Eye, Heart, Sparkles, BookOpen, Shirt, ShoppingBag } from 'lucide-react';
+import { ShoppingCart, Star, Eye, Sparkles, BookOpen, Shirt, ShoppingBag, Clock, Zap, Bell } from 'lucide-react';
 import { toast } from 'sonner';
+import WishlistButton from '@/components/WishlistButton';
 
 interface ProductCardProps {
   product: Product;
@@ -103,6 +104,9 @@ export default function ProductCard({ product }: ProductCardProps) {
   const originalPrice = product.price;
   const displayPrice = shouldShowDiscount ? originalPrice * (1 - discountPercent / 100) : originalPrice;
 
+  // Derive effective product status
+  const productStatus = product.status || (product.stock === 0 ? 'out_of_stock' : 'available');
+
   return (
     <Card className="group relative overflow-hidden border border-border/40 hover:border-primary/20 shadow-sm hover:shadow-xl transition-all duration-300 h-full flex flex-col bg-card p-0 gap-0">
       {/* Image */}
@@ -127,24 +131,39 @@ export default function ProductCard({ product }: ProductCardProps) {
               <Eye className="h-4 w-4 text-foreground" />
             </Link>
           </Button>
-          <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full bg-white/90 hover:bg-white shadow-md border-0">
-            <Heart className="h-4 w-4 text-foreground" />
-          </Button>
+          <WishlistButton productId={product.id} variant="icon" />
         </div>
 
         {/* Top-left: stock + discount stacked */}
         <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5 z-10">
-          {product.stock === 0 && (
+          {productStatus === 'coming_soon' && (
+            <Badge className="text-[11px] px-2 py-0.5 bg-blue-500 text-white shadow-md border-0">
+              <Clock className="h-3 w-3 mr-1" />
+              Coming Soon
+            </Badge>
+          )}
+          {productStatus === 'pre_order' && (
+            <Badge className="text-[11px] px-2 py-0.5 bg-violet-500 text-white shadow-md border-0">
+              <Zap className="h-3 w-3 mr-1" />
+              Pre-order
+            </Badge>
+          )}
+          {productStatus === 'available' && product.stock === 0 && (
             <Badge variant="destructive" className="text-[11px] px-2 py-0.5 shadow-md">
               Out of Stock
             </Badge>
           )}
-          {product.stock > 0 && product.stock <= 5 && (
+          {productStatus === 'available' && product.stock > 0 && product.stock <= 5 && (
             <Badge className="text-[11px] px-2 py-0.5 bg-amber-500 text-white shadow-md border-0">
               Only {product.stock} left
             </Badge>
           )}
-          {shouldShowDiscount && (
+          {productStatus === 'out_of_stock' && (
+            <Badge variant="destructive" className="text-[11px] px-2 py-0.5 shadow-md">
+              Out of Stock
+            </Badge>
+          )}
+          {shouldShowDiscount && productStatus === 'available' && (
             <Badge className="text-[11px] px-2 py-0.5 bg-rose-500 text-white shadow-md border-0">
               -{discountPercent}%
             </Badge>
@@ -242,16 +261,36 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
       </CardContent>
 
-      {/* Add to Cart */}
+      {/* Action Button */}
       <CardFooter className="px-4 pb-4 pt-0">
-        <Button
-          onClick={handleAddToCart}
-          disabled={product.stock === 0}
-          className="w-full h-9 text-sm font-medium shadow-sm hover:shadow transition-all"
-        >
-          <ShoppingCart className="h-3.5 w-3.5 mr-1.5" />
-          {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
-        </Button>
+        {productStatus === 'coming_soon' ? (
+          <WishlistButton productId={product.id} variant="full" className="w-full" />
+        ) : productStatus === 'pre_order' ? (
+          <Button
+            onClick={handleAddToCart}
+            className="w-full h-9 text-sm font-medium shadow-sm hover:shadow transition-all bg-violet-600 hover:bg-violet-700"
+          >
+            <Zap className="h-3.5 w-3.5 mr-1.5" />
+            Pre-order Now
+          </Button>
+        ) : productStatus === 'out_of_stock' || product.stock === 0 ? (
+          <Button
+            disabled
+            className="w-full h-9 text-sm font-medium"
+          >
+            <Bell className="h-3.5 w-3.5 mr-1.5" />
+            Out of Stock
+          </Button>
+        ) : (
+          <Button
+            onClick={handleAddToCart}
+            disabled={product.stock === 0}
+            className="w-full h-9 text-sm font-medium shadow-sm hover:shadow transition-all"
+          >
+            <ShoppingCart className="h-3.5 w-3.5 mr-1.5" />
+            Add to Cart
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

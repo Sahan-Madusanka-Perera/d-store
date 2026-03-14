@@ -31,6 +31,7 @@ interface DatabaseProduct {
   publisher?: string;
   series?: string;
   character_names?: string[];
+  status?: string;
 }
 
 function mapDatabaseProduct(dbProduct: DatabaseProduct): Product {
@@ -68,6 +69,7 @@ function mapDatabaseProduct(dbProduct: DatabaseProduct): Product {
     language: 'english',
     series: dbProduct.series || undefined,
     characterNames: dbProduct.character_names || undefined,
+    status: (dbProduct.status as 'available' | 'coming_soon' | 'pre_order' | 'out_of_stock') || 'available',
     scale: '1/8',
     height: '20cm'
   };

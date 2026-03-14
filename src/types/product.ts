@@ -6,6 +6,7 @@ export interface Product {
   category: 'manga' | 'figures' | 'tshirts';
   images: string[];
   stock: number;
+  status?: 'available' | 'coming_soon' | 'pre_order' | 'out_of_stock';
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

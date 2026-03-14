@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import {
     User as UserIcon,
     Package,
+    Heart,
     Settings,
     LogOut
 } from 'lucide-react';
@@ -54,6 +55,7 @@ export default function ProfileLayout({
     const navigations = [
         { name: 'Overview', href: '/profile', icon: UserIcon },
         { name: 'My Orders', href: '/profile/orders', icon: Package },
+        { name: 'My Wishlist', href: '/profile/wishlist', icon: Heart },
         { name: 'Settings', href: '/profile/settings', icon: Settings },
     ];
 
