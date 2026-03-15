@@ -3,7 +3,7 @@ export const SL_PROVINCES = [
   'Western',
   'Central',
   'Southern',
-  'Northern', 
+  'Northern',
   'Eastern',
   'North Western',
   'North Central',
@@ -20,7 +20,7 @@ export const SHIPPING_RATES = {
 
 export const PRODUCT_CATEGORIES = {
   MANGA: 'manga',
-  FIGURES: 'figures', 
+  FIGURES: 'figures',
   TSHIRTS: 'tshirts'
 } as const;
 
@@ -34,16 +34,22 @@ export const ORDER_STATUSES = {
 } as const;
 
 export const PAYMENT_METHODS = {
-  PAYHERE: 'payhere',
-  COD: 'cod' // Cash on Delivery
+  BANK_TRANSFER: 'bank_transfer'
 } as const;
 
-// PayHere Configuration
-export const PAYHERE_CONFIG = {
-  SANDBOX_URL: 'https://sandbox.payhere.lk/pay/checkout',
-  LIVE_URL: 'https://www.payhere.lk/pay/checkout',
-  CURRENCY: 'LKR',
-  SANDBOX_MERCHANT_ID: process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID_SANDBOX,
-  LIVE_MERCHANT_ID: process.env.NEXT_PUBLIC_PAYHERE_MERCHANT_ID_LIVE,
-  IS_SANDBOX: process.env.NODE_ENV !== 'production'
+// ⚠️ FILL IN YOUR WHATSAPP NUMBER HERE (international format without +)
+// Example for Sri Lanka: '94771234567'
+export const WHATSAPP_NUMBER = '94769465982';
+
+// ⚠️ FILL IN YOUR BANK ACCOUNT DETAILS HERE
+export const BANK_DETAILS = {
+  bankName: 'Seylan Bank',
+  accountName: 'B H S M Perera',
+  accountNumber: 'XXXX XXXX XXXX',
+  branch: 'Mount Lavinia',
 } as const;
+
+// Helper to generate WhatsApp URLs
+export function getWhatsAppUrl(message: string): string {
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+}

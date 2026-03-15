@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { Cart, CartItem, CartActions, PaymentMethod } from '@/types/cart';
+import { Cart, CartItem, CartActions } from '@/types/cart';
 import { Product } from '@/types/product';
 import { createClient } from '@/utils/supabase/client';
 
@@ -49,7 +49,7 @@ export const useCartStore = create<CartStore>()(
             selectedSize: options.size,
             selectedColor: options.color,
             priceAtTime: product.price,
-            paymentMethod: options.paymentMethod || 'cod', // Default to COD
+            paymentMethod: 'bank_transfer',
           };
           newItems = [...items, newItem];
         }
@@ -119,25 +119,6 @@ export const useCartStore = create<CartStore>()(
       getTotal: () => {
         const { items } = get();
         return items.reduce((sum, item) => sum + (item.priceAtTime * item.quantity), 0);
-      },
-
-      updatePaymentMethod: (itemId: string, paymentMethod: PaymentMethod) => {
-        const { items } = get();
-        const updatedItems = items.map(item =>
-          item.id === itemId ? { ...item, paymentMethod } : item
-        );
-
-        set({
-          items: updatedItems,
-          updatedAt: new Date().toISOString(),
-        });
-      },
-
-      getTotalByPaymentMethod: (paymentMethod: PaymentMethod) => {
-        const { items } = get();
-        return items
-          .filter(item => item.paymentMethod === paymentMethod)
-          .reduce((total, item) => total + (item.priceAtTime * item.quantity), 0);
       },
 
       fetchAvailableDiscounts: async () => {

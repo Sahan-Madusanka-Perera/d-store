@@ -19,8 +19,6 @@ export default function CartPage() {
     removeItem,
     updateQuantity,
     clearCart,
-    updatePaymentMethod,
-    getTotalByPaymentMethod
   } = useCartStore();
 
   const formatPrice = (price: number) => {
@@ -48,7 +46,7 @@ export default function CartPage() {
           </div>
         </div>
         <h1 className="text-4xl font-bold text-foreground mb-4">Your Cart is Empty</h1>
-        <p className="text-muted-foreground text-lg mb-10 max-w-md mx-auto">Looks like you haven't added anything to your cart yet.</p>
+        <p className="text-muted-foreground text-lg mb-10 max-w-md mx-auto">Looks like you haven&apos;t added anything to your cart yet.</p>
         <Button size="lg" asChild className="shadow-lg hover:shadow-xl">
           <Link href="/products">
             <ShoppingBag className="mr-2 h-5 w-5" />
@@ -106,19 +104,6 @@ export default function CartPage() {
                       </span>
                     )}
                   </div>
-
-                  {/* Payment Method Selection */}
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-muted-foreground font-medium">Payment:</span>
-                    <select
-                      value={item.paymentMethod}
-                      onChange={(e) => updatePaymentMethod(item.id, e.target.value as 'cod' | 'bank_transfer')}
-                      className="text-sm border border-border/60 rounded-lg px-3 py-2 bg-card shadow-sm hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium"
-                    >
-                      <option value="cod">Cash on Delivery</option>
-                      <option value="bank_transfer">Bank Transfer</option>
-                    </select>
-                  </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-4 sm:mt-0">
@@ -158,33 +143,12 @@ export default function CartPage() {
         </div>
       </div>
 
-      {/* Order Summary - Elegant */}
+      {/* Order Summary */}
       <div className="lg:col-span-1">
         <div className="bg-card border border-border/50 rounded-xl shadow-lg p-8 sticky top-4">
           <h2 className="text-2xl font-bold text-foreground mb-6">Order Summary</h2>
 
           <div className="space-y-4 mb-6">
-            {/* Payment Method Breakdown */}
-            {getTotalByPaymentMethod('cod') > 0 && (
-              <div className="flex justify-between items-center">
-                <span className="flex items-center gap-2.5 text-sm">
-                  <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200 font-medium">COD</Badge>
-                  <span className="text-muted-foreground">Cash on Delivery</span>
-                </span>
-                <span className="font-semibold">{formatPrice(getTotalByPaymentMethod('cod'))}</span>
-              </div>
-            )}
-
-            {getTotalByPaymentMethod('bank_transfer') > 0 && (
-              <div className="flex justify-between items-center">
-                <span className="flex items-center gap-2.5 text-sm">
-                  <Badge className="bg-blue-500/10 text-blue-600 border-blue-200 font-medium">Bank</Badge>
-                  <span className="text-muted-foreground">Bank Transfer</span>
-                </span>
-                <span className="font-semibold">{formatPrice(getTotalByPaymentMethod('bank_transfer'))}</span>
-              </div>
-            )}
-
             <div className="flex justify-between pt-3 border-t border-border/50">
               <span className="text-muted-foreground">Subtotal ({items.length} {items.length === 1 ? 'item' : 'items'})</span>
               <span className="font-semibold">{formatPrice(totalAmount)}</span>
@@ -245,13 +209,10 @@ export default function CartPage() {
 
           {/* Payment Methods */}
           <div className="mt-8 pt-6 border-t border-border/50">
-            <h3 className="text-sm font-semibold text-foreground mb-4">We Accept</h3>
+            <h3 className="text-sm font-semibold text-foreground mb-4">Payment Method</h3>
             <div className="flex items-center gap-3">
               <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 font-medium px-3 py-1.5">
-                PayHere
-              </Badge>
-              <Badge className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-0 font-medium px-3 py-1.5">
-                Cash on Delivery
+                Bank Transfer
               </Badge>
             </div>
           </div>

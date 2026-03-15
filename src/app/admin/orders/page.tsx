@@ -18,6 +18,14 @@ export default async function AdminOrdersPage() {
                 quantity,
                 price_at_time,
                 products ( name, image_url )
+            ),
+            bank_slips (
+                id,
+                slip_url,
+                uploaded_via,
+                status,
+                admin_notes,
+                created_at
             )
         `)
         .order('created_at', { ascending: false });

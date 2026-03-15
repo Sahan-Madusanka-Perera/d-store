@@ -1,7 +1,7 @@
 import { Product } from './product';
 import type { QuantityDiscount, PublisherDiscount } from './database';
 
-export type PaymentMethod = 'cod' | 'bank_transfer';
+export type PaymentMethod = 'bank_transfer';
 
 export interface CartItem {
   id: string;
@@ -11,7 +11,7 @@ export interface CartItem {
   selectedSize?: string;
   selectedColor?: string;
   priceAtTime: number; // Price when added to cart
-  paymentMethod: PaymentMethod; // Payment method for this specific item
+  paymentMethod: PaymentMethod; // Always bank_transfer
 }
 
 export interface Cart {
@@ -33,13 +33,11 @@ export interface Cart {
 }
 
 export interface CartActions {
-  addItem: (product: Product, quantity?: number, options?: { size?: string; color?: string; paymentMethod?: PaymentMethod }) => void;
+  addItem: (product: Product, quantity?: number, options?: { size?: string; color?: string }) => void;
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
-  updatePaymentMethod: (itemId: string, paymentMethod: PaymentMethod) => void;
   clearCart: () => void;
   getTotal: () => number;
-  getTotalByPaymentMethod: (paymentMethod: PaymentMethod) => number;
   fetchAvailableDiscounts: () => Promise<void>;
   evaluateDiscounts: () => void;
 }

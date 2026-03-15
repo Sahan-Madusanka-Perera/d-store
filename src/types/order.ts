@@ -11,6 +11,21 @@ export interface ShippingAddress {
   email: string;
 }
 
+// Bank Slip types
+export type BankSlipStatus = 'pending' | 'verified' | 'rejected';
+export type SlipUploadMethod = 'website' | 'whatsapp';
+
+export interface BankSlip {
+  id: string;
+  order_id: number;
+  slip_url: string;
+  uploaded_via: SlipUploadMethod;
+  status: BankSlipStatus;
+  admin_notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Order {
   id: string;
   userId?: string;
@@ -32,8 +47,11 @@ export interface Order {
   billingAddress?: ShippingAddress;
   
   // Payment
-  paymentMethod: 'payhere' | 'cod'; // Cash on Delivery popular in SL
-  paymentId?: string; // PayHere payment reference
+  paymentMethod: 'bank_transfer';
+  paymentId?: string;
+  
+  // Bank slips
+  bank_slips?: BankSlip[];
   
   // Timestamps
   createdAt: string;

@@ -1,6 +1,7 @@
 import { HeroCarousel } from "@/components/sections/HeroCarousel";
 import { ProductShowcase } from "@/components/sections/ProductShowcase";
 import { CategoryGrid } from "@/components/sections/CategoryGrid";
+import { RecommendedProducts } from "@/components/sections/RecommendedProducts";
 import Navbar from "@/components/Navbar";
 import { createClient } from '@/utils/supabase/server'
 
@@ -10,13 +11,6 @@ const FRESH_DROPS = [
   { id: '2', name: 'Luffy Gear 5 T-Shirt', price: 'LKR 4,500', rating: 4.5, image: '' },
   { id: '3', name: 'Zoro Enma Replica', price: 'LKR 12,000', rating: 5, image: '' },
   { id: '4', name: 'Chainsaw Man Pochita Plush', price: 'LKR 3,500', rating: 4.8, image: '' },
-];
-
-const TOP_SELLING = [
-  { id: '5', name: 'Demon Slayer Artbook', price: 'LKR 8,500', rating: 5, image: '' },
-  { id: '6', name: 'Naruto Shippuden Hoodie', price: 'LKR 6,900', rating: 4.7, image: '' },
-  { id: '7', name: 'Attack on Titan Vol. 34', price: 'LKR 2,500', rating: 5, image: '' },
-  { id: '8', name: 'Gojo Satoru Figure', price: 'LKR 15,000', rating: 4.9, image: '' },
 ];
 
 export default async function Home() {
@@ -104,9 +98,9 @@ export default async function Home() {
     <div className="min-h-screen">
       <Navbar />
       <HeroCarousel initialSlides={initialSlides} />
+      <RecommendedProducts />
       <ProductShowcase title="NEW ARRIVALS" products={freshDropsData} />
       <CategoryGrid />
-      <ProductShowcase title="TOP SELLING" products={TOP_SELLING} centered={true} />
     </div>
   );
 }

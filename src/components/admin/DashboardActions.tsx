@@ -1,6 +1,6 @@
 'use client';
 
-import { Package, ShoppingCart, Mail, Tag } from 'lucide-react';
+import { Package, ShoppingCart, Mail, Tag, FileImage } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -43,6 +43,13 @@ export default function DashboardActions() {
                 <Link href="/admin/orders">
                     <ShoppingCart className="h-4 w-4 mr-2" />
                     Process Orders
+                </Link>
+            </Button>
+
+            <Button className="w-full bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 h-12 shadow-sm" asChild>
+                <Link href="/admin/orders">
+                    <FileImage className="h-4 w-4 mr-2" />
+                    Review Bank Slips
                 </Link>
             </Button>
 

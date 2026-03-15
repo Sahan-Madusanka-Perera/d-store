@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import AddToCartButton from '@/components/AddToCartButton';
+import WhatsAppInquiryButton from '@/components/WhatsAppInquiryButton';
 import ProductImageGallery from '@/components/ProductImageGallery';
 import ProductInfoAssistant from '@/components/ProductInfoAssistant';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -347,6 +348,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
             {/* Add to Cart - Elegant */}
             <div className="space-y-5">
               <AddToCartButton product={product} />
+
+              {/* Inquire via WhatsApp */}
+              <WhatsAppInquiryButton
+                productName={product.name}
+                productPrice={displayPrice}
+                productCategory={product.category}
+                productDescription={product.description}
+              />
 
               {/* Additional Info - Refined */}
               <div className="grid grid-cols-1 gap-3 pt-2">
