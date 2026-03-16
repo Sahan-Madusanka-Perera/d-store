@@ -4,12 +4,10 @@ import { Twitter, Facebook, Instagram, Github, CreditCard } from "lucide-react";
 
 export function Footer() {
     return (
-        <footer className="relative mt-40 sm:mt-48 md:mt-56 border-t border-gray-200 bg-white pt-48 sm:pt-56 md:pt-64 pb-12">
-            <div className="absolute -top-32 sm:-top-40 md:-top-48 left-0 right-0 px-4 md:px-8 max-w-7xl mx-auto w-full">
-                <ConditionalNewsletter />
-            </div>
-
-            <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col items-center">
+        <>
+            <ConditionalNewsletter />
+            <footer className="relative border-t border-gray-200 bg-white pt-48 sm:pt-56 md:pt-64 pb-12">
+                <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col items-center">
                 <Link href="/" className="inline-block mb-6">
                     <div className="text-3xl font-bold text-black">D-Store</div>
                 </Link>
@@ -38,5 +36,6 @@ export function Footer() {
                 </div>
             </div>
         </footer>
+        </>
     );
 }

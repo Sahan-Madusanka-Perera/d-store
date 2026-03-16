@@ -15,7 +15,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "D-STORE | Premium Otaku Lifestyle",
+  title: "D-STORE | The Ultimate Hobby Store",
   description: "Authentic Anime Merchandise, Figures, and Streetwear.",
 };
 
