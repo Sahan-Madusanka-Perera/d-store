@@ -34,6 +34,7 @@ interface Product {
   sizes?: string[]
   colors?: string[]
   status?: string
+  specifications?: Record<string, any>
 }
 
 export default function ProductManager() {
@@ -60,6 +61,7 @@ export default function ProductManager() {
     sizes: '',
     colors: '',
     status: 'available',
+    specifications: {} as Record<string, any>,
     images: [] as File[]
   })
 
@@ -115,6 +117,16 @@ export default function ProductManager() {
   // Handle form input changes
   const handleInputChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleSpecChange = (name: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      specifications: {
+        ...prev.specifications,
+        [name]: value
+      }
+    }))
   }
 
   // Handle multiple image upload
@@ -206,6 +218,7 @@ export default function ProductManager() {
       sizes: '',
       colors: '',
       status: 'available',
+      specifications: {},
       images: []
     })
 
@@ -264,6 +277,7 @@ export default function ProductManager() {
         sizes: formData.sizes ? formData.sizes.split(',').map(s => s.trim()) : null,
         colors: formData.colors ? formData.colors.split(',').map(c => c.trim()) : null,
         status: formData.status || 'available',
+        specifications: Object.keys(formData.specifications).length > 0 ? formData.specifications : null,
       }
 
       console.log('Preparing to save product data:', productData)
@@ -318,6 +332,7 @@ export default function ProductManager() {
       sizes: product.sizes?.join(', ') || '',
       colors: product.colors?.join(', ') || '',
       status: product.status || 'available',
+      specifications: product.specifications || {},
       images: []
     })
     setShowAddForm(true)
@@ -474,40 +489,173 @@ export default function ProductManager() {
                 {/* Category-specific fields */}
                 <div className="space-y-5">
                   {formData.category === 'manga' && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="author" className="text-gray-900 font-bold mb-1.5 block">Author</Label>
-                        <Input
-                          id="author"
-                          value={formData.author}
-                          onChange={(e) => handleInputChange('author', e.target.value)}
-                          placeholder="Author name"
-                          className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 rounded-xl h-11"
-                        />
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="author" className="text-gray-900 font-bold mb-1.5 block">Author</Label>
+                          <Input
+                            id="author"
+                            value={formData.author}
+                            onChange={(e) => handleInputChange('author', e.target.value)}
+                            placeholder="Author name"
+                            className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 rounded-xl h-11"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="publisher" className="text-gray-900 font-bold mb-1.5 block">Publisher</Label>
+                          <Input
+                            id="publisher"
+                            value={formData.publisher}
+                            onChange={(e) => handleInputChange('publisher', e.target.value)}
+                            placeholder="e.g. Viz Media, Kodansha"
+                            className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 rounded-xl h-11"
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <Label htmlFor="publisher" className="text-gray-900 font-bold mb-1.5 block">Publisher</Label>
-                        <Input
-                          id="publisher"
-                          value={formData.publisher}
-                          onChange={(e) => handleInputChange('publisher', e.target.value)}
-                          placeholder="e.g. Viz Media, Kodansha"
-                          className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 rounded-xl h-11"
-                        />
+                      
+                      {/* Advanced Manga Specifications */}
+                      <p className="font-bold text-gray-900 border-b border-gray-100 pb-2 mt-4">Product Details (Amazon Style)</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-gray-900 font-bold mb-1.5 block">Publication Date</Label>
+                          <Input
+                            value={formData.specifications.publicationDate || ''}
+                            onChange={(e) => handleSpecChange('publicationDate', e.target.value)}
+                            placeholder="e.g. March 11, 2025"
+                            className="bg-white border-gray-200 focus:border-black rounded-xl h-11"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-gray-900 font-bold mb-1.5 block">Language</Label>
+                          <Input
+                            value={formData.specifications.language || ''}
+                            onChange={(e) => handleSpecChange('language', e.target.value)}
+                            placeholder="e.g. English"
+                            className="bg-white border-gray-200 focus:border-black rounded-xl h-11"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-gray-900 font-bold mb-1.5 block">Print Length</Label>
+                          <Input
+                            value={formData.specifications.printLength || ''}
+                            onChange={(e) => handleSpecChange('printLength', e.target.value)}
+                            placeholder="e.g. 208 pages"
+                            className="bg-white border-gray-200 focus:border-black rounded-xl h-11"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-gray-900 font-bold mb-1.5 block">Item Weight</Label>
+                          <Input
+                            value={formData.specifications.itemWeight || ''}
+                            onChange={(e) => handleSpecChange('itemWeight', e.target.value)}
+                            placeholder="e.g. 6.5 ounces"
+                            className="bg-white border-gray-200 focus:border-black rounded-xl h-11"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-gray-900 font-bold mb-1.5 block">Dimensions</Label>
+                          <Input
+                            value={formData.specifications.dimensions || ''}
+                            onChange={(e) => handleSpecChange('dimensions', e.target.value)}
+                            placeholder="e.g. 5 x 0.7 x 7.5 inches"
+                            className="bg-white border-gray-200 focus:border-black rounded-xl h-11"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-gray-900 font-bold mb-1.5 block">ISBN-10</Label>
+                          <Input
+                            value={formData.specifications.isbn10 || ''}
+                            onChange={(e) => handleSpecChange('isbn10', e.target.value)}
+                            placeholder="e.g. 1974751880"
+                            className="bg-white border-gray-200 focus:border-black rounded-xl h-11"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-gray-900 font-bold mb-1.5 block">ISBN-13</Label>
+                          <Input
+                            value={formData.specifications.isbn13 || ''}
+                            onChange={(e) => handleSpecChange('isbn13', e.target.value)}
+                            placeholder="e.g. 978-1974751884"
+                            className="bg-white border-gray-200 focus:border-black rounded-xl h-11"
+                          />
+                        </div>
                       </div>
                     </div>
                   )}
 
                   {formData.category === 'figures' && (
-                    <div>
-                      <Label htmlFor="brand" className="text-gray-900 font-bold mb-1.5 block">Brand</Label>
-                      <Input
-                        id="brand"
-                        value={formData.brand}
-                        onChange={(e) => handleInputChange('brand', e.target.value)}
-                        placeholder="Brand name"
-                        className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 rounded-xl h-11"
-                      />
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="brand" className="text-gray-900 font-bold mb-1.5 block">Brand</Label>
+                        <Input
+                          id="brand"
+                          value={formData.brand}
+                          onChange={(e) => handleInputChange('brand', e.target.value)}
+                          placeholder="Brand name"
+                          className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 rounded-xl h-11"
+                        />
+                      </div>
+                      
+                      {/* Advanced Figure Specifications */}
+                      <p className="font-bold text-gray-900 border-b border-gray-100 pb-2 mt-4">Product Details (Amazon Style)</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-gray-900 font-bold mb-1.5 block">Theme</Label>
+                          <Input value={formData.specifications.theme || ''} onChange={(e) => handleSpecChange('theme', e.target.value)} placeholder="e.g. Anime" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
+                        </div>
+                        <div>
+                          <Label className="text-gray-900 font-bold mb-1.5 block">Color</Label>
+                          <Input value={formData.specifications.color || ''} onChange={(e) => handleSpecChange('color', e.target.value)} placeholder="e.g. Sukuna" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
+                        </div>
+                        <div>
+                          <Label className="text-gray-900 font-bold mb-1.5 block">Style</Label>
+                          <Input value={formData.specifications.style || ''} onChange={(e) => handleSpecChange('style', e.target.value)} placeholder="e.g. Modern" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
+                        </div>
+                        <div>
+                          <Label className="text-gray-900 font-bold mb-1.5 block">Occasion</Label>
+                          <Input value={formData.specifications.occasion || ''} onChange={(e) => handleSpecChange('occasion', e.target.value)} placeholder="e.g. Collectible" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
+                        </div>
+                        <div>
+                          <Label className="text-gray-900 font-bold mb-1.5 block">Item Dimensions</Label>
+                          <Input value={formData.specifications.itemDimensions || ''} onChange={(e) => handleSpecChange('itemDimensions', e.target.value)} placeholder="e.g. 4.5 L x 8.8 W x 4.5 H" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
+                        </div>
+                        <div>
+                          <Label className="text-gray-900 font-bold mb-1.5 block">Item Weight</Label>
+                          <Input value={formData.specifications.itemWeight || ''} onChange={(e) => handleSpecChange('itemWeight', e.target.value)} placeholder="e.g. 200 Grams" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
+                        </div>
+                        <div>
+                          <Label className="text-gray-900 font-bold mb-1.5 block">Manufacturer</Label>
+                          <Input value={formData.specifications.manufacturer || ''} onChange={(e) => handleSpecChange('manufacturer', e.target.value)} placeholder="e.g. Bandai Spirits" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
+                        </div>
+                        <div>
+                          <Label className="text-gray-900 font-bold mb-1.5 block">Material Type</Label>
+                          <Input value={formData.specifications.materialType || ''} onChange={(e) => handleSpecChange('materialType', e.target.value)} placeholder="e.g. Polyvinyl Chloride" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
+                        </div>
+                        <div>
+                          <Label className="text-gray-900 font-bold mb-1.5 block">Number of Pieces</Label>
+                          <Input value={formData.specifications.numberOfPieces || ''} onChange={(e) => handleSpecChange('numberOfPieces', e.target.value)} placeholder="e.g. 1" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
+                        </div>
+                        <div>
+                          <Label className="text-gray-900 font-bold mb-1.5 block">Age Range</Label>
+                          <Input value={formData.specifications.ageRange || ''} onChange={(e) => handleSpecChange('ageRange', e.target.value)} placeholder="e.g. 15+" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
+                        </div>
+                        <div>
+                          <Label className="text-gray-900 font-bold mb-1.5 block">Item Type Name</Label>
+                          <Input value={formData.specifications.itemTypeName || ''} onChange={(e) => handleSpecChange('itemTypeName', e.target.value)} placeholder="e.g. Figure" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
+                        </div>
+                        <div>
+                          <Label className="text-gray-900 font-bold mb-1.5 block">Finish Types</Label>
+                          <Input value={formData.specifications.finishTypes || ''} onChange={(e) => handleSpecChange('finishTypes', e.target.value)} placeholder="e.g. Glossy" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
+                        </div>
+                        <div>
+                          <Label className="text-gray-900 font-bold mb-1.5 block">ASIN</Label>
+                          <Input value={formData.specifications.asin || ''} onChange={(e) => handleSpecChange('asin', e.target.value)} placeholder="e.g. B0FLCCRL7T" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
+                        </div>
+                        <div>
+                          <Label className="text-gray-900 font-bold mb-1.5 block">Batteries Required</Label>
+                          <Input value={formData.specifications.batteriesRequired || ''} onChange={(e) => handleSpecChange('batteriesRequired', e.target.value)} placeholder="e.g. No" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
+                        </div>
+                      </div>
                     </div>
                   )}
 

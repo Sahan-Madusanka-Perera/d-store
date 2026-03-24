@@ -36,6 +36,7 @@ export interface Product {
   colors?: string[];
   fabricMaterial?: string;
   printType?: 'screen-print' | 'digital-print' | 'vinyl';
+  specifications?: Record<string, any>;
 }
 
 export interface ProductFilters {

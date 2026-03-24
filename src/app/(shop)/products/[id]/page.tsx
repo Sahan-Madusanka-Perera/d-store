@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Star, ArrowLeft, Truck, Shield, RotateCcw, Heart, Sparkles, Clock, Zap, Bell } from 'lucide-react';
+import { Star, ArrowLeft, Truck, Shield, RotateCcw, Heart, Sparkles, Clock, Zap, Bell, BookOpen, Languages, Calendar, Hash, Weight, Maximize, Palette, Brush, Gift, Ruler, Puzzle, Box, Battery, Factory, Info, Book } from 'lucide-react';
 import ExternalRating from '@/components/ExternalRating';
 import WishlistButton from '@/components/WishlistButton';
 
@@ -33,6 +33,7 @@ interface DatabaseProduct {
   series?: string;
   character_names?: string[];
   status?: string;
+  specifications?: Record<string, any>;
 }
 
 function mapDatabaseProduct(dbProduct: DatabaseProduct): Product {
@@ -72,7 +73,8 @@ function mapDatabaseProduct(dbProduct: DatabaseProduct): Product {
     characterNames: dbProduct.character_names,
     status: (dbProduct.status as 'available' | 'coming_soon' | 'pre_order' | 'out_of_stock') || 'available',
     scale: '1/8',
-    height: '20cm'
+    height: '20cm',
+    specifications: dbProduct.specifications
   };
 }
 
@@ -244,96 +246,158 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </div>
             </div>
 
-            {/* Product Specifications - Elegant */}
+            {/* Product Specifications - Elegant & Informative */}
             <Card className="border-border/50">
               <CardHeader>
                 <CardTitle className="text-xl">Product Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {product.brand && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground font-medium">Brand:</span>
-                    <Link href={`/figures?brand=${encodeURIComponent(product.brand)}`}>
-                      <span className="font-semibold text-foreground hover:text-primary transition-colors underline decoration-transparent hover:decoration-primary/50">{product.brand}</span>
-                    </Link>
-                  </div>
-                )}
+                {/* Unified Specs Display similar to Amazon */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 auto-rows-max">
 
-                {product.category === 'manga' && product.publisher && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground font-medium">Publisher:</span>
-                    <Link href={`/manga?publisher=${encodeURIComponent(product.publisher)}`}>
-                      <span className="font-semibold text-foreground hover:text-primary transition-colors underline decoration-transparent hover:decoration-primary/50">{product.publisher}</span>
-                    </Link>
-                  </div>
-                )}
-
-                {product.series && product.series !== 'Various' && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground font-medium">Series:</span>
-                    <Link href={`/${product.category}?search=${encodeURIComponent(product.series)}`}>
-                      <Badge title={product.series} variant="outline" className="border-primary/20 bg-primary/5 text-primary uppercase font-bold tracking-wider max-w-[200px] truncate block text-center hover:bg-primary/10 transition-colors cursor-pointer">
-                        {product.series}
-                      </Badge>
-                    </Link>
-                  </div>
-                )}
-
-                {product.characterNames && product.characterNames.length > 0 && (
-                  <div className="flex justify-between items-start">
-                    <span className="text-muted-foreground font-medium">Characters:</span>
-                    <div className="flex flex-wrap gap-2 justify-end max-w-[60%]">
-                      {product.characterNames.map((char) => (
-                        <Link key={char} href={`/${product.category}?search=${encodeURIComponent(char)}`}>
-                          <Badge title={char} variant="secondary" className="font-semibold px-2 max-w-[150px] truncate block text-center hover:bg-muted transition-colors cursor-pointer">
-                            {char}
-                          </Badge>
-                        </Link>
-                      ))}
+                  {/* General Features */}
+                  {product.brand && (
+                    <div className="flex flex-col p-3 bg-secondary/20 rounded-lg">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Factory className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Brand</span>
+                      </div>
+                      <Link href={`/figures?brand=${encodeURIComponent(product.brand)}`}>
+                        <span className="font-semibold text-foreground hover:text-primary transition-colors truncate">{product.brand}</span>
+                      </Link>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {product.author && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground font-medium">Author:</span>
-                    <Link href={`/manga?search=${encodeURIComponent(product.author)}`}>
-                      <span className="font-semibold text-foreground hover:text-primary transition-colors underline decoration-transparent hover:decoration-primary/50">{product.author}</span>
-                    </Link>
-                  </div>
-                )}
+                  {product.category === 'manga' && product.publisher && (
+                    <div className="flex flex-col p-3 bg-secondary/20 rounded-lg">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Book className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Publisher</span>
+                      </div>
+                      <Link href={`/manga?publisher=${encodeURIComponent(product.publisher)}`}>
+                        <span className="font-semibold text-foreground hover:text-primary transition-colors truncate">{product.publisher}</span>
+                      </Link>
+                    </div>
+                  )}
 
-                {product.sizes && product.sizes.length > 0 && (
-                  <div className="flex justify-between items-start">
-                    <span className="text-muted-foreground font-medium">Sizes:</span>
-                    <div className="flex flex-wrap gap-2 justify-end">
-                      {product.sizes.map((size) => (
-                        <Badge key={size} variant="secondary" className="text-xs font-semibold">
-                          {size}
+                  {product.author && (
+                    <div className="flex flex-col p-3 bg-secondary/20 rounded-lg">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Brush className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Author</span>
+                      </div>
+                      <Link href={`/manga?search=${encodeURIComponent(product.author)}`}>
+                        <span className="font-semibold text-foreground hover:text-primary transition-colors truncate">{product.author}</span>
+                      </Link>
+                    </div>
+                  )}
+
+                  {product.series && product.series !== 'Various' && (
+                    <div className="flex flex-col p-3 bg-secondary/20 rounded-lg md:col-span-2">
+                       <div className="flex items-center gap-2 mb-2">
+                        <BookOpen className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Part of Series</span>
+                      </div>
+                      <Link href={`/${product.category}?search=${encodeURIComponent(product.series)}`}>
+                        <Badge title={product.series} variant="outline" className="border-primary/20 bg-primary/5 text-primary uppercase font-bold tracking-wider hover:bg-primary/10 transition-colors cursor-pointer w-full justify-center py-1">
+                          {product.series}
                         </Badge>
-                      ))}
+                      </Link>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {product.colors && product.colors.length > 0 && (
-                  <div className="flex justify-between items-start">
-                    <span className="text-muted-foreground font-medium">Colors:</span>
-                    <div className="flex flex-wrap gap-2 justify-end">
-                      {product.colors.map((color) => (
-                        <Badge key={color} variant="secondary" className="text-xs font-semibold capitalize">
-                          {color}
-                        </Badge>
-                      ))}
+                  {/* Specifications JSON Rendering */}
+                  {product.specifications && Object.entries(product.specifications).map(([key, value]) => {
+                    if (!value) return null;
+                    
+                    // Map keys to nice labels and icons
+                    let label = key;
+                    let Icon = Info;
+                    let spanClass = "md:col-span-1";
+                    
+                    if (key === 'publicationDate') { label = 'Publication Date'; Icon = Calendar; }
+                    else if (key === 'language') { label = 'Language'; Icon = Languages; }
+                    else if (key === 'printLength') { label = 'Print Length'; Icon = BookOpen; }
+                    else if (key === 'isbn10') { label = 'ISBN-10'; Icon = Hash; }
+                    else if (key === 'isbn13') { label = 'ISBN-13'; Icon = Hash; }
+                    else if (key === 'itemWeight') { label = 'Item Weight'; Icon = Weight; }
+                    else if (key === 'dimensions' || key === 'itemDimensions') { label = 'Dimensions'; Icon = Maximize; spanClass = "md:col-span-2"; }
+                    else if (key === 'theme') { label = 'Theme'; Icon = Palette; }
+                    else if (key === 'color') { label = 'Color'; Icon = Palette; }
+                    else if (key === 'style') { label = 'Style'; Icon = Brush; }
+                    else if (key === 'occasion') { label = 'Occasion'; Icon = Gift; }
+                    else if (key === 'numberOfPieces') { label = 'Pieces'; Icon = Puzzle; }
+                    else if (key === 'manufacturer') { label = 'Manufacturer'; Icon = Factory; }
+                    else if (key === 'materialType') { label = 'Material Type'; Icon = Box; }
+                    else if (key === 'asin') { label = 'ASIN'; Icon = Hash; }
+                    else if (key === 'batteriesRequired') { label = 'Batteries Req?'; Icon = Battery; }
+                    else if (key === 'finishTypes') { label = 'Finish Types'; Icon = Sparkles; }
+                    else if (key === 'ageRange') { label = 'Age Range'; Icon = Info; }
+                    else if (key === 'itemTypeName') { label = 'Item Type'; Icon = Info; }
+
+                    return (
+                      <div key={key} className={`flex flex-col p-3 bg-secondary/20 rounded-lg ${spanClass}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Icon className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider truncate" title={label}>{label}</span>
+                        </div>
+                        <span className="font-semibold text-foreground break-words">{String(value)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Tags and Characters */}
+                {(product.characterNames && product.characterNames.length > 0) || (product.sizes && product.sizes.length > 0) || (product.colors && product.colors.length > 0) ? (
+                  <>
+                    <Separator className="my-4" />
+                    <div className="space-y-3">
+                      {product.characterNames && product.characterNames.length > 0 && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider mr-2">Characters:</span>
+                          {product.characterNames.map((char) => (
+                            <Link key={char} href={`/${product.category}?search=${encodeURIComponent(char)}`}>
+                              <Badge title={char} variant="secondary" className="font-semibold hover:bg-muted transition-colors cursor-pointer">
+                                {char}
+                              </Badge>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {product.sizes && product.sizes.length > 0 && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider mr-2">Sizes:</span>
+                          {product.sizes.map((size) => (
+                            <Badge key={size} variant="secondary" className="font-semibold">
+                              {size}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {product.colors && product.colors.length > 0 && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider mr-2">Colors:</span>
+                          {product.colors.map((color) => (
+                            <Badge key={color} variant="secondary" className="font-semibold capitalize">
+                              {color}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                     </div>
+                  </>
+                ) : null}
+
+                <Separator className="mt-4 mb-2" />
+
+                <div className="flex justify-between items-center bg-accent/5 p-4 rounded-xl border border-accent/10">
+                  <div className="flex items-center gap-2">
+                    <Box className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-foreground font-medium">Availability:</span>
                   </div>
-                )}
-
-                <Separator />
-
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground font-medium">Availability:</span>
-                  <span className={`font-semibold ${product.stock === 0
+                  <span className={`font-bold text-lg ${product.stock === 0
                     ? 'text-destructive'
                     : product.stock <= 5
                       ? 'text-amber-600'

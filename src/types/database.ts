@@ -24,6 +24,7 @@ export interface DatabaseProduct {
   series?: string;
   external_rating?: number;
   external_rating_count?: number;
+  specifications?: Record<string, any>;
 }
 
 export interface CarouselSlide {
