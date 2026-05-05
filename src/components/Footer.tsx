@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ConditionalNewsletter } from "@/components/ConditionalNewsletter";
 import { Newsletter } from '@/components/sections/Newsletter';
 import { InstagramFeed } from '@/components/sections/InstagramFeed';
-import { Twitter, Facebook, Instagram, Github, CreditCard } from "lucide-react";
+import { Twitter, Facebook, Instagram, CreditCard } from "lucide-react";
 
 export function Footer() {
     return (
@@ -29,7 +29,7 @@ export function Footer() {
                 </p>
 
                 <div className="flex gap-6 mb-8">
-                    {[Twitter, Facebook, Instagram, Github].map((Icon, i) => (
+                    {[Twitter, Facebook, Instagram].map((Icon, i) => (
                         <a key={i} href="#" className="text-gray-400 hover:text-black transition-colors">
                             <Icon className="w-5 h-5" />
                         </a>
