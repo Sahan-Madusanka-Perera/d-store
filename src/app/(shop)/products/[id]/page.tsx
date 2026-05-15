@@ -2,17 +2,17 @@ import { Product } from '@/types/product';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
-import AddToCartButton from '@/components/AddToCartButton';
-import WhatsAppInquiryButton from '@/components/WhatsAppInquiryButton';
-import ProductImageGallery from '@/components/ProductImageGallery';
-import ProductInfoAssistant from '@/components/ProductInfoAssistant';
+import AddToCartButton from '@/components/product/AddToCartButton';
+import WhatsAppInquiryButton from '@/components/product/WhatsAppInquiryButton';
+import ProductImageGallery from '@/components/product/ProductImageGallery';
+import ProductInfoAssistant from '@/components/product/ProductInfoAssistant';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Star, ArrowLeft, Truck, Shield, RotateCcw, Heart, Sparkles, Clock, Zap, Bell, BookOpen, Languages, Calendar, Hash, Weight, Maximize, Palette, Brush, Gift, Ruler, Puzzle, Box, Battery, Factory, Info, Book } from 'lucide-react';
-import ExternalRating from '@/components/ExternalRating';
-import WishlistButton from '@/components/WishlistButton';
+import ExternalRating from '@/components/product/ExternalRating';
+import WishlistButton from '@/components/product/WishlistButton';
 
 interface DatabaseProduct {
   id: number;

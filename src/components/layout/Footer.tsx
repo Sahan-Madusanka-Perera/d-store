@@ -1,17 +1,22 @@
 import Link from "next/link";
-import { ConditionalNewsletter } from "@/components/ConditionalNewsletter";
+import { ConditionalNewsletter } from '@/components/sections/ConditionalNewsletter';
 import { Newsletter } from '@/components/sections/Newsletter';
 import { InstagramFeed } from '@/components/sections/InstagramFeed';
 import { Twitter, Facebook, Instagram, CreditCard } from "lucide-react";
+import { ConditionalInstagram } from '@/components/sections/ConditionalInstagram';
+import Image from "next/image";
 
 export function Footer() {
     return (
         <>
             <ConditionalNewsletter>
                 <div className="w-full flex-col flex relative z-10 pb-16">
-                    <div className="w-full px-4 md:px-8 max-w-7xl mx-auto mt-24 mb-16 sm:mb-24">
-                        <InstagramFeed />
-                    </div>
+                    {/* Instagram Feed — only on homepage & listing pages */}
+                    <ConditionalInstagram>
+                        <div className="w-full px-4 md:px-8 max-w-7xl mx-auto mt-24 mb-16 sm:mb-24">
+                            <InstagramFeed />
+                        </div>
+                    </ConditionalInstagram>
                     {/* The negative margin makes it overlap the footer which is conceptually directly after this component */}
                     <div className="w-full px-4 md:px-8 max-w-7xl mx-auto relative z-10 -mb-32 sm:-mb-40 md:-mb-48">
                         <Newsletter />
@@ -21,7 +26,7 @@ export function Footer() {
             <footer className="relative border-t border-gray-200 bg-white pt-48 sm:pt-56 md:pt-64 pb-12">
                 <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col items-center">
                 <Link href="/" className="inline-block mb-6">
-                    <div className="text-3xl font-bold text-black">D-Store</div>
+                    <Image src="/Logo.Trns.png" alt="D-Store Logo" width={256} height={256} className="h-28 w-auto" />
                 </Link>
                 
                 <p className="mt-2 text-center text-sm text-gray-500 max-w-md mb-8">

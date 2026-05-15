@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
-import ProductCard from '@/components/ProductCard';
-import CategorySearchControls from '@/components/CategorySearchControls';
-import CategoryPageFilters from '@/components/CategoryPageFilters';
+import ProductCard from '@/components/product/ProductCard';
+import CategorySearchControls from '@/components/category/CategorySearchControls';
+import CategoryPageFilters from '@/components/category/CategoryPageFilters';
 import { Product } from '@/types/product';
 import { Shirt, Package, SlidersHorizontal } from 'lucide-react';
 import { Suspense } from 'react';

@@ -42,6 +42,34 @@ const DUMMY_POSTS = [
         likes: "943",
         comments: 18,
         postUrl: "https://instagram.com/p/dummy4" 
+    },
+    {
+        id: 5,
+        image: "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1000&auto=format&fit=crop",
+        likes: "1.8K",
+        comments: 67,
+        postUrl: "https://instagram.com/p/dummy5" 
+    },
+    {
+        id: 6,
+        image: "https://images.unsplash.com/photo-1613376023733-7a6665cb9d46?q=80&w=1000&auto=format&fit=crop",
+        likes: "723",
+        comments: 31,
+        postUrl: "https://instagram.com/p/dummy6" 
+    },
+    {
+        id: 7,
+        image: "https://images.unsplash.com/photo-1541562232579-512a21360020?q=80&w=1000&auto=format&fit=crop",
+        likes: "1.5K",
+        comments: 89,
+        postUrl: "https://instagram.com/p/dummy7" 
+    },
+    {
+        id: 8,
+        image: "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1000&auto=format&fit=crop",
+        likes: "2.1K",
+        comments: 112,
+        postUrl: "https://instagram.com/p/dummy8" 
     }
 ];
 
@@ -55,7 +83,7 @@ async function getInstagramData() {
 
     try {
         // Fetch User Info + Metrics + 4 Latest Media items via Graph API
-        const url = `https://graph.facebook.com/v19.0/${accountId}?fields=username,biography,followers_count,follows_count,media_count,profile_picture_url,media.limit(4){media_url,thumbnail_url,permalink,like_count,comments_count,media_type}&access_token=${token}`;
+        const url = `https://graph.facebook.com/v19.0/${accountId}?fields=username,biography,followers_count,follows_count,media_count,profile_picture_url,media.limit(8){media_url,thumbnail_url,permalink,like_count,comments_count,media_type}&access_token=${token}`;
         
         const res = await fetch(url, {
             // Revalidate cache every 1 hour (3600 seconds) to prevent hitting rate limits
@@ -92,7 +120,7 @@ export async function InstagramFeed() {
         following: formatNumber(liveData.follows_count || 0)
     } : METRICS;
 
-    // Map the 4 posts
+    // Map the 8 posts
     const displayPosts = liveData?.media?.data ? liveData.media.data.map((item: any) => ({
         id: item.id,
         // Videos provide a thumbnail_url, otherwise use media_url

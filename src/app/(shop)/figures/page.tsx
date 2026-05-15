@@ -1,9 +1,10 @@
 import { createClient } from '@/utils/supabase/server';
-import ProductCard from '@/components/ProductCard';
-import CategorySearchControls from '@/components/CategorySearchControls';
-import CategoryPageFilters from '@/components/CategoryPageFilters';
+import ProductCard from '@/components/product/ProductCard';
+import CategorySearchControls from '@/components/category/CategorySearchControls';
+import CategoryPageFilters from '@/components/category/CategoryPageFilters';
 import { Product } from '@/types/product';
 import { Sparkles, Package, SlidersHorizontal } from 'lucide-react';
+import Image from "next/image";
 import { Suspense } from 'react';
 import {
   Sheet,
@@ -114,12 +115,11 @@ export default async function FiguresPage(props: FiguresPageProps) {
       <div className="w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-12 md:py-20">
         {/* Header */}
         <div className="flex flex-col items-center text-center mb-16 md:mb-20">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white border border-gray-200 rounded-full mb-8 shadow-sm">
-            <Sparkles className="h-6 w-6 text-zinc-900" strokeWidth={1.5} />
-          </div>
+          
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-zinc-900 tracking-tighter uppercase mb-6">
             Anime Figures
           </h1>
+          {/*<Image src="/son_goku.jpg" alt="Anime Figures" width={600} height={400} className="w-full max-w-3xl rounded-2xl mb-6 object-cover" />*/}
           <p className="text-base sm:text-lg text-zinc-500 max-w-2xl mx-auto font-medium leading-relaxed">
             Discover premium collectible figures from your favorite anime series.
             Each piece is carefully crafted with meticulous attention to detail.

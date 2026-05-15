@@ -19,9 +19,8 @@ export function CategoryGrid() {
                     {/* Figures - Wide Rectangle */}
                     <Link href="/figures" className="relative group overflow-hidden rounded-[1.5rem] bg-white md:col-span-2">
                         <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-blue-100"></div>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-6xl grayscale opacity-20">🎎</span>
-                        </div>
+                                                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1769479027867-817973e429af?q=80&w=1720&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')] bg-center bg-cover transition-transform duration-700 group-hover:scale-110"></div>
+                        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors"></div>  
                         <h3 className="absolute top-8 left-8 text-3xl font-bold bg-white px-4 py-2 rounded-lg">FIGURES</h3>
                         <ArrowUpRight className="absolute top-8 right-8 w-8 h-8 text-black bg-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0" />
                     </Link>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import ProductCard from '../ProductCard';
+import ProductCard from '@/components/product/ProductCard';
 import { DatabaseProduct } from '@/types/database';
 
 interface RecommendationResponse {

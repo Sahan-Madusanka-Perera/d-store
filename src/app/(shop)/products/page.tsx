@@ -1,7 +1,7 @@
-import ProductCard from '@/components/ProductCard';
+import ProductCard from '@/components/product/ProductCard';
 import { Product } from '@/types/product';
 import { createClient } from '@/utils/supabase/server';
-import { Package, SlidersHorizontal } from 'lucide-react';
+import { Package, ShoppingBag, SlidersHorizontal, Sparkles, TrendingUp } from 'lucide-react';
 import { Suspense } from 'react';
 import SearchControls from './SearchControls';
 import ProductFilters from './ProductFilters';
@@ -139,20 +139,48 @@ export default async function ProductsPage(props: ProductsPageProps) {
 
   const products: Product[] = dbProducts?.map(mapDatabaseProduct) || [];
 
+  // Category breakdown for stats
+  const mangaCount = products.filter(p => p.category === 'manga').length;
+  const figuresCount = products.filter(p => p.category === 'figures').length;
+  const tshirtCount = products.filter(p => p.category === 'tshirts').length;
+
   return (
-    <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="mb-10">
-          <h1 className="text-4xl font-bold text-foreground mb-2">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center">
+      <div className="w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-12 md:py-20">
+        {/* Header — matches category page design */}
+        <div className="flex flex-col items-center text-center mb-16 md:mb-20">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-white border border-gray-200 rounded-full mb-8 shadow-sm">
+            <ShoppingBag className="h-6 w-6 text-zinc-900" strokeWidth={1.5} />
+          </div>
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-zinc-900 tracking-tighter uppercase mb-6">
             All Products
           </h1>
-          <p className="text-muted-foreground">Discover {products.length} amazing items</p>
+          <p className="text-base sm:text-lg text-zinc-500 max-w-2xl mx-auto font-medium leading-relaxed">
+            Browse our entire catalogue of premium anime merchandise.
+            From manga and collectible figures to stylish apparel — find it all here.
+          </p>
+
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-12 w-full">
+            <div className="flex flex-col items-center justify-center bg-white border border-gray-200 rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
+              <div className="text-4xl font-black text-zinc-900 tracking-tight pb-1">{products.length}</div>
+              <div className="text-xs text-zinc-500 font-semibold uppercase tracking-widest">Products</div>
+            </div>
+            <div className="flex flex-col items-center justify-center bg-white border border-gray-200 rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
+              <div className="text-4xl font-black text-zinc-900 tracking-tight pb-1">3</div>
+              <div className="text-xs text-zinc-500 font-semibold uppercase tracking-widest">Categories</div>
+            </div>
+            <div className="flex flex-col items-center justify-center bg-white border border-gray-200 rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
+              <div className="text-4xl font-black text-zinc-900 tracking-tight pb-1">New</div>
+              <div className="text-xs text-zinc-500 font-semibold uppercase tracking-widest">Arrivals</div>
+            </div>
+          </div>
         </div>
 
+        {/* Content with Sidebar */}
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           {/* Sidebar Filters - Desktop */}
           <div className="w-full lg:w-72 flex-shrink-0 hidden lg:block">
-            <Suspense fallback={<div className="h-[400px] w-full animate-pulse bg-muted rounded-2xl border border-border/60"></div>}>
+            <Suspense fallback={<div className="h-[400px] w-full animate-pulse bg-white rounded-2xl border border-gray-200"></div>}>
               <ProductFilters />
             </Suspense>
           </div>
@@ -163,7 +191,7 @@ export default async function ProductsPage(props: ProductsPageProps) {
             <div className="lg:hidden mb-6 flex justify-end">
               <Sheet>
                 <SheetTrigger asChild>
-                  <button className="flex items-center gap-2 px-4 py-2 border border-border/60 rounded-xl text-sm font-medium bg-card shadow-sm hover:shadow-md transition-all">
+                  <button className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold bg-white shadow-sm hover:shadow-md transition-all">
                     <SlidersHorizontal size={16} /> Filters
                   </button>
                 </SheetTrigger>
@@ -171,43 +199,36 @@ export default async function ProductsPage(props: ProductsPageProps) {
                   <SheetHeader className="mb-6">
                     <SheetTitle className="text-left font-bold text-2xl">Filters</SheetTitle>
                   </SheetHeader>
-                  <Suspense fallback={<div className="h-[400px] w-full animate-pulse bg-muted rounded-2xl border border-border/60"></div>}>
+                  <Suspense fallback={<div className="h-[400px] w-full animate-pulse bg-white rounded-2xl border border-gray-200"></div>}>
                     <ProductFilters isMobile />
                   </Suspense>
                 </SheetContent>
               </Sheet>
             </div>
 
-            <Suspense fallback={<div className="h-[52px] mb-8 w-full animate-pulse bg-muted rounded-lg border border-border/60"></div>}>
+            <Suspense fallback={<div className="h-[52px] mb-8 w-full animate-pulse bg-white rounded-lg border border-gray-200"></div>}>
               <SearchControls initialSearch={search || ''} initialSort={sort} />
             </Suspense>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-5">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-
-            {products.length === 0 && (
-              <div className="text-center py-16 bg-card rounded-2xl border border-border/60 mt-8">
-                <div className="flex justify-center mb-4">
-                  <Package className="h-16 w-16 text-muted-foreground/50" />
+            {products.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5">
+                {products.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-24 px-4 bg-white border border-gray-200 rounded-3xl shadow-sm text-center">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-50 border border-gray-100 rounded-full mb-6">
+                  <Package className="h-8 w-8 text-zinc-300" strokeWidth={1.5} />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">No products found</h3>
-                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                  {error ? 'Error loading products. Please try again later.' : "We couldn't find any products matching your current filters."}
+                <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight mb-3">No Products Found</h2>
+                <p className="text-zinc-500 font-medium max-w-md">
+                  {error ? 'Error loading products. Please try again later.' : search ? `No results for "${search}". Try a different search term or adjust your filters.` : "We couldn't find any products matching your current filters."}
                 </p>
-                <Suspense fallback={null}>
-                  <div className="flex justify-center">
-                    <ProductFilters /> {/* This re-renders just to give clear filters button in empty state if needed. A bit hacky but works for now as a clear button substitute. Better to just add a small link. */}
-                  </div>
-                </Suspense>
               </div>
             )}
           </div>
         </div>
-
-
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Search } from 'lucide-react';
 
 interface SearchControlsProps {
     initialSearch?: string;
@@ -34,19 +35,28 @@ export default function SearchControls({ initialSearch, initialSort }: SearchCon
     };
 
     return (
-        <div className="flex flex-wrap gap-4 mb-8">
-            <input
-                type="text"
-                placeholder="Search products..."
-                defaultValue={initialSearch || ''}
-                className="border border-border/60 rounded-xl px-4 py-2.5 bg-card flex-1 min-w-[250px] shadow-sm hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-primary/20"
-                onKeyDown={handleSearch}
-            />
+        <div className="flex flex-col sm:flex-row gap-3 mb-8">
+            <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 pointer-events-none" />
+                <input
+                    type="text"
+                    placeholder="Search all products..."
+                    defaultValue={initialSearch || ''}
+                    className="w-full h-11 pl-11 pr-4 rounded-xl bg-white border border-gray-200 text-sm text-zinc-900 placeholder:text-zinc-400 shadow-sm hover:shadow-md focus:shadow-md focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-300 transition-all"
+                    onKeyDown={handleSearch}
+                />
+            </div>
 
             <select
-                className="border border-border/60 rounded-xl px-4 py-2.5 bg-card shadow-sm hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium min-w-[180px]"
+                className="h-11 px-4 rounded-xl bg-white border border-gray-200 text-sm font-medium text-zinc-700 shadow-sm hover:shadow-md focus:shadow-md focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-300 transition-all min-w-[180px] appearance-none cursor-pointer"
                 defaultValue={initialSort || 'newest'}
                 onChange={handleSortChange}
+                style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 14px center',
+                    paddingRight: '40px'
+                }}
             >
                 <option value="newest">Newest Arrivals</option>
                 <option value="price_asc">Price: Low to High</option>
@@ -54,7 +64,6 @@ export default function SearchControls({ initialSearch, initialSort }: SearchCon
                 <option value="name_asc">Name: A to Z</option>
                 <option value="name_desc">Name: Z to A</option>
             </select>
-
         </div>
     );
 }

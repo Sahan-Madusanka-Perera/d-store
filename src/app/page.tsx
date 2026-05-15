@@ -2,7 +2,7 @@ import { HeroCarousel } from "@/components/sections/HeroCarousel";
 import { ProductShowcase } from "@/components/sections/ProductShowcase";
 import { CategoryGrid } from "@/components/sections/CategoryGrid";
 import { RecommendedProducts } from "@/components/sections/RecommendedProducts";
-import Navbar from "@/components/Navbar";
+import Navbar from '@/components/layout/Navbar';
 import { createClient } from '@/utils/supabase/server'
 
 // Mock Data

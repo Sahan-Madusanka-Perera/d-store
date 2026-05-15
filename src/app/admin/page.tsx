@@ -1,6 +1,6 @@
 import { requireAdmin } from '@/lib/auth'
-import UserProfile from '@/components/UserProfile'
-import ProductManager from '@/components/ProductManager'
+import UserProfile from '@/components/profile/UserProfile'
+import ProductManager from '@/components/admin/ProductManager'
 import CarouselManager from '@/components/admin/CarouselManager'
 import { createClient } from '@/utils/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'

@@ -1,4 +1,4 @@
-import Navbar from '@/components/Navbar';
+import Navbar from '@/components/layout/Navbar';
 
 export default function ShopLayout({
   children,
@@ -8,7 +8,7 @@ export default function ShopLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-8 sm:pt-36">
+      <main className="pt-28 sm:pt-36 pb-8">
         {children}
       </main>
     </div>

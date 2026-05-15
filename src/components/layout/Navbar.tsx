@@ -3,11 +3,20 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useCartStore } from '@/store/cart';
-import UserProfile from './UserProfile';
+import UserProfile from '@/components/profile/UserProfile';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import UniversalSearch from './UniversalSearch';
+import dynamic from 'next/dynamic';
 import { ShoppingCart, Menu, X, BookOpen, Sparkles, Shirt, ShoppingBag, Search } from 'lucide-react';
+
+const UniversalSearch = dynamic(() => import('@/components/search/UniversalSearch'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10">
+      <Search className="h-5 w-5 text-zinc-300" strokeWidth={1.5} />
+    </div>
+  )
+});
 
 export default function Navbar() {
   const [totalItems, setTotalItems] = useState(0);
@@ -33,7 +42,7 @@ export default function Navbar() {
   return (
     <>
       <div className="fixed top-4 sm:top-6 left-0 right-0 z-50 flex justify-center px-4 sm:px-6 pointer-events-none transition-all duration-300">
-        <nav className="pointer-events-auto w-full max-w-5xl bg-black/75 backdrop-blur-xl border border-white/15 shadow-xl shadow-black/20 rounded-full px-4 sm:px-6 transition-all duration-300 supports-[backdrop-filter]:bg-black/50">
+        <nav className="pointer-events-auto w-full max-w-7xl bg-black/75 backdrop-blur-xl border border-white/15 shadow-xl shadow-black/20 rounded-full px-4 sm:px-6 transition-all duration-300 supports-[backdrop-filter]:bg-black/50">
           <div className="flex justify-between items-center h-14 sm:h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-2 group">
