@@ -223,10 +223,10 @@ export default function Navbar() {
           className={`absolute inset-0 bg-black/95 backdrop-blur-md transition-opacity duration-500 ${mobileOpen ? 'opacity-100' : 'opacity-0'}`}
         />
         <div
-          className={`relative z-10 min-h-screen flex flex-col px-6 pt-6 pb-8 transition-all duration-500 ${mobileOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}
+          className={`relative z-10 h-[100dvh] flex flex-col px-6 pt-6 pb-6 sm:pb-8 transition-all duration-500 ${mobileOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-shrink-0 items-center justify-between mb-8">
             <Link href="/" onClick={() => setMobileOpen(false)} className="h-8 w-24 relative">
               <img src="/Logo.Trns.png" alt="D-Store" className="h-full w-full object-contain" />
             </Link>
@@ -239,7 +239,7 @@ export default function Navbar() {
             </button>
           </div>
 
-          <nav className="flex-1 space-y-1 overflow-y-auto pb-4">
+          <nav className="flex-1 space-y-1 overflow-y-auto overscroll-contain pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {navItems.map((item, i) => (
               <div key={item.label} className="group">
                 <Link
@@ -274,7 +274,7 @@ export default function Navbar() {
             ))}
           </nav>
 
-          <div className="space-y-3 pt-2 border-t border-white/10">
+          <div className="flex-shrink-0 space-y-3 pt-4 mt-auto border-t border-white/10">
             <div className="border border-white/10 rounded-2xl overflow-hidden">
               <UniversalSearch onOpen={() => setMobileOpen(false)} />
             </div>
