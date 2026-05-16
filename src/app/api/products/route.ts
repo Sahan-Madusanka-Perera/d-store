@@ -20,8 +20,19 @@ export async function GET(request: NextRequest) {
     // Filter by search term
     if (search) {
       const searchSafe = search.replace(/[%_]/g, '\\$&'); // Escape special chars for LIKE
-      // Search across name, description, author, brand, series
-      const orQuery = `name.ilike.%${searchSafe}%,description.ilike.%${searchSafe}%,author.ilike.%${searchSafe}%,brand.ilike.%${searchSafe}%,series.ilike.%${searchSafe}%`;
+      let orQuery = `name.ilike.%${searchSafe}%,description.ilike.%${searchSafe}%,author.ilike.%${searchSafe}%,brand.ilike.%${searchSafe}%,series.ilike.%${searchSafe}%`;
+      
+      const exactLower = search.toLowerCase().trim();
+      if (['manga'].includes(exactLower)) {
+        orQuery += `,category.eq.manga`;
+      }
+      if (['figure', 'figures', 'anime figure', 'anime figures'].includes(exactLower)) {
+        orQuery += `,category.eq.figures`;
+      }
+      if (['shirt', 'shirts', 'tshirt', 't-shirt', 'tshirts', 't-shirts', 'apparel', 'graphic tshirt', 'graphic tshirts'].includes(exactLower)) {
+        orQuery += `,category.eq.tshirts`;
+      }
+      
       query = query.or(orQuery);
     }
 

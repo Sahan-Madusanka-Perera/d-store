@@ -77,7 +77,14 @@ export default async function FiguresPage(props: FiguresPageProps) {
 
   if (search) {
     const searchSafe = search.replace(/[%_]/g, '\\$&');
-    query = query.or(`name.ilike.%${searchSafe}%,description.ilike.%${searchSafe}%,brand.ilike.%${searchSafe}%,series.ilike.%${searchSafe}%`);
+    let orQuery = `name.ilike.%${searchSafe}%,description.ilike.%${searchSafe}%,brand.ilike.%${searchSafe}%,series.ilike.%${searchSafe}%`;
+    
+    const exactLower = search.toLowerCase().trim();
+    if (['figure', 'figures', 'anime figure', 'anime figures'].includes(exactLower)) {
+      orQuery += `,category.eq.figures`;
+    }
+    
+    query = query.or(orQuery);
   }
 
   if (minPrice && !isNaN(minPrice)) query = query.gte('price', minPrice);

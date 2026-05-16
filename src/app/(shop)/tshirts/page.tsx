@@ -77,7 +77,14 @@ export default async function TshirtsPage(props: TshirtsPageProps) {
 
   if (search) {
     const searchSafe = search.replace(/[%_]/g, '\\$&');
-    query = query.or(`name.ilike.%${searchSafe}%,description.ilike.%${searchSafe}%,brand.ilike.%${searchSafe}%,series.ilike.%${searchSafe}%`);
+    let orQuery = `name.ilike.%${searchSafe}%,description.ilike.%${searchSafe}%,brand.ilike.%${searchSafe}%,series.ilike.%${searchSafe}%`;
+    
+    const exactLower = search.toLowerCase().trim();
+    if (['shirt', 'shirts', 'tshirt', 't-shirt', 'tshirts', 't-shirts', 'apparel', 'graphic tshirt', 'graphic tshirts'].includes(exactLower)) {
+      orQuery += `,category.eq.tshirts`;
+    }
+    
+    query = query.or(orQuery);
   }
 
   if (minPrice && !isNaN(minPrice)) query = query.gte('price', minPrice);

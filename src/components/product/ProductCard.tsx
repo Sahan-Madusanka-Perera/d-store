@@ -163,13 +163,30 @@ export default function ProductCard({ product }: ProductCardProps) {
     <Card className="group relative overflow-hidden border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-xl transition-all duration-300 h-full flex flex-col bg-white p-0 gap-0 rounded-2xl">
       {/* Image */}
       <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
-        <Link href={`/products/${product.id}`}>
-          <Image
-            src={(product.images && product.images[0]) || '/placeholder.svg'}
-            alt={product.name}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-          />
+        <Link href={`/products/${product.id}`} className="block w-full h-full">
+          {product.images && product.images.length > 1 ? (
+            <div className="relative w-full h-full">
+              <Image
+                src={product.images[1]}
+                alt={`${product.name} - view 2`}
+                fill
+                className="object-cover"
+              />
+              <Image
+                src={product.images[0]}
+                alt={product.name}
+                fill
+                className="object-cover transition-transform duration-500 group-hover:-translate-y-full"
+              />
+            </div>
+          ) : (
+            <Image
+              src={(product.images && product.images[0]) || '/placeholder.svg'}
+              alt={product.name}
+              fill
+              className="object-cover"
+            />
+          )}
         </Link>
 
         {/* Persistent bottom gradient for text/badge readability */}

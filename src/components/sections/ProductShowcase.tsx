@@ -6,7 +6,7 @@ interface Product {
     id: string;
     name: string;
     price: string;
-    image: string;
+    images: string[];
     rating: number;
 }
 
@@ -29,16 +29,35 @@ export function ProductShowcase({
                         <Link href={`/products/${product.id}`} key={product.id} className="group cursor-pointer space-y-4">
                             {/* Image Container */}
                             <div className="aspect-[4/5] bg-[#F0EEED] rounded-[1rem] overflow-hidden relative">
-                                {product.image ? (
-                                    <Image
-                                        src={product.image}
-                                        alt={product.name}
-                                        fill
-                                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                        sizes="(max-width: 768px) 50vw, 25vw"
-                                    />
+                                {product.images && product.images.length > 0 ? (
+                                    product.images.length > 1 ? (
+                                        <div className="relative w-full h-full">
+                                            <Image
+                                                src={product.images[1]}
+                                                alt={`${product.name} - view 2`}
+                                                fill
+                                                className="object-cover"
+                                                sizes="(max-width: 768px) 50vw, 25vw"
+                                            />
+                                            <Image
+                                                src={product.images[0]}
+                                                alt={product.name}
+                                                fill
+                                                className="object-cover transition-transform duration-500 group-hover:-translate-y-full"
+                                                sizes="(max-width: 768px) 50vw, 25vw"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <Image
+                                            src={product.images[0]}
+                                            alt={product.name}
+                                            fill
+                                            className="object-cover"
+                                            sizes="(max-width: 768px) 50vw, 25vw"
+                                        />
+                                    )
                                 ) : (
-                                    <div className="absolute inset-0 flex items-center justify-center text-4xl opacity-20 group-hover:scale-110 transition-transform duration-500">
+                                    <div className="absolute inset-0 flex items-center justify-center text-4xl opacity-20">
                                         📦
                                     </div>
                                 )}

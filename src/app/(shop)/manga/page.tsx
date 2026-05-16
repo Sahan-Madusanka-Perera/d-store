@@ -76,7 +76,14 @@ export default async function MangaPage(props: MangaPageProps) {
 
   if (search) {
     const searchSafe = search.replace(/[%_]/g, '\\$&');
-    query = query.or(`name.ilike.%${searchSafe}%,description.ilike.%${searchSafe}%,author.ilike.%${searchSafe}%,series.ilike.%${searchSafe}%`);
+    let orQuery = `name.ilike.%${searchSafe}%,description.ilike.%${searchSafe}%,author.ilike.%${searchSafe}%,series.ilike.%${searchSafe}%`;
+    
+    const exactLower = search.toLowerCase().trim();
+    if (['manga'].includes(exactLower)) {
+      orQuery += `,category.eq.manga`;
+    }
+    
+    query = query.or(orQuery);
   }
 
   if (minPrice && !isNaN(minPrice)) query = query.gte('price', minPrice);

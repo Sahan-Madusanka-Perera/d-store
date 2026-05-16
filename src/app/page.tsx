@@ -4,13 +4,13 @@ import { CategoryGrid } from "@/components/sections/CategoryGrid";
 import { RecommendedProducts } from "@/components/sections/RecommendedProducts";
 import Navbar from '@/components/layout/Navbar';
 import { createClient } from '@/utils/supabase/server'
+import { Shield, CheckCircle, Truck, Globe } from 'lucide-react';
 
-// Mock Data
 const FRESH_DROPS = [
-  { id: '1', name: 'Jujutsu Kaisen Vol. 25', price: 'LKR 2,500', rating: 5, image: '' },
-  { id: '2', name: 'Luffy Gear 5 T-Shirt', price: 'LKR 4,500', rating: 4.5, image: '' },
-  { id: '3', name: 'Zoro Enma Replica', price: 'LKR 12,000', rating: 5, image: '' },
-  { id: '4', name: 'Chainsaw Man Pochita Plush', price: 'LKR 3,500', rating: 4.8, image: '' },
+  { id: '1', name: 'Jujutsu Kaisen Vol. 25', price: 'LKR 2,500', rating: 5, images: [] },
+  { id: '2', name: 'Luffy Gear 5 T-Shirt', price: 'LKR 4,500', rating: 4.5, images: [] },
+  { id: '3', name: 'Zoro Enma Replica', price: 'LKR 12,000', rating: 5, images: [] },
+  { id: '4', name: 'Chainsaw Man Pochita Plush', price: 'LKR 3,500', rating: 4.8, images: [] },
 ];
 
 export default async function Home() {
@@ -77,19 +77,19 @@ export default async function Home() {
 
   const freshDropsData = latestProducts && latestProducts.length > 0
     ? latestProducts.map(p => {
-      let image = '';
+      const images: string[] = [];
       if (p.image_urls && Array.isArray(p.image_urls) && p.image_urls.length > 0) {
-        image = p.image_urls[0];
+        images.push(...p.image_urls);
       } else if (p.image_url) {
-        image = p.image_url;
+        images.push(p.image_url);
       }
 
       return {
         id: p.id.toString(),
         name: p.name,
         price: formatPrice(p.price),
-        rating: 5, // Mock rating or compute if available
-        image: image
+        rating: 5,
+        images
       };
     })
     : FRESH_DROPS;

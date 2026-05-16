@@ -107,7 +107,19 @@ export default async function ProductsPage(props: ProductsPageProps) {
 
   if (search) {
     const searchSafe = search.replace(/[%_]/g, '\\$&');
-    const orQuery = `name.ilike.%${searchSafe}%,description.ilike.%${searchSafe}%,author.ilike.%${searchSafe}%,brand.ilike.%${searchSafe}%,series.ilike.%${searchSafe}%,character_names.cs.{${searchSafe}}`;
+    let orQuery = `name.ilike.%${searchSafe}%,description.ilike.%${searchSafe}%,author.ilike.%${searchSafe}%,brand.ilike.%${searchSafe}%,series.ilike.%${searchSafe}%,character_names.cs.{${searchSafe}}`;
+    
+    const exactLower = search.toLowerCase().trim();
+    if (['manga'].includes(exactLower)) {
+      orQuery += `,category.eq.manga`;
+    }
+    if (['figure', 'figures', 'anime figure', 'anime figures'].includes(exactLower)) {
+      orQuery += `,category.eq.figures`;
+    }
+    if (['shirt', 'shirts', 'tshirt', 't-shirt', 'tshirts', 't-shirts', 'apparel', 'graphic tshirt', 'graphic tshirts'].includes(exactLower)) {
+      orQuery += `,category.eq.tshirts`;
+    }
+    
     query = query.or(orQuery);
   }
 

@@ -2,12 +2,13 @@ import { requireAdmin } from '@/lib/auth'
 import UserProfile from '@/components/profile/UserProfile'
 import ProductManager from '@/components/admin/ProductManager'
 import CarouselManager from '@/components/admin/CarouselManager'
+import NavCategoryManager from '@/components/admin/NavCategoryManager'
 import { createClient } from '@/utils/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Package, DollarSign, AlertTriangle, Users, TrendingUp, ShoppingCart, Eye, Settings, Mail, LayoutTemplate, Activity } from 'lucide-react'
+import { Package, DollarSign, AlertTriangle, Users, TrendingUp, ShoppingCart, Eye, Settings, Mail, LayoutTemplate, Activity, Menu as MenuIcon } from 'lucide-react'
 import Link from 'next/link'
 import DashboardActions from '@/components/admin/DashboardActions'
 export default async function AdminDashboard() {
@@ -68,6 +69,7 @@ export default async function AdminDashboard() {
               <TabsTrigger value="overview" className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-md transition-all"><Activity className="w-4 h-4 mr-2" /> Overview</TabsTrigger>
               <TabsTrigger value="products" className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-md transition-all"><Package className="w-4 h-4 mr-2" /> Products</TabsTrigger>
               <TabsTrigger value="carousel" className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-md transition-all"><LayoutTemplate className="w-4 h-4 mr-2" /> Carousel</TabsTrigger>
+              <TabsTrigger value="navigation" className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-md transition-all"><MenuIcon className="w-4 h-4 mr-2" /> Navigation</TabsTrigger>
             </TabsList>
           </div>
 
@@ -228,6 +230,21 @@ export default async function AdminDashboard() {
             <Card className="border-2 border-gray-200 shadow-lg rounded-xl overflow-hidden">
               <CardContent className="p-6">
                 <CarouselManager />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="navigation" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <Card className="border-2 border-gray-200 shadow-lg rounded-xl overflow-hidden">
+              <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
+                <CardTitle className="flex items-center gap-2 text-2xl font-black uppercase tracking-tight">
+                  <MenuIcon className="h-6 w-6" />
+                  Navigation Categories
+                </CardTitle>
+                <CardDescription className="text-gray-500 font-medium">Manage navbar dropdown categories and their sub-items.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                <NavCategoryManager />
               </CardContent>
             </Card>
           </TabsContent>
