@@ -216,14 +216,14 @@ export default function Navbar() {
 
       {/* Mobile Menu Overlay */}
       <div
-        className={`fixed inset-0 z-[100] md:hidden transition-all duration-500 ${mobileOpen ? 'visible' : 'invisible'}`}
+        className={`fixed inset-0 z-[100] md:hidden transition-all duration-500 ${mobileOpen ? 'visible pointer-events-auto' : 'invisible pointer-events-none'}`}
         onClick={() => setMobileOpen(false)}
       >
         <div
           className={`absolute inset-0 bg-black/95 backdrop-blur-md transition-opacity duration-500 ${mobileOpen ? 'opacity-100' : 'opacity-0'}`}
         />
         <div
-          className={`relative z-10 h-[100dvh] flex flex-col px-6 pt-6 pb-6 sm:pb-8 transition-all duration-500 ${mobileOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}
+          className={`relative z-10 h-[100dvh] flex flex-col px-6 pt-6 pb-6 sm:pb-8 transition-all duration-500 ${mobileOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-4 pointer-events-none'}`}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex flex-shrink-0 items-center justify-between mb-8">

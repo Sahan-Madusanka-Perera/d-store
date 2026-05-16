@@ -80,19 +80,18 @@ export default function UniversalSearch({ onOpen, isMobile }: UniversalSearchPro
     }
 
     return (
+        <>
+            {isMobile ? (
+                <button onClick={() => handleOpenChange(true)} className="flex w-full items-center gap-3 bg-zinc-900/50 px-4 py-3.5 text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-colors">
+                    <Search className="w-5 h-5 shrink-0" strokeWidth={1.5} />
+                    <span className="text-base font-medium">Search store...</span>
+                </button>
+            ) : (
+                <Button onClick={() => handleOpenChange(true)} variant="ghost" size="icon" className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full text-zinc-300 hover:text-white hover:bg-white/10 transition-all duration-200 touch-manipulation">
+                    <Search className="h-5 w-5" strokeWidth={1.5} />
+                </Button>
+            )}
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-                {isMobile ? (
-                    <button className="flex w-full items-center gap-3 bg-zinc-900/50 px-4 py-3.5 text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-colors">
-                        <Search className="w-5 h-5 shrink-0" strokeWidth={1.5} />
-                        <span className="text-base font-medium">Search store...</span>
-                    </button>
-                ) : (
-                    <Button variant="ghost" size="icon" className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full text-zinc-300 hover:text-white hover:bg-white/10 transition-all duration-200 touch-manipulation">
-                        <Search className="h-5 w-5" strokeWidth={1.5} />
-                    </Button>
-                )}
-            </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] p-0 gap-0 bg-zinc-950 border-white/10 shadow-2xl overflow-hidden rounded-2xl">
                 <DialogTitle className="sr-only">Search Products</DialogTitle>
                 <div className="flex items-center px-4 py-3 border-b border-white/10">
@@ -106,8 +105,13 @@ export default function UniversalSearch({ onOpen, isMobile }: UniversalSearchPro
                         onChange={(e) => setQuery(e.target.value)}
                     />
                     {query && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-white rounded-full ml-2" onClick={() => setQuery('')}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-white rounded-full ml-1" onClick={() => setQuery('')}>
                             <X className="h-4 w-4" />
+                        </Button>
+                    )}
+                    {isMobile && (
+                        <Button variant="ghost" className="h-8 px-2 ml-1 text-sm font-medium text-zinc-400 hover:text-white" onClick={() => setOpen(false)}>
+                            Cancel
                         </Button>
                     )}
                 </div>
@@ -192,5 +196,6 @@ export default function UniversalSearch({ onOpen, isMobile }: UniversalSearchPro
                 </div>
             </DialogContent>
         </Dialog>
+        </>
     )
 }
