@@ -65,7 +65,7 @@ export function HeroCarousel({ initialSlides }: HeroCarouselProps) {
                 </div>
               )}
 
-              <div className="max-w-7xl mx-auto px-5 sm:px-6 w-full grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center pt-24 sm:pt-28 md:pt-0 pb-24 md:pb-20 z-10">
+              <div className="max-w-7xl mx-auto px-5 sm:px-6 w-full grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center pt-32 sm:pt-40 md:pt-0 pb-24 md:pb-20 z-10">
 
                 {/* Content */}
                 <div className={`space-y-4 md:space-y-8 text-center ${slide.image_alignment === 'left' ? 'md:text-right md:order-last' : 'md:text-left'}`}>

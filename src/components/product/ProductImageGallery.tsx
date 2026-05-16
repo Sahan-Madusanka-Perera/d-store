@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Expand, X } from 'lucide-react';
+import useEmblaCarousel from 'embla-carousel-react';
 
 interface ProductImageGalleryProps {
   images: string[];
@@ -16,13 +17,30 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isFullScreen, setIsFullScreen] = useState(false);
 
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
+
   const nextImage = () => {
-    setSelectedImageIndex((prev) => (prev + 1) % images.length);
+    if (emblaApi) emblaApi.scrollNext();
   };
 
   const prevImage = () => {
-    setSelectedImageIndex((prev) => (prev - 1 + images.length) % images.length);
+    if (emblaApi) emblaApi.scrollPrev();
   };
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    const onSelect = () => {
+      setSelectedImageIndex(emblaApi.selectedScrollSnap());
+    };
+    emblaApi.on('select', onSelect);
+    return () => {
+      emblaApi.off('select', onSelect);
+    };
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (emblaApi) emblaApi.scrollTo(selectedImageIndex);
+  }, [selectedImageIndex, emblaApi]);
 
   // Keyboard navigation for full screen mode
   useEffect(() => {
@@ -50,14 +68,22 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
     <div className="space-y-4">
       {/* Main Image with Navigation */}
       <div className="relative aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden shadow-xl group cursor-pointer">
-        <Image
-          src={images[selectedImageIndex]}
-          alt={productName}
-          fill
-          className="object-cover transition-all duration-300 hover:scale-105"
-          priority
-          onClick={() => setIsFullScreen(true)}
-        />
+        <div className="overflow-hidden h-full" ref={emblaRef}>
+          <div className="flex h-full touch-pan-y">
+            {images.map((img, idx) => (
+              <div key={idx} className="relative flex-[0_0_100%] min-w-0 h-full">
+                <Image
+                  src={img}
+                  alt={`${productName} - Image ${idx + 1}`}
+                  fill
+                  className="object-cover transition-all duration-300 group-hover:scale-105"
+                  priority={idx === 0}
+                  onClick={() => setIsFullScreen(true)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
         
         {/* Full Screen Button */}
         <Button

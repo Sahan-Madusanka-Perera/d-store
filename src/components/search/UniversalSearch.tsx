@@ -11,9 +11,10 @@ import Image from 'next/image'
 
 interface UniversalSearchProps {
     onOpen?: () => void;
+    isMobile?: boolean;
 }
 
-export default function UniversalSearch({ onOpen }: UniversalSearchProps = {}) {
+export default function UniversalSearch({ onOpen, isMobile }: UniversalSearchProps = {}) {
     const [open, setOpen] = useState(false)
     const [query, setQuery] = useState('')
     const [results, setResults] = useState<DatabaseProduct[]>([])
@@ -81,9 +82,16 @@ export default function UniversalSearch({ onOpen }: UniversalSearchProps = {}) {
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full text-zinc-300 hover:text-white hover:bg-white/10 transition-all duration-200 touch-manipulation">
-                    <Search className="h-5 w-5" strokeWidth={1.5} />
-                </Button>
+                {isMobile ? (
+                    <button className="flex w-full items-center gap-3 bg-zinc-900/50 px-4 py-3.5 text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-colors">
+                        <Search className="w-5 h-5 shrink-0" strokeWidth={1.5} />
+                        <span className="text-base font-medium">Search store...</span>
+                    </button>
+                ) : (
+                    <Button variant="ghost" size="icon" className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full text-zinc-300 hover:text-white hover:bg-white/10 transition-all duration-200 touch-manipulation">
+                        <Search className="h-5 w-5" strokeWidth={1.5} />
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] p-0 gap-0 bg-zinc-950 border-white/10 shadow-2xl overflow-hidden rounded-2xl">
                 <DialogTitle className="sr-only">Search Products</DialogTitle>

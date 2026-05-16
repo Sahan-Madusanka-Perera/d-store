@@ -275,8 +275,8 @@ export default function Navbar() {
           </nav>
 
           <div className="flex-shrink-0 space-y-3 pt-4 mt-auto border-t border-white/10">
-            <div className="border border-white/10 rounded-2xl overflow-hidden">
-              <UniversalSearch onOpen={() => setMobileOpen(false)} />
+            <div className="border border-white/10 rounded-2xl overflow-hidden bg-zinc-900/30">
+              <UniversalSearch onOpen={() => setMobileOpen(false)} isMobile={true} />
             </div>
             <div className="flex gap-3">
               <Link
