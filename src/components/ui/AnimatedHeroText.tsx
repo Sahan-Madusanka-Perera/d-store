@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, Variants } from 'framer-motion';
 
 export default function AnimatedHeroText({ 
   text, 
@@ -11,7 +11,7 @@ export default function AnimatedHeroText({
 }) {
   const letters = Array.from(text);
 
-  const container = {
+  const container: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -19,7 +19,7 @@ export default function AnimatedHeroText({
     },
   };
 
-  const child = {
+  const child: Variants = {
     visible: {
       opacity: 1,
       y: 0,
