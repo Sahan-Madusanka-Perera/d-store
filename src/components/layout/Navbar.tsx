@@ -60,6 +60,11 @@ export default function Navbar() {
   const cartTotalItems = useCartStore(state => state.totalItems);
   const fetchAvailableDiscounts = useCartStore(state => state.fetchAvailableDiscounts);
   const wishlistCount = useWishlistStore(state => state.items.length);
+  const fetchWishlist = useWishlistStore(state => state.fetchWishlist);
+
+  useEffect(() => {
+    fetchWishlist();
+  }, [fetchWishlist]);
 
   useEffect(() => {
     fetch('/api/nav-categories')

@@ -6,11 +6,12 @@ import AddToCartButton from '@/components/product/AddToCartButton';
 import WhatsAppInquiryButton from '@/components/product/WhatsAppInquiryButton';
 import ProductImageGallery from '@/components/product/ProductImageGallery';
 import ProductInfoAssistant from '@/components/product/ProductInfoAssistant';
+import ProductCard from '@/components/product/ProductCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Star, ArrowLeft, Truck, Shield, RotateCcw, Heart, Sparkles, Clock, Zap, Bell, BookOpen, Languages, Calendar, Hash, Weight, Maximize, Palette, Brush, Gift, Ruler, Puzzle, Box, Battery, Factory, Info, Book } from 'lucide-react';
+import { Star, ArrowLeft, Truck, Shield, RotateCcw, Heart, Sparkles, Clock, Zap, Bell, BookOpen, Languages, Calendar, Hash, Weight, Maximize, Palette, Brush, Gift, Ruler, Puzzle, Box, Battery, Factory, Info, Book, Globe, Lock } from 'lucide-react';
 import ExternalRating from '@/components/product/ExternalRating';
 import WishlistButton from '@/components/product/WishlistButton';
 
@@ -111,6 +112,37 @@ export default async function ProductPage({ params }: ProductPageProps) {
       discountPercent = discountData.discount_percentage;
     }
   }
+
+  // Fetch related products
+  const filterParts: string[] = [];
+  if (dbProduct.brand) filterParts.push(`brand.eq."${dbProduct.brand.replace(/"/g, '""')}"`);
+  if (dbProduct.publisher) filterParts.push(`publisher.eq."${dbProduct.publisher.replace(/"/g, '""')}"`);
+  if (dbProduct.series) filterParts.push(`series.eq."${dbProduct.series.replace(/"/g, '""')}"`);
+  
+  let relatedQuery = supabase
+    .from('products')
+    .select('*, image_url, image_urls')
+    .eq('category', dbProduct.category)
+    .neq('id', dbProduct.id);
+    
+  if (filterParts.length > 0) {
+    relatedQuery = relatedQuery.or(filterParts.join(','));
+  }
+  
+  let { data: relatedData } = await relatedQuery.limit(4);
+  
+  // Fallback if no specific matches found
+  if (!relatedData || relatedData.length === 0) {
+    const { data: fallbackData } = await supabase
+      .from('products')
+      .select('*, image_url, image_urls')
+      .eq('category', dbProduct.category)
+      .neq('id', dbProduct.id)
+      .limit(4);
+    relatedData = fallbackData;
+  }
+  
+  const relatedProducts = (relatedData || []).map(mapDatabaseProduct);
 
   const shouldShowDiscount = discountPercent > 0;
   const originalPrice = product.price;
@@ -411,18 +443,22 @@ export default async function ProductPage({ params }: ProductPageProps) {
               />
 
               {/* Additional Info - Refined */}
-              <div className="grid grid-cols-1 gap-3 pt-2">
-                <div className="flex items-center gap-3 text-sm text-muted-foreground p-3 bg-primary/5 rounded-lg">
-                  <Truck className="h-5 w-5 text-primary flex-shrink-0" />
-                  <span>Free shipping on orders over LKR 5,000</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <div className="flex items-center gap-3 text-sm font-semibold text-zinc-700 p-3 bg-zinc-50 border border-zinc-100 rounded-xl">
+                  <Truck className="h-5 w-5 text-indigo-500 flex-shrink-0" />
+                  <span>Island-Wide Free Delivery</span>
                 </div>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground p-3 bg-primary/5 rounded-lg">
-                  <Shield className="h-5 w-5 text-primary flex-shrink-0" />
-                  <span>Authentic products guaranteed</span>
+                <div className="flex items-center gap-3 text-sm font-semibold text-zinc-700 p-3 bg-zinc-50 border border-zinc-100 rounded-xl">
+                  <Shield className="h-5 w-5 text-emerald-500 flex-shrink-0" />
+                  <span>Authentic Products Guaranteed</span>
                 </div>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground p-3 bg-primary/5 rounded-lg">
-                  <RotateCcw className="h-5 w-5 text-primary flex-shrink-0" />
-                  <span>30-day return policy</span>
+                <div className="flex items-center gap-3 text-sm font-semibold text-zinc-700 p-3 bg-zinc-50 border border-zinc-100 rounded-xl">
+                  <Globe className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                  <span>Officially Licensed</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm font-semibold text-zinc-700 p-3 bg-zinc-50 border border-zinc-100 rounded-xl">
+                  <Lock className="h-5 w-5 text-rose-500 flex-shrink-0" />
+                  <span>Secure Shipping</span>
                 </div>
               </div>
             </div>
@@ -430,18 +466,33 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </div>
 
         {/* Related Products Section - Elegant */}
-        <Separator className="my-16" />
-        <div className="text-center max-w-2xl mx-auto">
-          <h2 className="text-3xl font-bold text-foreground mb-4">You might also like</h2>
-          <p className="text-muted-foreground mb-8 text-lg">
-            Discover more products in the {product.category} category
-          </p>
-          <Button asChild variant="outline" size="lg" className="shadow-sm hover:shadow-md">
-            <Link href={`/${product.category}`}>
-              View More {product.category}
-            </Link>
-          </Button>
-        </div>
+        {relatedProducts.length > 0 && (
+          <>
+            <Separator className="my-16" />
+            <div className="max-w-7xl mx-auto">
+              <div className="text-center max-w-2xl mx-auto mb-12">
+                <h2 className="text-3xl font-bold text-foreground mb-4">You might also like</h2>
+                <p className="text-muted-foreground text-lg">
+                  Discover more products in the {product.category} category
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+                {relatedProducts.map(relatedProduct => (
+                  <ProductCard key={relatedProduct.id} product={relatedProduct} />
+                ))}
+              </div>
+
+              <div className="mt-12 text-center">
+                <Button asChild variant="outline" size="lg" className="shadow-sm hover:shadow-md">
+                  <Link href={`/${product.category}`}>
+                    View More {product.category}
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

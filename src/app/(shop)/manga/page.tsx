@@ -76,7 +76,7 @@ export default async function MangaPage(props: MangaPageProps) {
 
   if (search) {
     const searchSafe = search.replace(/[%_]/g, '\\$&');
-    let orQuery = `name.ilike.%${searchSafe}%,description.ilike.%${searchSafe}%,author.ilike.%${searchSafe}%,series.ilike.%${searchSafe}%`;
+    let orQuery = `name.ilike.%${searchSafe}%,description.ilike.%${searchSafe}%,author.ilike.%${searchSafe}%,series.ilike.%${searchSafe}%,tags.cs.{${searchSafe}}`;
     
     const exactLower = search.toLowerCase().trim();
     if (['manga'].includes(exactLower)) {
@@ -125,7 +125,7 @@ export default async function MangaPage(props: MangaPageProps) {
             <BookOpen className="h-6 w-6 text-zinc-900" strokeWidth={1.5} />
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-zinc-900 tracking-tighter uppercase mb-6">
-            Manga Collection
+            {search ? search : 'Manga Collection'}
           </h1>
           <p className="text-base sm:text-lg text-zinc-500 max-w-2xl mx-auto font-medium leading-relaxed">
             Immerse yourself in captivating stories with our curated collection of manga.

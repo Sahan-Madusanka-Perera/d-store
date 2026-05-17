@@ -162,7 +162,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <Card className="group relative overflow-hidden border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-xl transition-all duration-300 h-full flex flex-col bg-white p-0 gap-0 rounded-2xl">
       {/* Image */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
+      <div className="relative aspect-[4/5] overflow-hidden bg-gray-100">
         <Link href={`/products/${product.id}`} className="block w-full h-full">
           {product.images && product.images.length > 1 ? (
             <div className="relative w-full h-full">

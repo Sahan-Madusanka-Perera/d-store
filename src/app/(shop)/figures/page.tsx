@@ -77,7 +77,7 @@ export default async function FiguresPage(props: FiguresPageProps) {
 
   if (search) {
     const searchSafe = search.replace(/[%_]/g, '\\$&');
-    let orQuery = `name.ilike.%${searchSafe}%,description.ilike.%${searchSafe}%,brand.ilike.%${searchSafe}%,series.ilike.%${searchSafe}%`;
+    let orQuery = `name.ilike.%${searchSafe}%,description.ilike.%${searchSafe}%,brand.ilike.%${searchSafe}%,series.ilike.%${searchSafe}%,tags.cs.{${searchSafe}}`;
     
     const exactLower = search.toLowerCase().trim();
     if (['figure', 'figures', 'anime figure', 'anime figures'].includes(exactLower)) {
@@ -124,7 +124,7 @@ export default async function FiguresPage(props: FiguresPageProps) {
         <div className="flex flex-col items-center text-center mb-16 md:mb-20">
           
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-zinc-900 tracking-tighter uppercase mb-6">
-            Anime Figures
+            {search ? search : 'Anime Figures'}
           </h1>
           {/*<Image src="/son_goku.jpg" alt="Anime Figures" width={600} height={400} className="w-full max-w-3xl rounded-2xl mb-6 object-cover" />*/}
           <p className="text-base sm:text-lg text-zinc-500 max-w-2xl mx-auto font-medium leading-relaxed">

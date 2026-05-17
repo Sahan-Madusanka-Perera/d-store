@@ -44,7 +44,7 @@ export function RecommendedProducts() {
           <div className="flex gap-6 overflow-x-hidden">
             {[1, 2, 3, 4].map((n) => (
               <div key={n} className="w-[280px] sm:w-[320px] flex-none">
-                <div className="aspect-[3/4] bg-zinc-200 dark:bg-zinc-800 rounded-[1rem] animate-pulse mb-4"></div>
+                <div className="aspect-[4/5] bg-zinc-200 dark:bg-zinc-800 rounded-[1rem] animate-pulse mb-4"></div>
                 <div className="h-6 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse w-3/4 mb-2"></div>
                 <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse w-1/4"></div>
               </div>

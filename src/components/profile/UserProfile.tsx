@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { User as UserIcon, Package, LogOut } from 'lucide-react'
+import { User as UserIcon, Package, LogOut, Shield } from 'lucide-react'
 
 interface UserProfileProps {
   onLogout?: () => void
@@ -19,26 +19,64 @@ interface UserProfileProps {
 
 export default function UserProfile({ onLogout }: UserProfileProps) {
   const [user, setUser] = useState<User | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-      setLoading(false)
+    let mounted = true;
+
+    const checkSession = async () => {
+      // getSession reads from local storage instantly
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (mounted) {
+        setUser(session?.user ?? null)
+        setLoading(false) // Remove skeleton immediately
+      }
+
+      if (session?.user && mounted) {
+        // Fetch admin role in the background
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single()
+          
+        if (mounted && profile?.role === 'admin') {
+          setIsAdmin(true)
+        }
+      }
     }
 
-    getUser()
+    checkSession()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null)
-        setLoading(false)
+      async (event, session) => {
+        if (mounted) {
+          setUser(session?.user ?? null)
+          setLoading(false)
+        }
+        
+        if (session?.user && mounted) {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single()
+          if (mounted) {
+            setIsAdmin(profile?.role === 'admin')
+          }
+        } else if (mounted) {
+          setIsAdmin(false)
+        }
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    }
   }, [supabase.auth])
 
   const handleLogout = async () => {
@@ -49,9 +87,8 @@ export default function UserProfile({ onLogout }: UserProfileProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center space-x-2">
-        <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
-        <div className="w-20 h-4 bg-gray-200 rounded animate-pulse hidden sm:block"></div>
+      <div className="flex items-center space-x-4 h-8">
+        <UserIcon className="h-5 w-5 text-zinc-400" strokeWidth={1.5} />
       </div>
     )
   }
@@ -93,6 +130,17 @@ export default function UserProfile({ onLogout }: UserProfileProps) {
           <p className="text-xs leading-none text-gray-500 mt-1.5 truncate">{user.email}</p>
         </div>
         <DropdownMenuSeparator />
+        {isAdmin && (
+          <>
+            <DropdownMenuItem asChild className="cursor-pointer bg-black/5 text-black font-bold hover:bg-black/10 focus:bg-black/10">
+              <Link href="/admin" className="flex items-center">
+                <Shield className="mr-2 h-4 w-4" />
+                <span>Admin Dashboard</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuItem asChild className="cursor-pointer">
           <Link href="/profile" className="flex items-center">
             <UserIcon className="mr-2 h-4 w-4 text-gray-500" />

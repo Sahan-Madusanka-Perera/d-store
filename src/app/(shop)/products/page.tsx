@@ -12,6 +12,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import AnimatedHeroText from '@/components/ui/AnimatedHeroText';
 
 interface DatabaseProduct {
   id: number;
@@ -107,7 +108,7 @@ export default async function ProductsPage(props: ProductsPageProps) {
 
   if (search) {
     const searchSafe = search.replace(/[%_]/g, '\\$&');
-    let orQuery = `name.ilike.%${searchSafe}%,description.ilike.%${searchSafe}%,author.ilike.%${searchSafe}%,brand.ilike.%${searchSafe}%,series.ilike.%${searchSafe}%,character_names.cs.{${searchSafe}}`;
+    let orQuery = `name.ilike.%${searchSafe}%,description.ilike.%${searchSafe}%,author.ilike.%${searchSafe}%,brand.ilike.%${searchSafe}%,series.ilike.%${searchSafe}%,character_names.cs.{${searchSafe}},tags.cs.{${searchSafe}}`;
     
     const exactLower = search.toLowerCase().trim();
     if (['manga'].includes(exactLower)) {
@@ -156,36 +157,85 @@ export default async function ProductsPage(props: ProductsPageProps) {
   const figuresCount = products.filter(p => p.category === 'figures').length;
   const tshirtCount = products.filter(p => p.category === 'tshirts').length;
 
+  // Check if we have a theme wallpaper for this search
+  let themeWallpaperUrl: string | null = null;
+  if (search) {
+    const { data: themeData } = await supabase
+      .from('nav_dropdown_items')
+      .select('image_url')
+      .ilike('label', search)
+      .not('image_url', 'is', null)
+      .maybeSingle();
+      
+    if (themeData?.image_url) {
+      themeWallpaperUrl = themeData.image_url;
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center">
-      <div className="w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-12 md:py-20">
-        {/* Header — matches category page design */}
-        <div className="flex flex-col items-center text-center mb-16 md:mb-20">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white border border-gray-200 rounded-full mb-8 shadow-sm">
-            <ShoppingBag className="h-6 w-6 text-zinc-900" strokeWidth={1.5} />
-          </div>
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-zinc-900 tracking-tighter uppercase mb-6">
-            All Products
-          </h1>
-          <p className="text-base sm:text-lg text-zinc-500 max-w-2xl mx-auto font-medium leading-relaxed">
-            Browse our entire catalogue of premium anime merchandise.
-            From manga and collectible figures to stylish apparel — find it all here.
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center relative">
+      
+      {/* Edge-to-Edge Theme Background Overlay */}
+      {themeWallpaperUrl && (
+        <div className="absolute -top-28 sm:-top-36 left-0 w-full h-[calc(70vh+7rem)] sm:h-[calc(85vh+9rem)] z-0 overflow-hidden bg-black pointer-events-none">
+          <img 
+            src={themeWallpaperUrl} 
+            alt={search || 'Series Theme'} 
+            className="w-full h-full object-cover opacity-70 scale-105 animate-slow-zoom" 
+          />
+          {/* Black overlay for contrast */}
+          <div className="absolute inset-0 bg-black/40"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-black/80"></div>
+          
+          {/* Gradient to fade the bottom of the image into pure black */}
+          <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black to-transparent"></div>
+        </div>
+      )}
+
+      <div className="w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-12 md:py-20 relative z-10">
+        
+        {/* Header */}
+        <div className={`flex flex-col items-center text-center ${themeWallpaperUrl ? 'pt-24 md:pt-40 mb-32 md:mb-48' : 'mb-16 md:mb-24'}`}>
+          
+          {!themeWallpaperUrl && (
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-white border border-gray-200 rounded-full mb-8 shadow-sm">
+              <ShoppingBag className="h-6 w-6 text-zinc-900" strokeWidth={1.5} />
+            </div>
+          )}
+
+          {themeWallpaperUrl ? (
+            <AnimatedHeroText 
+              text={search ? search : 'All Products'} 
+              className="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter uppercase mb-6 drop-shadow-2xl text-white" 
+            />
+          ) : (
+            <h1 className="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter uppercase mb-6 drop-shadow-2xl text-zinc-900">
+              {search ? search : 'All Products'}
+            </h1>
+          )}
+          
+          <p className={`text-base sm:text-lg max-w-2xl mx-auto font-medium leading-relaxed drop-shadow-md ${themeWallpaperUrl ? 'text-zinc-100 font-semibold' : 'text-zinc-500'}`}>
+            {themeWallpaperUrl 
+              ? `Explore our exclusive collection of ${search} premium merchandise.`
+              : `Browse our entire catalogue of premium anime merchandise. From manga and collectible figures to stylish apparel — find it all here.`}
           </p>
 
-          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-12 w-full">
-            <div className="flex flex-col items-center justify-center bg-white border border-gray-200 rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
-              <div className="text-4xl font-black text-zinc-900 tracking-tight pb-1">{products.length}</div>
-              <div className="text-xs text-zinc-500 font-semibold uppercase tracking-widest">Products</div>
+          {!themeWallpaperUrl && (
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-12 w-full">
+              <div className="flex flex-col items-center justify-center bg-white border border-gray-200 rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
+                <div className="text-4xl font-black text-zinc-900 tracking-tight pb-1">{products.length}</div>
+                <div className="text-xs text-zinc-500 font-semibold uppercase tracking-widest">Products</div>
+              </div>
+              <div className="flex flex-col items-center justify-center bg-white border border-gray-200 rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
+                <div className="text-4xl font-black text-zinc-900 tracking-tight pb-1">3</div>
+                <div className="text-xs text-zinc-500 font-semibold uppercase tracking-widest">Categories</div>
+              </div>
+              <div className="flex flex-col items-center justify-center bg-white border border-gray-200 rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
+                <div className="text-4xl font-black text-zinc-900 tracking-tight pb-1">New</div>
+                <div className="text-xs text-zinc-500 font-semibold uppercase tracking-widest">Arrivals</div>
+              </div>
             </div>
-            <div className="flex flex-col items-center justify-center bg-white border border-gray-200 rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
-              <div className="text-4xl font-black text-zinc-900 tracking-tight pb-1">3</div>
-              <div className="text-xs text-zinc-500 font-semibold uppercase tracking-widest">Categories</div>
-            </div>
-            <div className="flex flex-col items-center justify-center bg-white border border-gray-200 rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
-              <div className="text-4xl font-black text-zinc-900 tracking-tight pb-1">New</div>
-              <div className="text-xs text-zinc-500 font-semibold uppercase tracking-widest">Arrivals</div>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Content with Sidebar */}

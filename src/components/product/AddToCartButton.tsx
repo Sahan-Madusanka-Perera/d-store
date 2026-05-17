@@ -67,54 +67,42 @@ export default function AddToCartButton({ product, selectedSize, selectedColor }
   }
 
   return (
-    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+    <div className="flex flex-col sm:flex-row items-stretch gap-4 w-full">
       {/* Quantity Selector */}
-      <div className="flex items-center justify-center">
-        <div className="flex items-center border rounded-lg">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setQuantity(Math.max(1, quantity - 1))}
-            disabled={quantity <= 1}
-            className="h-10 w-10 rounded-r-none"
-          >
-            <Minus className="h-4 w-4" />
-          </Button>
+      <div className="flex items-center border rounded-xl bg-white shadow-sm h-14 w-full sm:w-auto">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setQuantity(Math.max(1, quantity - 1))}
+          disabled={quantity <= 1}
+          className="h-full w-14 rounded-r-none hover:bg-gray-100"
+        >
+          <Minus className="h-4 w-4" />
+        </Button>
 
-          <div className="flex items-center justify-center h-10 px-4 border-x bg-background min-w-[60px]">
-            <span className="font-medium">{quantity}</span>
-          </div>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-            disabled={quantity >= product.stock}
-            className="h-10 w-10 rounded-l-none"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+        <div className="flex items-center justify-center h-full px-6 border-x bg-gray-50/50 min-w-[70px]">
+          <span className="font-bold text-lg">{quantity}</span>
         </div>
 
-        {/* Stock indicator */}
-        <div className="ml-3">
-          {product.stock <= 5 && product.stock > 0 && (
-            <Badge variant="outline" className="text-orange-600 border-orange-200">
-              {product.stock} left
-            </Badge>
-          )}
-        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+          disabled={quantity >= product.stock}
+          className="h-full w-14 rounded-l-none hover:bg-gray-100"
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* Add to Cart Button */}
       <Button
         onClick={handleAddToCart}
         disabled={product.stock === 0}
-        size="lg"
-        className="flex-1 sm:min-w-[200px]"
+        className="flex-1 h-14 text-base font-black uppercase tracking-wide rounded-xl bg-black text-white hover:bg-indigo-600 hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-300 active:scale-[0.98]"
       >
-        <ShoppingCart className="w-4 h-4 mr-2" />
-        {product.stock === 0 ? 'Out of Stock' : `Add ${quantity} to Cart`}
+        <ShoppingCart className="w-5 h-5 mr-3" />
+        {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
       </Button>
     </div>
   )

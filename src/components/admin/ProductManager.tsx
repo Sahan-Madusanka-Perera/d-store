@@ -70,11 +70,12 @@ export default function ProductManager() {
 
   // Autocomplete states
   const [uniqueSeries, setUniqueSeries] = useState<string[]>([])
+  const [uniqueTags, setUniqueTags] = useState<string[]>([])
   const [uniqueCharacters, setUniqueCharacters] = useState<string[]>([])
   const [characterSearch, setCharacterSearch] = useState('')
   const [showCharacterSuggestions, setShowCharacterSuggestions] = useState(false)
 
-  // Fetch products
+  // Fetch products and categories
   const fetchProducts = async () => {
     setIsLoading(true)
     const { data, error } = await supabase
@@ -104,7 +105,25 @@ export default function ProductManager() {
         }
       })
 
+      // Fetch nav categories and their dropdown items
+      const { data: navData } = await supabase.from('nav_categories').select(`
+        *,
+        nav_dropdown_items (*)
+      `);
+      const tagSet = new Set<string>();
+      
+      if (navData) {
+        navData.forEach((nav: any) => {
+          if (nav.label === 'Series' && Array.isArray(nav.nav_dropdown_items)) {
+            nav.nav_dropdown_items.forEach((item: any) => seriesSet.add(item.label.trim()));
+          } else if (Array.isArray(nav.nav_dropdown_items)) {
+            nav.nav_dropdown_items.forEach((item: any) => tagSet.add(item.label.trim()));
+          }
+        });
+      }
+
       setUniqueSeries(Array.from(seriesSet).filter(Boolean).sort())
+      setUniqueTags(Array.from(tagSet).filter(Boolean).sort())
       setUniqueCharacters(Array.from(charsSet).filter(Boolean).sort())
     }
     setIsLoading(false)
@@ -176,16 +195,46 @@ export default function ProductManager() {
 
       console.log(`Uploading image ${index + 1}: ${image.name} as ${fileName}`)
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('product-images')
-        .upload(fileName, image, {
-          cacheControl: '3600',
-          upsert: false
+      try {
+        // We use native fetch to completely bypass supabase-js hanging bugs in Next.js Turbopack
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.access_token) {
+          throw new Error('Not authenticated')
+        }
+
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://bqeuhcdfjxexaxqpxnny.supabase.co'
+        const uploadUrl = `${supabaseUrl}/storage/v1/object/product-images/${fileName}`
+
+        // Convert File to ArrayBuffer to prevent mysterious browser/fetch streaming hangs
+        const arrayBuffer = await image.arrayBuffer()
+
+        // Create an AbortController for a 60-second timeout
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 60000)
+
+        const response = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': image.type || 'image/jpeg',
+            'x-upsert': 'false'
+          },
+          body: arrayBuffer,
+          signal: controller.signal
         })
 
-      if (uploadError) {
-        console.error(`Image ${index + 1} upload error:`, uploadError)
-        throw new Error(`Image ${index + 1} upload failed: ${uploadError.message}`)
+        clearTimeout(timeoutId)
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error(`Image ${index + 1} upload error response:`, errorText)
+          throw new Error(`Upload failed with status ${response.status}: ${errorText}`)
+        }
+
+        console.log(`Image ${index + 1} upload native fetch successful.`)
+      } catch (err) {
+        console.error(`Critical failure during upload of image ${index + 1}:`, err)
+        throw err
       }
 
       const { data: { publicUrl } } = supabase.storage
@@ -268,14 +317,14 @@ export default function ProductManager() {
         publisher: formData.publisher || null,
         brand: formData.brand || null,
         series: formData.series || null,
-        tags: formData.tags ? formData.tags.split(',').map(t => t.trim()) : null,
-        character_names: formData.character_names ? formData.character_names.split(',').map(c => c.trim()) : null,
-        stock: parseInt(formData.stock),
+        tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : null,
+        character_names: formData.character_names ? formData.character_names.split(',').map(c => c.trim()).filter(Boolean) : null,
+        stock: parseInt(formData.stock) || 0,
         // Support both single image_url and multiple image_urls for backward compatibility
         image_url: imageUrls.length > 0 ? imageUrls[0] : null,
         image_urls: imageUrls.length > 0 ? imageUrls : null,
-        sizes: formData.sizes ? formData.sizes.split(',').map(s => s.trim()) : null,
-        colors: formData.colors ? formData.colors.split(',').map(c => c.trim()) : null,
+        sizes: formData.sizes ? formData.sizes.split(',').map(s => s.trim()).filter(Boolean) : null,
+        colors: formData.colors ? formData.colors.split(',').map(c => c.trim()).filter(Boolean) : null,
         status: formData.status || 'available',
         specifications: Object.keys(formData.specifications).length > 0 ? formData.specifications : null,
       }
@@ -283,6 +332,7 @@ export default function ProductManager() {
       console.log('Preparing to save product data:', productData)
 
       let result
+      console.log('Executing database operation...')
       if (editingProduct) {
         console.log('Updating existing product:', editingProduct.id)
         result = await supabase
@@ -296,20 +346,22 @@ export default function ProductManager() {
           .insert([productData])
       }
 
-      console.log('Database operation result:', result)
+      console.log('Database operation completed. Result:', result)
 
       if (result.error) {
-        console.error('Database error:', result.error)
+        console.error('Database error details:', result.error)
         throw new Error(result.error.message)
       }
 
+      console.log('Product saved successfully. Showing toast and resetting form.')
       toast.success(editingProduct ? 'Product updated successfully!' : 'Product added successfully!')
       resetForm()
       fetchProducts()
     } catch (error) {
-      console.error('Error saving product:', error)
+      console.error('*** ERROR SAVING PRODUCT ***', error)
       toast.error(`Failed to save product: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
+      console.log('Executing finally block. Setting isSubmitting to false.')
       setIsSubmitting(false)
     }
   }
@@ -399,7 +451,7 @@ export default function ProductManager() {
         setShowAddForm(open)
       }}>
 
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden z-50 bg-white border border-gray-200 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] rounded-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden bg-white border border-gray-200 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] rounded-2xl z-[10000]">
           <DialogHeader className="p-6 px-8 border-b border-gray-100 bg-gray-50/80 shrink-0">
             <DialogTitle className="flex items-center gap-2 text-2xl font-black uppercase tracking-tight text-gray-900">
               <Package className="h-6 w-6 text-black" />
@@ -411,11 +463,16 @@ export default function ProductManager() {
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden">
-            <div className="p-6 px-8 overflow-y-auto flex-1 space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Basic Information */}
-                <div className="space-y-5">
-                  <div>
+            <div className="p-6 px-8 overflow-y-auto flex-1 space-y-8 bg-white">
+              {/* Basic Information Section */}
+              <div className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
+                <h3 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2">
+                  <div className="w-2 h-6 bg-black rounded-sm" />
+                  Basic Details
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="col-span-1 md:col-span-2">
                     <Label htmlFor="name" className="text-gray-900 font-bold mb-1.5 block">Product Name</Label>
                     <Input
                       id="name"
@@ -433,40 +490,12 @@ export default function ProductManager() {
                       <SelectTrigger className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black rounded-xl h-11">
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
-                      <SelectContent className="bg-white border-gray-200 text-black rounded-xl">
+                      <SelectContent className="bg-white border-gray-200 text-black rounded-xl z-[10001]">
                         <SelectItem value="manga" className="focus:bg-gray-50 focus:text-black cursor-pointer">Manga</SelectItem>
                         <SelectItem value="figures" className="focus:bg-gray-50 focus:text-black cursor-pointer">Figures</SelectItem>
                         <SelectItem value="tshirts" className="focus:bg-gray-50 focus:text-black cursor-pointer">T-Shirts</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="price" className="text-gray-900 font-bold mb-1.5 block">Price (LKR)</Label>
-                      <Input
-                        id="price"
-                        type="number"
-                        step="0.01"
-                        value={formData.price}
-                        onChange={(e) => handleInputChange('price', e.target.value)}
-                        required
-                        placeholder="0.00"
-                        className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 rounded-xl h-11"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="stock" className="text-gray-900 font-bold mb-1.5 block">Stock Quantity</Label>
-                      <Input
-                        id="stock"
-                        type="number"
-                        value={formData.stock}
-                        onChange={(e) => handleInputChange('stock', e.target.value)}
-                        required
-                        placeholder="0"
-                        className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 rounded-xl h-11"
-                      />
-                    </div>
                   </div>
 
                   <div>
@@ -475,22 +504,67 @@ export default function ProductManager() {
                       <SelectTrigger className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black rounded-xl h-11">
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
-                      <SelectContent className="bg-white border-gray-200 text-black rounded-xl">
+                      <SelectContent className="bg-white border-gray-200 text-black rounded-xl z-[10001]">
                         <SelectItem value="available" className="focus:bg-gray-50 focus:text-black cursor-pointer">Available</SelectItem>
                         <SelectItem value="coming_soon" className="focus:bg-gray-50 focus:text-black cursor-pointer">Coming Soon</SelectItem>
                         <SelectItem value="pre_order" className="focus:bg-gray-50 focus:text-black cursor-pointer">Pre-order</SelectItem>
                         <SelectItem value="out_of_stock" className="focus:bg-gray-50 focus:text-black cursor-pointer">Out of Stock</SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-gray-500 mt-1.5 font-medium">Controls how the product appears to customers</p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="price" className="text-gray-900 font-bold mb-1.5 block">Price (LKR)</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.01"
+                      value={formData.price}
+                      onChange={(e) => handleInputChange('price', e.target.value)}
+                      required
+                      placeholder="0.00"
+                      className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 rounded-xl h-11"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="stock" className="text-gray-900 font-bold mb-1.5 block">Stock Quantity</Label>
+                    <Input
+                      id="stock"
+                      type="number"
+                      value={formData.stock}
+                      onChange={(e) => handleInputChange('stock', e.target.value)}
+                      required
+                      placeholder="0"
+                      className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 rounded-xl h-11"
+                    />
+                  </div>
+
+                  <div className="col-span-1 md:col-span-2 mt-2">
+                    <Label htmlFor="description" className="text-gray-900 font-bold mb-1.5 block">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      rows={5}
+                      placeholder="Enter a detailed product description..."
+                      className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 resize-none rounded-xl"
+                    />
                   </div>
                 </div>
+              </div>
 
-                {/* Category-specific fields */}
-                <div className="space-y-5">
+              {/* Category-Specific Section */}
+              {formData.category && (
+                <div className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
+                  <h3 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2 capitalize">
+                    <div className="w-2 h-6 bg-blue-600 rounded-sm" />
+                    {formData.category} Specifications
+                  </h3>
+
                   {formData.category === 'manga' && (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                           <Label htmlFor="author" className="text-gray-900 font-bold mb-1.5 block">Author</Label>
                           <Input
@@ -513,154 +587,128 @@ export default function ProductManager() {
                         </div>
                       </div>
                       
-                      {/* Advanced Manga Specifications */}
-                      <p className="font-bold text-gray-900 border-b border-gray-100 pb-2 mt-4">Product Details (Amazon Style)</p>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label className="text-gray-900 font-bold mb-1.5 block">Publication Date</Label>
-                          <Input
-                            value={formData.specifications.publicationDate || ''}
-                            onChange={(e) => handleSpecChange('publicationDate', e.target.value)}
-                            placeholder="e.g. March 11, 2025"
-                            className="bg-white border-gray-200 focus:border-black rounded-xl h-11"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-gray-900 font-bold mb-1.5 block">Language</Label>
-                          <Input
-                            value={formData.specifications.language || ''}
-                            onChange={(e) => handleSpecChange('language', e.target.value)}
-                            placeholder="e.g. English"
-                            className="bg-white border-gray-200 focus:border-black rounded-xl h-11"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-gray-900 font-bold mb-1.5 block">Print Length</Label>
-                          <Input
-                            value={formData.specifications.printLength || ''}
-                            onChange={(e) => handleSpecChange('printLength', e.target.value)}
-                            placeholder="e.g. 208 pages"
-                            className="bg-white border-gray-200 focus:border-black rounded-xl h-11"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-gray-900 font-bold mb-1.5 block">Item Weight</Label>
-                          <Input
-                            value={formData.specifications.itemWeight || ''}
-                            onChange={(e) => handleSpecChange('itemWeight', e.target.value)}
-                            placeholder="e.g. 6.5 ounces"
-                            className="bg-white border-gray-200 focus:border-black rounded-xl h-11"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-gray-900 font-bold mb-1.5 block">Dimensions</Label>
-                          <Input
-                            value={formData.specifications.dimensions || ''}
-                            onChange={(e) => handleSpecChange('dimensions', e.target.value)}
-                            placeholder="e.g. 5 x 0.7 x 7.5 inches"
-                            className="bg-white border-gray-200 focus:border-black rounded-xl h-11"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-gray-900 font-bold mb-1.5 block">ISBN-10</Label>
-                          <Input
-                            value={formData.specifications.isbn10 || ''}
-                            onChange={(e) => handleSpecChange('isbn10', e.target.value)}
-                            placeholder="e.g. 1974751880"
-                            className="bg-white border-gray-200 focus:border-black rounded-xl h-11"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-gray-900 font-bold mb-1.5 block">ISBN-13</Label>
-                          <Input
-                            value={formData.specifications.isbn13 || ''}
-                            onChange={(e) => handleSpecChange('isbn13', e.target.value)}
-                            placeholder="e.g. 978-1974751884"
-                            className="bg-white border-gray-200 focus:border-black rounded-xl h-11"
-                          />
+                      <div className="pt-4 border-t border-gray-200">
+                        <p className="font-bold text-gray-900 mb-4">Detailed Specifications</p>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
+                          <div>
+                            <Label className="text-gray-700 font-semibold mb-1.5 block text-sm">Publication Date</Label>
+                            <Input
+                              value={formData.specifications.publicationDate || ''}
+                              onChange={(e) => handleSpecChange('publicationDate', e.target.value)}
+                              placeholder="e.g. March 11, 2025"
+                              className="bg-white border-gray-200 focus:border-black rounded-lg"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-gray-700 font-semibold mb-1.5 block text-sm">Language</Label>
+                            <Input
+                              value={formData.specifications.language || ''}
+                              onChange={(e) => handleSpecChange('language', e.target.value)}
+                              placeholder="e.g. English"
+                              className="bg-white border-gray-200 focus:border-black rounded-lg"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-gray-700 font-semibold mb-1.5 block text-sm">Print Length</Label>
+                            <Input
+                              value={formData.specifications.printLength || ''}
+                              onChange={(e) => handleSpecChange('printLength', e.target.value)}
+                              placeholder="e.g. 208 pages"
+                              className="bg-white border-gray-200 focus:border-black rounded-lg"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-gray-700 font-semibold mb-1.5 block text-sm">Item Weight</Label>
+                            <Input
+                              value={formData.specifications.itemWeight || ''}
+                              onChange={(e) => handleSpecChange('itemWeight', e.target.value)}
+                              placeholder="e.g. 6.5 ounces"
+                              className="bg-white border-gray-200 focus:border-black rounded-lg"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-gray-700 font-semibold mb-1.5 block text-sm">Dimensions</Label>
+                            <Input
+                              value={formData.specifications.dimensions || ''}
+                              onChange={(e) => handleSpecChange('dimensions', e.target.value)}
+                              placeholder="e.g. 5 x 0.7 x 7.5 inches"
+                              className="bg-white border-gray-200 focus:border-black rounded-lg"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-gray-700 font-semibold mb-1.5 block text-sm">ISBN-10</Label>
+                            <Input
+                              value={formData.specifications.isbn10 || ''}
+                              onChange={(e) => handleSpecChange('isbn10', e.target.value)}
+                              placeholder="e.g. 1974751880"
+                              className="bg-white border-gray-200 focus:border-black rounded-lg"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-gray-700 font-semibold mb-1.5 block text-sm">ISBN-13</Label>
+                            <Input
+                              value={formData.specifications.isbn13 || ''}
+                              onChange={(e) => handleSpecChange('isbn13', e.target.value)}
+                              placeholder="e.g. 978-1974751884"
+                              className="bg-white border-gray-200 focus:border-black rounded-lg"
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
                   )}
 
                   {formData.category === 'figures' && (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       <div>
-                        <Label htmlFor="brand" className="text-gray-900 font-bold mb-1.5 block">Brand</Label>
+                        <Label htmlFor="brand" className="text-gray-900 font-bold mb-1.5 block">Brand / Manufacturer</Label>
                         <Input
                           id="brand"
                           value={formData.brand}
                           onChange={(e) => handleInputChange('brand', e.target.value)}
-                          placeholder="Brand name"
+                          placeholder="e.g. Bandai Spirits, Good Smile"
                           className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 rounded-xl h-11"
                         />
                       </div>
                       
-                      {/* Advanced Figure Specifications */}
-                      <p className="font-bold text-gray-900 border-b border-gray-100 pb-2 mt-4">Product Details (Amazon Style)</p>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label className="text-gray-900 font-bold mb-1.5 block">Theme</Label>
-                          <Input value={formData.specifications.theme || ''} onChange={(e) => handleSpecChange('theme', e.target.value)} placeholder="e.g. Anime" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
-                        </div>
-                        <div>
-                          <Label className="text-gray-900 font-bold mb-1.5 block">Color</Label>
-                          <Input value={formData.specifications.color || ''} onChange={(e) => handleSpecChange('color', e.target.value)} placeholder="e.g. Sukuna" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
-                        </div>
-                        <div>
-                          <Label className="text-gray-900 font-bold mb-1.5 block">Style</Label>
-                          <Input value={formData.specifications.style || ''} onChange={(e) => handleSpecChange('style', e.target.value)} placeholder="e.g. Modern" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
-                        </div>
-                        <div>
-                          <Label className="text-gray-900 font-bold mb-1.5 block">Occasion</Label>
-                          <Input value={formData.specifications.occasion || ''} onChange={(e) => handleSpecChange('occasion', e.target.value)} placeholder="e.g. Collectible" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
-                        </div>
-                        <div>
-                          <Label className="text-gray-900 font-bold mb-1.5 block">Item Dimensions</Label>
-                          <Input value={formData.specifications.itemDimensions || ''} onChange={(e) => handleSpecChange('itemDimensions', e.target.value)} placeholder="e.g. 4.5 L x 8.8 W x 4.5 H" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
-                        </div>
-                        <div>
-                          <Label className="text-gray-900 font-bold mb-1.5 block">Item Weight</Label>
-                          <Input value={formData.specifications.itemWeight || ''} onChange={(e) => handleSpecChange('itemWeight', e.target.value)} placeholder="e.g. 200 Grams" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
-                        </div>
-                        <div>
-                          <Label className="text-gray-900 font-bold mb-1.5 block">Manufacturer</Label>
-                          <Input value={formData.specifications.manufacturer || ''} onChange={(e) => handleSpecChange('manufacturer', e.target.value)} placeholder="e.g. Bandai Spirits" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
-                        </div>
-                        <div>
-                          <Label className="text-gray-900 font-bold mb-1.5 block">Material Type</Label>
-                          <Input value={formData.specifications.materialType || ''} onChange={(e) => handleSpecChange('materialType', e.target.value)} placeholder="e.g. Polyvinyl Chloride" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
-                        </div>
-                        <div>
-                          <Label className="text-gray-900 font-bold mb-1.5 block">Number of Pieces</Label>
-                          <Input value={formData.specifications.numberOfPieces || ''} onChange={(e) => handleSpecChange('numberOfPieces', e.target.value)} placeholder="e.g. 1" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
-                        </div>
-                        <div>
-                          <Label className="text-gray-900 font-bold mb-1.5 block">Age Range</Label>
-                          <Input value={formData.specifications.ageRange || ''} onChange={(e) => handleSpecChange('ageRange', e.target.value)} placeholder="e.g. 15+" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
-                        </div>
-                        <div>
-                          <Label className="text-gray-900 font-bold mb-1.5 block">Item Type Name</Label>
-                          <Input value={formData.specifications.itemTypeName || ''} onChange={(e) => handleSpecChange('itemTypeName', e.target.value)} placeholder="e.g. Figure" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
-                        </div>
-                        <div>
-                          <Label className="text-gray-900 font-bold mb-1.5 block">Finish Types</Label>
-                          <Input value={formData.specifications.finishTypes || ''} onChange={(e) => handleSpecChange('finishTypes', e.target.value)} placeholder="e.g. Glossy" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
-                        </div>
-                        <div>
-                          <Label className="text-gray-900 font-bold mb-1.5 block">ASIN</Label>
-                          <Input value={formData.specifications.asin || ''} onChange={(e) => handleSpecChange('asin', e.target.value)} placeholder="e.g. B0FLCCRL7T" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
-                        </div>
-                        <div>
-                          <Label className="text-gray-900 font-bold mb-1.5 block">Batteries Required</Label>
-                          <Input value={formData.specifications.batteriesRequired || ''} onChange={(e) => handleSpecChange('batteriesRequired', e.target.value)} placeholder="e.g. No" className="bg-white border-gray-200 focus:border-black rounded-xl h-11" />
+                      <div className="pt-4 border-t border-gray-200">
+                        <p className="font-bold text-gray-900 mb-4">Detailed Specifications</p>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
+                          <div>
+                            <Label className="text-gray-700 font-semibold mb-1.5 block text-sm">Theme</Label>
+                            <Input value={formData.specifications.theme || ''} onChange={(e) => handleSpecChange('theme', e.target.value)} placeholder="e.g. Anime" className="bg-white border-gray-200 focus:border-black rounded-lg" />
+                          </div>
+                          <div>
+                            <Label className="text-gray-700 font-semibold mb-1.5 block text-sm">Color</Label>
+                            <Input value={formData.specifications.color || ''} onChange={(e) => handleSpecChange('color', e.target.value)} placeholder="e.g. Sukuna" className="bg-white border-gray-200 focus:border-black rounded-lg" />
+                          </div>
+                          <div>
+                            <Label className="text-gray-700 font-semibold mb-1.5 block text-sm">Style</Label>
+                            <Input value={formData.specifications.style || ''} onChange={(e) => handleSpecChange('style', e.target.value)} placeholder="e.g. Modern" className="bg-white border-gray-200 focus:border-black rounded-lg" />
+                          </div>
+                          <div>
+                            <Label className="text-gray-700 font-semibold mb-1.5 block text-sm">Item Dimensions</Label>
+                            <Input value={formData.specifications.itemDimensions || ''} onChange={(e) => handleSpecChange('itemDimensions', e.target.value)} placeholder="e.g. 4.5 L x 8.8 W" className="bg-white border-gray-200 focus:border-black rounded-lg" />
+                          </div>
+                          <div>
+                            <Label className="text-gray-700 font-semibold mb-1.5 block text-sm">Item Weight</Label>
+                            <Input value={formData.specifications.itemWeight || ''} onChange={(e) => handleSpecChange('itemWeight', e.target.value)} placeholder="e.g. 200 Grams" className="bg-white border-gray-200 focus:border-black rounded-lg" />
+                          </div>
+                          <div>
+                            <Label className="text-gray-700 font-semibold mb-1.5 block text-sm">Material Type</Label>
+                            <Input value={formData.specifications.materialType || ''} onChange={(e) => handleSpecChange('materialType', e.target.value)} placeholder="e.g. PVC" className="bg-white border-gray-200 focus:border-black rounded-lg" />
+                          </div>
+                          <div>
+                            <Label className="text-gray-700 font-semibold mb-1.5 block text-sm">Age Range</Label>
+                            <Input value={formData.specifications.ageRange || ''} onChange={(e) => handleSpecChange('ageRange', e.target.value)} placeholder="e.g. 15+" className="bg-white border-gray-200 focus:border-black rounded-lg" />
+                          </div>
                         </div>
                       </div>
                     </div>
                   )}
 
                   {formData.category === 'tshirts' && (
-                    <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <Label htmlFor="sizes" className="text-gray-900 font-bold mb-1.5 block">Available Sizes</Label>
                         <Input
@@ -683,26 +731,18 @@ export default function ProductManager() {
                         />
                         <p className="text-xs text-gray-500 mt-1.5 font-medium">Separate colors with commas</p>
                       </div>
-                    </>
+                    </div>
                   )}
                 </div>
-              </div>
+              )}
 
-              {/* Description */}
-              <div>
-                <Label htmlFor="description" className="text-gray-900 font-bold mb-1.5 block">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
-                  rows={4}
-                  placeholder="Enter product description..."
-                  className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 resize-none rounded-xl"
-                />
-              </div>
-
-              {/* Tagging & Classification (Global/Optional) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Organization & Tagging Section */}
+              <div className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
+                <h3 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2">
+                  <div className="w-2 h-6 bg-purple-600 rounded-sm" />
+                  Organization & Tagging
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-5">
                   <div>
                     <Label htmlFor="series" className="text-gray-900 font-bold mb-1.5 block">Series Title (e.g. One Piece)</Label>
@@ -721,15 +761,21 @@ export default function ProductManager() {
                     </datalist>
                   </div>
                   <div>
-                    <Label htmlFor="tags" className="text-gray-900 font-bold mb-1.5 block">Tags</Label>
+                    <Label htmlFor="tags" className="text-gray-900 font-bold mb-1.5 block">Sub-Category / Tags</Label>
                     <Input
                       id="tags"
+                      list="tags-list"
                       value={formData.tags}
                       onChange={(e) => handleInputChange('tags', e.target.value)}
-                      placeholder="e.g. shonen, limited edition"
+                      placeholder="e.g. Action Figures, Gundam Kits, Shonen"
                       className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 rounded-xl h-11"
                     />
-                    <p className="text-xs text-gray-500 mt-1.5 font-medium">Separate tags with commas</p>
+                    <datalist id="tags-list">
+                      {uniqueTags.map((tag, idx) => (
+                        <option key={idx} value={tag} />
+                      ))}
+                    </datalist>
+                    <p className="text-xs text-gray-500 mt-1.5 font-medium">Select from your nav categories, or type new ones separated by commas</p>
                   </div>
                 </div>
                 <div className="space-y-5">
@@ -824,8 +870,15 @@ export default function ProductManager() {
                     <p className="text-xs text-gray-500 mt-1.5 font-medium">Separate characters with commas. Click suggestions to quick-add.</p>
                   </div>
                 </div>
+                </div>
               </div>
 
+              {/* Media Section */}
+              <div className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
+                <h3 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2">
+                  <div className="w-2 h-6 bg-rose-500 rounded-sm" />
+                  Media & Images
+                </h3>
               {/* Multiple Image Upload */}
               <div className="space-y-4">
                 <Label className="text-gray-900 font-bold mb-1.5 block">Product Images (Max 5)</Label>
@@ -920,6 +973,7 @@ export default function ProductManager() {
                     </div>
                   </div>
                 )}
+              </div>
               </div>
             </div>
 

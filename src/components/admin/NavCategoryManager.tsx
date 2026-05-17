@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Trash2, GripVertical, Save, Sparkles, BookOpen, Shirt, Package, ShoppingBag, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Save, Sparkles, BookOpen, Shirt, Package, ShoppingBag, ChevronDown, ChevronRight, Image as ImageIcon } from 'lucide-react';
 import type { NavCategory, NavDropdownItem } from '@/types/navigation';
+import { createClient } from '@/utils/supabase/client';
+import { toast } from 'sonner';
 
 const ICON_OPTIONS = [
   { name: 'Sparkles', component: Sparkles },
@@ -21,6 +23,8 @@ export default function NavCategoryManager() {
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const [newCategoryLabel, setNewCategoryLabel] = useState('');
   const [newItemInputs, setNewItemInputs] = useState<Record<number, string>>({});
+  const [uploadingItemId, setUploadingItemId] = useState<number | null>(null);
+  const supabase = createClient();
 
   const fetchCategories = async () => {
     const res = await fetch('/api/admin/nav-categories');
@@ -69,6 +73,56 @@ export default function NavCategoryManager() {
   const deleteDropdownItem = async (id: number) => {
     await fetch(`/api/admin/nav-dropdown-items/${id}`, { method: 'DELETE' });
     fetchCategories();
+  };
+
+  const uploadThemeWallpaper = async (e: React.ChangeEvent<HTMLInputElement>, item: NavDropdownItem) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingItemId(item.id);
+    const toastId = toast.loading(`Uploading wallpaper for ${item.label}...`);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('bucket', 'product-images');
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+      const res = await fetch('/api/admin/upload-image', {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Upload failed with status ${res.status}`);
+      }
+
+      const { url } = await res.json();
+
+      const updateRes = await fetch(`/api/admin/nav-dropdown-items/${item.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...item, image_url: url }),
+      });
+
+      if (!updateRes.ok) throw new Error('Failed to update database');
+
+      toast.success('Theme wallpaper updated!', { id: toastId });
+      fetchCategories();
+    } catch (error: any) {
+      console.error(error);
+      toast.error(`Error: ${error.message}`, { id: toastId });
+    } finally {
+      setUploadingItemId(null);
+      // reset file input
+      e.target.value = '';
+    }
   };
 
   const toggleExpand = (id: number) => {
@@ -142,10 +196,30 @@ export default function NavCategoryManager() {
                           <GripVertical className="h-3.5 w-3.5 text-muted-foreground/40" />
                           <span className="text-sm font-medium">{item.label}</span>
                           <span className="text-xs text-muted-foreground/60">{item.href}</span>
+                          {item.image_url && (
+                            <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200">
+                              Has Wallpaper
+                            </span>
+                          )}
                         </div>
-                        <Button variant="ghost" size="icon" onClick={() => deleteDropdownItem(item.id)} className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="relative">
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50" disabled={uploadingItemId === item.id}>
+                              <ImageIcon className="h-3.5 w-3.5" />
+                            </Button>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                              onChange={(e) => uploadThemeWallpaper(e, item)}
+                              disabled={uploadingItemId === item.id}
+                              title="Upload Theme Wallpaper"
+                            />
+                          </div>
+                          <Button variant="ghost" size="icon" onClick={() => deleteDropdownItem(item.id)} className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>

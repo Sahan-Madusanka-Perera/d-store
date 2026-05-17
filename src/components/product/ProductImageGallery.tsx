@@ -67,7 +67,7 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
   return (
     <div className="space-y-4">
       {/* Main Image with Navigation */}
-      <div className="relative aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden shadow-xl group cursor-pointer">
+      <div className="relative w-full aspect-square max-h-[450px] lg:max-h-[550px] bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden shadow-xl group cursor-pointer">
         <div className="overflow-hidden h-full" ref={emblaRef}>
           <div className="flex h-full touch-pan-y">
             {images.map((img, idx) => (
@@ -176,7 +176,7 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
 
       {/* Full Screen Modal */}
       {isFullScreen && (
-        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center">
+        <div className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center">
           {/* Close Button */}
           <Button
             variant="ghost"

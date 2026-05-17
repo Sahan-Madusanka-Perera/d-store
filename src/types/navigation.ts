@@ -13,4 +13,5 @@ export interface NavDropdownItem {
   label: string;
   href: string;
   sort_order: number;
+  image_url?: string;
 }

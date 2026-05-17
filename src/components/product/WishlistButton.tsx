@@ -26,12 +26,7 @@ export default function WishlistButton({ productId, variant = 'icon', className 
 
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // Fetch wishlist on mount if not already loaded
-  useEffect(() => {
-    if (isAuthenticated === null) {
-      fetchWishlist();
-    }
-  }, [isAuthenticated, fetchWishlist]);
+  // Wishlist fetching is now handled globally in Navbar to prevent duplicate requests
 
   const handleToggle = async (e: React.MouseEvent) => {
     e.preventDefault();

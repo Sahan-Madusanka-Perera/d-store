@@ -10,7 +10,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   const { data, error } = await supabase
     .from('nav_dropdown_items')
-    .update({ label: body.label, href: body.href, sort_order: body.sort_order })
+    .update({ 
+      label: body.label, 
+      href: body.href, 
+      sort_order: body.sort_order,
+      image_url: body.image_url 
+    })
     .eq('id', id)
     .select()
     .single();
