@@ -37,13 +37,69 @@ interface Product {
   specifications?: Record<string, any>
 }
 
-export default function ProductManager() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+export default function ProductManager({
+  initialProducts,
+  initialNavCategories
+}: {
+  initialProducts?: any[]
+  initialNavCategories?: any[]
+} = {}) {
+  const [products, setProducts] = useState<Product[]>(() => {
+    if (!initialProducts) return []
+    return initialProducts.map((product: any) => ({
+      ...product,
+      image_urls: product.image_urls || (product.image_url ? [product.image_url] : [])
+    }))
+  })
+  const [isLoading, setIsLoading] = useState(!initialProducts)
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const supabase = createClient()
+
+  // Read the auth token directly from cookies — supabase-js auth methods hang in Turbopack.
+  // @supabase/ssr's createBrowserClient stores the session in cookies named
+  // sb-{projectRef}-auth-token (or chunked as sb-{projectRef}-auth-token.0, .1, etc.)
+  const getAccessToken = (): string | null => {
+    try {
+      const projectRef = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace('https://', '').split('.')[0]
+      const cookiePrefix = `sb-${projectRef}-auth-token`
+      const allCookies = document.cookie.split(';').map(c => c.trim())
+
+      // Try single cookie first
+      const singleCookie = allCookies.find(c => c.startsWith(`${cookiePrefix}=`))
+      if (singleCookie) {
+        let value = decodeURIComponent(singleCookie.split('=').slice(1).join('='))
+        // @supabase/ssr stores cookies as base64-encoded JSON with "base64-" prefix
+        if (value.startsWith('base64-')) {
+          value = atob(value.slice(7))
+        }
+        const parsed = JSON.parse(value)
+        return parsed?.access_token || null
+      }
+
+      // Try chunked cookies (sb-xxx-auth-token.0, sb-xxx-auth-token.1, etc.)
+      const chunks: string[] = []
+      for (let i = 0; i < 10; i++) {
+        const chunk = allCookies.find(c => c.startsWith(`${cookiePrefix}.${i}=`))
+        if (!chunk) break
+        chunks.push(decodeURIComponent(chunk.split('=').slice(1).join('=')))
+      }
+      if (chunks.length > 0) {
+        let joined = chunks.join('')
+        if (joined.startsWith('base64-')) {
+          joined = atob(joined.slice(7))
+        }
+        const parsed = JSON.parse(joined)
+        return parsed?.access_token || null
+      }
+
+      return null
+    } catch (err) {
+      console.error('Failed to read auth token from cookie:', err)
+      return null
+    }
+  }
 
   // Form state
   const [formData, setFormData] = useState({
@@ -78,10 +134,21 @@ export default function ProductManager() {
   // Fetch products and categories
   const fetchProducts = async () => {
     setIsLoading(true)
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false })
+
+    // Fire both queries in parallel — they're independent of each other
+    const [productsResult, navResult] = await Promise.all([
+      supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false }),
+      supabase.from('nav_categories').select(`
+        *,
+        nav_dropdown_items (*)
+      `)
+    ])
+
+    const { data, error } = productsResult
+    const { data: navData } = navResult
 
     if (error) {
       console.error('Error fetching products:', error)
@@ -105,11 +172,6 @@ export default function ProductManager() {
         }
       })
 
-      // Fetch nav categories and their dropdown items
-      const { data: navData } = await supabase.from('nav_categories').select(`
-        *,
-        nav_dropdown_items (*)
-      `);
       const tagSet = new Set<string>();
       
       if (navData) {
@@ -130,7 +192,33 @@ export default function ProductManager() {
   }
 
   useEffect(() => {
-    fetchProducts()
+    if (initialProducts) {
+      // Server already provided the data — just compute autocomplete values
+      const seriesSet = new Set<string>()
+      const charsSet = new Set<string>()
+      initialProducts.forEach((p: any) => {
+        if (p.series) seriesSet.add(p.series.trim())
+        if (p.character_names && Array.isArray(p.character_names)) {
+          p.character_names.forEach((c: string) => charsSet.add(c.trim()))
+        }
+      })
+      const tagSet = new Set<string>()
+      if (initialNavCategories) {
+        initialNavCategories.forEach((nav: any) => {
+          if (nav.label === 'Series' && Array.isArray(nav.nav_dropdown_items)) {
+            nav.nav_dropdown_items.forEach((item: any) => seriesSet.add(item.label.trim()))
+          } else if (Array.isArray(nav.nav_dropdown_items)) {
+            nav.nav_dropdown_items.forEach((item: any) => tagSet.add(item.label.trim()))
+          }
+        })
+      }
+      setUniqueSeries(Array.from(seriesSet).filter(Boolean).sort())
+      setUniqueTags(Array.from(tagSet).filter(Boolean).sort())
+      setUniqueCharacters(Array.from(charsSet).filter(Boolean).sort())
+    } else {
+      // No server data — fall back to client-side fetch
+      fetchProducts()
+    }
   }, [])
 
   // Handle form input changes
@@ -189,6 +277,15 @@ export default function ProductManager() {
   const uploadImages = async (images: File[]): Promise<string[]> => {
     console.log(`Starting upload of ${images.length} images...`)
 
+    // Read cached session — never await supabase-js auth in Turbopack (it hangs)
+    // Read token directly from cookies (supabase-js hangs in Turbopack)
+    const accessToken = getAccessToken()
+    if (!accessToken) {
+      throw new Error('Not authenticated — please refresh the page and log in again')
+    }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://bqeuhcdfjxexaxqpxnny.supabase.co'
+
     const uploadPromises = images.map(async (image, index) => {
       const fileExt = image.name.split('.').pop()
       const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`
@@ -196,13 +293,6 @@ export default function ProductManager() {
       console.log(`Uploading image ${index + 1}: ${image.name} as ${fileName}`)
 
       try {
-        // We use native fetch to completely bypass supabase-js hanging bugs in Next.js Turbopack
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session?.access_token) {
-          throw new Error('Not authenticated')
-        }
-
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://bqeuhcdfjxexaxqpxnny.supabase.co'
         const uploadUrl = `${supabaseUrl}/storage/v1/object/product-images/${fileName}`
 
         // Convert File to ArrayBuffer to prevent mysterious browser/fetch streaming hangs
@@ -215,7 +305,7 @@ export default function ProductManager() {
         const response = await fetch(uploadUrl, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${session.access_token}`,
+            'Authorization': `Bearer ${accessToken}`,
             'Content-Type': image.type || 'image/jpeg',
             'x-upsert': 'false'
           },
@@ -287,8 +377,7 @@ export default function ProductManager() {
     setIsSubmitting(true)
 
     console.log('Form submission started')
-    console.log('Form data:', formData)
-    console.log('Number of images to upload:', formData.images.length)
+    console.log('Specifications being saved:', formData.specifications)
 
     try {
       let imageUrls: string[] = []
@@ -298,13 +387,10 @@ export default function ProductManager() {
         console.log('Starting image upload process...')
         imageUrls = await uploadImages(formData.images)
         console.log('Images uploaded successfully:', imageUrls)
-      } else {
-        console.log('No images to upload')
       }
 
       // If editing, combine with existing images
-      if (editingProduct?.image_urls) {
-        console.log('Combining with existing images:', editingProduct.image_urls)
+      if (editingProduct?.image_urls && editingProduct.image_urls.length > 0) {
         imageUrls = [...editingProduct.image_urls, ...imageUrls]
       }
 
@@ -320,7 +406,6 @@ export default function ProductManager() {
         tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : null,
         character_names: formData.character_names ? formData.character_names.split(',').map(c => c.trim()).filter(Boolean) : null,
         stock: parseInt(formData.stock) || 0,
-        // Support both single image_url and multiple image_urls for backward compatibility
         image_url: imageUrls.length > 0 ? imageUrls[0] : null,
         image_urls: imageUrls.length > 0 ? imageUrls : null,
         sizes: formData.sizes ? formData.sizes.split(',').map(s => s.trim()).filter(Boolean) : null,
@@ -329,39 +414,94 @@ export default function ProductManager() {
         specifications: Object.keys(formData.specifications).length > 0 ? formData.specifications : null,
       }
 
-      console.log('Preparing to save product data:', productData)
+      console.log('Product data to save:', JSON.stringify(productData, null, 2))
 
-      let result
-      console.log('Executing database operation...')
+      // Read cached session — never await supabase-js auth in Turbopack (it hangs)
+      // Read token directly from cookies (supabase-js hangs in Turbopack)
+      const accessToken = getAccessToken()
+      if (!accessToken) {
+        throw new Error('Session expired — please refresh the page and log in again')
+      }
+      console.log('Session token available, proceeding with REST call...')
+
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+        'apikey': supabaseAnonKey,
+        'Prefer': 'return=representation',
+      }
+
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 15000)
+
+      let response: Response
       if (editingProduct) {
-        console.log('Updating existing product:', editingProduct.id)
-        result = await supabase
-          .from('products')
-          .update(productData)
-          .eq('id', editingProduct.id)
+        console.log('Updating product via REST:', editingProduct.id)
+        response = await fetch(
+          `${supabaseUrl}/rest/v1/products?id=eq.${editingProduct.id}`,
+          {
+            method: 'PATCH',
+            headers,
+            body: JSON.stringify(productData),
+            signal: controller.signal,
+          }
+        )
       } else {
-        console.log('Inserting new product')
-        result = await supabase
-          .from('products')
-          .insert([productData])
+        console.log('Inserting new product via REST')
+        response = await fetch(
+          `${supabaseUrl}/rest/v1/products`,
+          {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(productData),
+            signal: controller.signal,
+          }
+        )
+      }
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('REST API error:', response.status, errorText)
+        throw new Error(`Database operation failed (${response.status}): ${errorText}`)
       }
 
-      console.log('Database operation completed. Result:', result)
+      const returnedData = await response.json()
+      console.log('Database operation successful. Returned:', returnedData)
 
-      if (result.error) {
-        console.error('Database error details:', result.error)
-        throw new Error(result.error.message)
+      // Verify the update actually affected a row
+      if (editingProduct && (!returnedData || (Array.isArray(returnedData) && returnedData.length === 0))) {
+        throw new Error('Update returned no data — the product may have been deleted.')
       }
 
-      console.log('Product saved successfully. Showing toast and resetting form.')
       toast.success(editingProduct ? 'Product updated successfully!' : 'Product added successfully!')
       resetForm()
-      fetchProducts()
+
+      if (editingProduct && Array.isArray(returnedData) && returnedData.length > 0) {
+        // Update local state directly instead of re-fetching everything
+        const updated = returnedData[0]
+        setProducts(prev => prev.map(p =>
+          p.id === editingProduct.id
+            ? {
+                ...updated,
+                image_urls: updated.image_urls || (updated.image_url ? [updated.image_url] : [])
+              }
+            : p
+        ))
+      } else {
+        // For inserts, do a full refresh to get the new product
+        fetchProducts()
+      }
     } catch (error) {
       console.error('*** ERROR SAVING PRODUCT ***', error)
-      toast.error(`Failed to save product: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        toast.error('Request timed out — please try again')
+      } else {
+        toast.error(`Failed to save product: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
     } finally {
-      console.log('Executing finally block. Setting isSubmitting to false.')
       setIsSubmitting(false)
     }
   }
@@ -393,15 +533,31 @@ export default function ProductManager() {
   // Handle delete product
   const handleDelete = async (productId: number) => {
     try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', productId)
+      const accessToken = getAccessToken()
+      if (!accessToken) throw new Error('Not authenticated — please refresh the page')
 
-      if (error) throw error
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+      const response = await fetch(
+        `${supabaseUrl}/rest/v1/products?id=eq.${productId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'apikey': supabaseAnonKey,
+          },
+        }
+      )
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Delete failed (${response.status}): ${errorText}`)
+      }
 
       toast.success('Product deleted successfully!')
-      fetchProducts()
+      // Remove from local state instantly instead of re-fetching
+      setProducts(prev => prev.filter(p => p.id !== productId))
     } catch (error) {
       console.error('Error deleting product:', error)
       toast.error('Failed to delete product')

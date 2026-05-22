@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export function HeroSection() {
-    const brands = ["SHONEN JUMP", "BANDAI", "GOOD SMILE", "VIZ MEDIA", "TOEI ANIMATION", "MAPPA"];
+    const brands = ["VIZ MEDIA", "YEN PRESS", "SEVEN SEAS", "KODANSHA", "TITAN BOOKS", "BANDAI", "SEGA", "GOOD SMILE COMPANY", "TAITO", "FURYU", "KOTOBUKIYA", "TOEI ANIMATION"];
 
     return (
         <section className="relative w-full pt-20 border-b border-border">

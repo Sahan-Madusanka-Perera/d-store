@@ -2,6 +2,7 @@ import { HeroCarousel } from "@/components/sections/HeroCarousel";
 import { ProductShowcase } from "@/components/sections/ProductShowcase";
 import { CategoryGrid } from "@/components/sections/CategoryGrid";
 import { RecommendedProducts } from "@/components/sections/RecommendedProducts";
+import { CategoryShowcase } from "@/components/sections/CategoryShowcase";
 import Navbar from '@/components/layout/Navbar';
 import { createClient } from '@/utils/supabase/server'
 import { Shield, CheckCircle, Truck, Globe } from 'lucide-react';
@@ -100,6 +101,7 @@ export default async function Home() {
       <HeroCarousel initialSlides={initialSlides} />
       <RecommendedProducts />
       <ProductShowcase title="NEW ARRIVALS" products={freshDropsData} />
+      <CategoryShowcase />
       <CategoryGrid />
     </div>
   );

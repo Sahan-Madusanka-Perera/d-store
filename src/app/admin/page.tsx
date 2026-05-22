@@ -3,6 +3,8 @@ import UserProfile from '@/components/profile/UserProfile'
 import ProductManager from '@/components/admin/ProductManager'
 import CarouselManager from '@/components/admin/CarouselManager'
 import NavCategoryManager from '@/components/admin/NavCategoryManager'
+import SystemLog from '@/components/admin/SystemLog'
+import InventoryMatrix from '@/components/admin/InventoryMatrix'
 import { createClient } from '@/utils/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -15,18 +17,27 @@ export default async function AdminDashboard() {
   // This will throw an error and redirect if user is not admin
   const user = await requireAdmin()
 
-  // Get dashboard stats
+  // Fetch full product data + nav categories in parallel (server-side)
+  // This data is shared between dashboard stats AND ProductManager,
+  // eliminating the redundant client-side re-fetch
   const supabase = await createClient()
-  const { data: products } = await supabase.from('products').select('id, stock, price, category')
-  const totalProducts = products?.length || 0
-  const lowStockItems = products?.filter(p => p.stock < 10).length || 0
-  const totalValue = products?.reduce((sum, p) => sum + (p.price * p.stock), 0) || 0
+  const [{ data: allProducts }, { data: navCategories }, { data: recentOrders }, { data: lowStockProducts }] = await Promise.all([
+    supabase.from('products').select('*').order('created_at', { ascending: false }),
+    supabase.from('nav_categories').select('*, nav_dropdown_items (*)'),
+    supabase.from('orders').select('*, user_profiles(full_name, email)').order('created_at', { ascending: false }).limit(5),
+    supabase.from('products').select('id, name, stock, category').lt('stock', 10).order('stock', { ascending: true }).limit(5)
+  ])
+
+  const products = allProducts || []
+  const totalProducts = products.length
+  const lowStockItems = products.filter(p => p.stock < 10).length
+  const totalValue = products.reduce((sum, p) => sum + (p.price * p.stock), 0)
 
   // Category breakdown
-  const categoryStats = products?.reduce((acc: Record<string, number>, product) => {
+  const categoryStats = products.reduce((acc: Record<string, number>, product) => {
     acc[product.category] = (acc[product.category] || 0) + 1
     return acc
-  }, {}) || {}
+  }, {})
 
   return (
     <div className="min-h-screen bg-[#FDFDFD] text-black">
@@ -145,19 +156,8 @@ export default async function AdminDashboard() {
                     Inventory Matrix
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-6 space-y-4">
-                  {Object.entries(categoryStats).map(([category, count]) => (
-                    <div key={category} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-200">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-3 h-3.5 rounded-sm ${category === 'manga' ? 'bg-[#E63946]' :
-                          category === 'figures' ? 'bg-[#457B9D]' :
-                            'bg-[#1D3557]'
-                          }`}></div>
-                        <span className="capitalize font-bold text-gray-700">{category}</span>
-                      </div>
-                      <Badge variant="outline" className="font-mono text-sm shadow-sm">{count}</Badge>
-                    </div>
-                  ))}
+                <CardContent className="pt-6">
+                  <InventoryMatrix initialProducts={products} initialNavCategories={navCategories || []} />
                 </CardContent>
               </Card>
 
@@ -174,38 +174,20 @@ export default async function AdminDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Recent Activity */}
+              {/* Recent Activity — Real-time */}
               <Card className="rounded-xl border border-gray-200 shadow-sm">
                 <CardHeader className="border-b border-gray-100 bg-gray-50/50 pb-4">
                   <CardTitle className="flex items-center gap-2 text-lg font-bold uppercase tracking-tight">
                     <Eye className="h-5 w-5" />
                     System Log
+                    <span className="ml-auto flex items-center gap-1.5 text-xs font-medium text-green-600 uppercase tracking-widest">
+                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                      Live
+                    </span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-6 space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 border border-gray-100 rounded-lg bg-gray-50/50 hover:bg-gray-100 transition-colors">
-                      <div>
-                        <div className="font-bold text-sm">TRANSACTION: NEW ORDER</div>
-                        <div className="text-xs text-gray-500 font-mono mt-0.5">ID: #12345 | USR: John Doe</div>
-                      </div>
-                      <Badge className="bg-black text-white hover:bg-gray-900 font-mono">LKR 3,500</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 border border-gray-100 rounded-lg bg-gray-50/50 hover:bg-gray-100 transition-colors">
-                      <div>
-                        <div className="font-bold text-sm">INVENTORY: DEPLOYED</div>
-                        <div className="text-xs text-gray-500 font-mono mt-0.5">ITEM: Naruto Figure</div>
-                      </div>
-                      <Badge variant="outline" className="border-gray-300 font-mono">NEW_ENTRY</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 border-l-4 border-l-red-500 border border-gray-100 rounded-lg bg-red-50/30">
-                      <div>
-                        <div className="font-bold text-sm text-red-700">ALERT: LOW STOCK</div>
-                        <div className="text-xs text-red-500 font-mono mt-0.5">ITEM: AOT Vol 34</div>
-                      </div>
-                      <Badge variant="destructive" className="font-mono">CRITICAL</Badge>
-                    </div>
-                  </div>
+                <CardContent className="pt-6">
+                  <SystemLog initialOrders={recentOrders || []} initialLowStock={lowStockProducts || []} />
                 </CardContent>
               </Card>
             </div>
@@ -221,7 +203,7 @@ export default async function AdminDashboard() {
                 <CardDescription className="text-gray-500 font-medium">Manage and deploy inventory to the storefront.</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
-                <ProductManager />
+                <ProductManager initialProducts={products} initialNavCategories={navCategories || []} />
               </CardContent>
             </Card>
           </TabsContent>

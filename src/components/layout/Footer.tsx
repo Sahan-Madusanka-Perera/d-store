@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ConditionalNewsletter } from '@/components/sections/ConditionalNewsletter';
 import { Newsletter } from '@/components/sections/Newsletter';
 import { InstagramFeed } from '@/components/sections/InstagramFeed';
+import { FacebookRecommendations } from '@/components/sections/FacebookRecommendations';
 import { Twitter, Facebook, Instagram, CreditCard } from "lucide-react";
 import { ConditionalInstagram } from '@/components/sections/ConditionalInstagram';
 import Image from "next/image";
@@ -11,9 +12,12 @@ export function Footer() {
         <>
             <ConditionalNewsletter>
                 <div className="w-full flex-col flex relative z-10 pb-16">
-                    {/* Instagram Feed — only on homepage & listing pages */}
+                    {/* Social Proof — only on homepage & listing pages */}
                     <ConditionalInstagram>
-                        <div className="w-full px-4 md:px-8 max-w-7xl mx-auto mt-24 mb-16 sm:mb-24">
+                        <div className="w-full px-4 md:px-8 max-w-7xl mx-auto mt-24 mb-8">
+                            <FacebookRecommendations />
+                        </div>
+                        <div className="w-full px-4 md:px-8 max-w-7xl mx-auto mb-16 sm:mb-24">
                             <InstagramFeed />
                         </div>
                     </ConditionalInstagram>
