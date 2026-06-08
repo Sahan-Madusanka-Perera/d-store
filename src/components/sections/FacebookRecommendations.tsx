@@ -1,7 +1,6 @@
-import { FacebookReviewSlider } from './FacebookReviewSlider';
+import { CustomerReviewSlider } from './FacebookReviewSlider';
 
-// --- STATIC FALLBACK DATA ---
-const DUMMY_REVIEWS = [
+const REVIEWS = [
     {
         id: "1",
         reviewerName: "Kasun Perera",
@@ -46,73 +45,6 @@ const DUMMY_REVIEWS = [
     }
 ];
 
-const OVERALL_RATING = 4.9;
-const TOTAL_REVIEWS = 124;
-
-async function getFacebookReviews() {
-    const token = process.env.FACEBOOK_GRAPH_TOKEN || process.env.INSTAGRAM_GRAPH_TOKEN;
-    const pageId = process.env.FACEBOOK_PAGE_ID || process.env.INSTAGRAM_ACCOUNT_ID; // Fallback
-    const pageUrl = process.env.FACEBOOK_PAGE_ID 
-        ? `https://www.facebook.com/profile.php?id=${process.env.FACEBOOK_PAGE_ID}`
-        : "https://facebook.com/dstore.lk";
-
-    if (!token || !pageId) return null;
-
-    try {
-        const url = `https://graph.facebook.com/v19.0/${pageId}/ratings?fields=reviewer{name},rating,review_text,created_time,recommendation_type&access_token=${token}`;
-        
-        const res = await fetch(url, {
-            next: { revalidate: 3600 }
-        });
-
-        if (!res.ok) {
-            // Silently fail if it's the expected "nonexisting field" error due to using an IG ID instead of a FB Page ID
-            const errorText = await res.text();
-            if (!errorText.includes("nonexisting field (ratings)")) {
-                console.warn("Facebook API fetch failed:", errorText);
-            }
-            return null;
-        }
-
-        return await res.json();
-    } catch (error) {
-        console.error("Failed to fetch Facebook API:", error);
-        return null;
-    }
-}
-
-export async function FacebookRecommendations() {
-    const liveData = await getFacebookReviews();
-
-    let displayReviews = DUMMY_REVIEWS;
-
-    if (liveData?.data && liveData.data.length > 0) {
-        displayReviews = liveData.data.filter((item: any) => item.review_text || item.recommendation_type === 'positive').map((item: any) => {
-            
-            // Format date nicely
-            const dateObj = new Date(item.created_time);
-            const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            
-            return {
-                id: item.created_time + (item.reviewer?.name || "Anonymous"), // Use time + name as pseudo ID
-                reviewerName: item.reviewer?.name || "Facebook User",
-                reviewText: item.review_text || (item.recommendation_type === 'positive' ? "Recommends this." : "Does not recommend this."),
-                date: dateStr,
-                rating: item.rating || (item.recommendation_type === 'positive' ? 5 : 1)
-            };
-        });
-    }
-
-    const pageUrl = process.env.FACEBOOK_PAGE_ID 
-        ? `https://www.facebook.com/profile.php?id=${process.env.FACEBOOK_PAGE_ID}`
-        : "https://facebook.com/dstore.lk";
-
-    return (
-        <FacebookReviewSlider 
-            reviews={displayReviews} 
-            overallRating={OVERALL_RATING} 
-            totalReviews={liveData?.data ? displayReviews.length : TOTAL_REVIEWS} 
-            pageUrl={pageUrl}
-        />
-    );
+export function FacebookRecommendations() {
+    return <CustomerReviewSlider reviews={REVIEWS} />;
 }

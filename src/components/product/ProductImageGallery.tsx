@@ -65,7 +65,7 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
   }, [isFullScreen, images.length]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 will-change-transform">
       {/* Main Image with Navigation */}
       <div className="relative w-full aspect-square max-h-[450px] lg:max-h-[550px] bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden shadow-xl group cursor-pointer">
         <div className="overflow-hidden h-full" ref={emblaRef}>
@@ -76,7 +76,7 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
                   src={img}
                   alt={`${productName} - Image ${idx + 1}`}
                   fill
-                  className="object-cover transition-all duration-300 group-hover:scale-105"
+                  className="object-cover transition-[filter] duration-300 group-hover:brightness-110"
                   priority={idx === 0}
                   onClick={() => setIsFullScreen(true)}
                 />
@@ -157,8 +157,8 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
             {images.map((image, index) => (
               <div 
                 key={index} 
-                className={`relative flex-shrink-0 w-20 h-20 bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all ${
-                  selectedImageIndex === index ? 'ring-2 ring-blue-500 scale-105' : ''
+                className={`relative flex-shrink-0 w-20 h-20 bg-gray-100 rounded-lg overflow-hidden cursor-pointer transition-[ring,opacity] duration-200 ${
+                  selectedImageIndex === index ? 'ring-2 ring-blue-500 opacity-100' : 'opacity-70 hover:opacity-100 hover:ring-2 hover:ring-blue-400'
                 }`}
                 onClick={() => setSelectedImageIndex(index)}
               >
@@ -166,7 +166,7 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
                   src={image}
                   alt={`${productName} ${index + 1}`}
                   fill
-                  className="object-cover hover:scale-110 transition-transform duration-200"
+                  className="object-cover"
                 />
               </div>
             ))}
