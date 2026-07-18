@@ -147,7 +147,7 @@ export default function NavCategoryManager() {
       {/* Add new category */}
       <div className="flex gap-3">
         <Input
-          placeholder="New category name (e.g. Accessories)"
+          placeholder="New category name (e.g. Other)"
           value={newCategoryLabel}
           onChange={(e) => setNewCategoryLabel(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && addCategory()}

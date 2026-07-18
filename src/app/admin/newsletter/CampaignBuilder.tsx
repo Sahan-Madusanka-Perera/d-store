@@ -227,7 +227,7 @@ export default function CampaignBuilder({ products, subscribersCount }: { produc
                                 {/* Featured Products */}
                                 {selectedProducts.length > 0 && (
                                     <div className="pt-6 mt-6 border-t border-gray-800">
-                                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6 text-center">Featured Gear</h3>
+                                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6 text-center">Featured Picks</h3>
 
                                         <div className="space-y-6">
                                             {selectedProducts.map((p) => (

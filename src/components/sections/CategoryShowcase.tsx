@@ -25,6 +25,10 @@ const CATEGORY_META: Record<string, { subtitle: string; gradient: string }> = {
     subtitle: 'Wear your fandom with style — graphic tees for every otaku.',
     gradient: 'from-amber-500/10 to-orange-500/10',
   },
+  other: {
+    subtitle: 'Trading card games, stationery, and collectibles worth hunting for.',
+    gradient: 'from-teal-500/10 to-emerald-500/10',
+  },
 };
 
 const DEFAULT_META = {

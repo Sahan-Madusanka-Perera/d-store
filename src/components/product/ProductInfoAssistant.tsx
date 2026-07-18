@@ -30,7 +30,7 @@ interface CharacterInfo {
 interface ProductInfoAssistantProps {
   productName: string;
   productDescription?: string;
-  category: 'manga' | 'figures' | 'tshirts';
+  category: 'manga' | 'figures' | 'tshirts' | 'other';
 }
 
 export default function ProductInfoAssistant({
@@ -88,7 +88,7 @@ export default function ProductInfoAssistant({
   };
 
   // Only show for manga and figures
-  if (category === 'tshirts') return null;
+  if (category === 'tshirts' || category === 'other') return null;
   const isManga = category === 'manga';
 
   return (

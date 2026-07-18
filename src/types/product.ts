@@ -3,7 +3,7 @@ export interface Product {
   name: string;
   description: string;
   price: number;
-  category: 'manga' | 'figures' | 'tshirts';
+  category: 'manga' | 'figures' | 'tshirts' | 'other';
   images: string[];
   stock: number;
   status?: 'available' | 'coming_soon' | 'pre_order' | 'out_of_stock';

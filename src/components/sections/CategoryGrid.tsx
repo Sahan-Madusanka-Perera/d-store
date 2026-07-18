@@ -36,11 +36,11 @@ const REALMS: RealmTile[] = [
         span: "",
     },
     {
-        href: "/accessories",
-        title: "Gear",
-        tagline: "Bags, props & collectibles",
+        href: "/other",
+        title: "Other",
+        tagline: "TCG cards & collectibles",
         imageUrl:
-            "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=1600&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1613771404721-1f92d799e49f?q=80&w=1600&auto=format&fit=crop",
         span: "",
     },
 ];

@@ -569,6 +569,7 @@ export default function ProductManager({
       case 'manga': return 'bg-blue-500 text-white'
       case 'figures': return 'bg-red-500 text-white'
       case 'tshirts': return 'bg-yellow-500 text-black'
+      case 'other': return 'bg-teal-500 text-white'
       default: return 'bg-gray-500 text-white'
     }
   }
@@ -650,6 +651,7 @@ export default function ProductManager({
                         <SelectItem value="manga" className="focus:bg-gray-50 focus:text-black cursor-pointer">Manga</SelectItem>
                         <SelectItem value="figures" className="focus:bg-gray-50 focus:text-black cursor-pointer">Figures</SelectItem>
                         <SelectItem value="tshirts" className="focus:bg-gray-50 focus:text-black cursor-pointer">T-Shirts</SelectItem>
+                        <SelectItem value="other" className="focus:bg-gray-50 focus:text-black cursor-pointer">Other (TCG, Collectibles, etc.)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

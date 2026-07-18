@@ -7,7 +7,7 @@ import { useCartStore } from '@/store/cart';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Star, Eye, Sparkles, BookOpen, Shirt, ShoppingBag, Clock, Zap, Bell } from 'lucide-react';
+import { ShoppingCart, Star, Eye, Sparkles, BookOpen, Shirt, ShoppingBag, Clock, Zap, Bell, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 import WishlistButton from '@/components/product/WishlistButton';
 
@@ -79,6 +79,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       case 'figures': return <Sparkles className="h-3 w-3" />;
       case 'manga': return <BookOpen className="h-3 w-3" />;
       case 'tshirts': return <Shirt className="h-3 w-3" />;
+      case 'other': return <Layers className="h-3 w-3" />;
       default: return <ShoppingBag className="h-3 w-3" />;
     }
   };
@@ -88,6 +89,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       case 'manga': return 'bg-indigo-500/90 text-white';
       case 'figures': return 'bg-violet-500/90 text-white';
       case 'tshirts': return 'bg-amber-500/90 text-white';
+      case 'other': return 'bg-teal-500/90 text-white';
       default: return 'bg-slate-500/90 text-white';
     }
   };

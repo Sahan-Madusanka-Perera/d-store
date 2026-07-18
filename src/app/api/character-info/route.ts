@@ -7,7 +7,7 @@ const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/
 interface CharacterInfoRequest {
   productName: string;
   productDescription?: string;
-  category: 'manga' | 'figures' | 'tshirts';
+  category: 'manga' | 'figures' | 'tshirts' | 'other';
 }
 
 export async function POST(request: NextRequest) {

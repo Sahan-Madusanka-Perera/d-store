@@ -48,7 +48,7 @@ export async function POST(request: Request) {
                     <p style="color: #d1d5db; line-height: 1.6; white-space: pre-wrap;">${body}</p>
                     ${products && products.length > 0 ? `
                         <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #333;">
-                            <h3 style="color: #9ca3af; font-size: 14px; text-transform: uppercase; text-align: center; margin-bottom: 24px;">Featured Gear</h3>
+                            <h3 style="color: #9ca3af; font-size: 14px; text-transform: uppercase; text-align: center; margin-bottom: 24px;">Featured Picks</h3>
                             ${products.map((p: any) => `
                                 <div style="display: flex; gap: 16px; background-color: #111; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
                                     ${p.image_url ? `<img src="${p.image_url}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px;" alt="${p.name}"/>` : ''}

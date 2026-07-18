@@ -63,7 +63,8 @@ export default function ProductFilters({ isMobile = false }: ProductFiltersProps
         { id: 'all', name: 'All Products' },
         { id: 'manga', name: 'Manga' },
         { id: 'figures', name: 'Figures' },
-        { id: 'tshirts', name: 'Apparel' }
+        { id: 'tshirts', name: 'Apparel' },
+        { id: 'other', name: 'Other' }
     ];
 
     const priceRanges = [

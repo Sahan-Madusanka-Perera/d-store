@@ -68,7 +68,7 @@ export default function WishlistPage() {
             name: product.name,
             description: product.description || '',
             price: product.price,
-            category: product.category as 'manga' | 'figures' | 'tshirts',
+            category: product.category as 'manga' | 'figures' | 'tshirts' | 'other',
             images: product.image_urls || (product.image_url ? [product.image_url] : ['/placeholder.svg']),
             stock: product.stock,
             status: product.status,

@@ -19,7 +19,7 @@ interface DatabaseProduct {
   name: string;
   description?: string;
   price: number;
-  category: 'manga' | 'figures' | 'tshirts';
+  category: 'manga' | 'figures' | 'tshirts' | 'other';
   stock: number;
   created_at: string;
   updated_at: string;

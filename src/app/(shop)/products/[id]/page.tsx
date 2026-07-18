@@ -20,7 +20,7 @@ interface DatabaseProduct {
   name: string;
   description?: string;
   price: number;
-  category: 'manga' | 'figures' | 'tshirts';
+  category: 'manga' | 'figures' | 'tshirts' | 'other';
   stock: number;
   created_at: string;
   updated_at: string;
@@ -57,7 +57,7 @@ function mapDatabaseProduct(dbProduct: DatabaseProduct): Product {
     name: dbProduct.name,
     description: dbProduct.description || '',
     price: dbProduct.price,
-    category: dbProduct.category as 'manga' | 'figures' | 'tshirts',
+    category: dbProduct.category as 'manga' | 'figures' | 'tshirts' | 'other',
     images: images,
     stock: dbProduct.stock,
     isActive: true,
@@ -161,6 +161,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       case 'manga': return 'bg-gradient-to-r from-indigo-500 to-blue-500 text-white border-0'
       case 'figures': return 'bg-gradient-to-r from-violet-500 to-purple-500 text-white border-0'
       case 'tshirts': return 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0'
+      case 'other': return 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white border-0'
       default: return 'bg-gradient-to-r from-slate-500 to-gray-500 text-white border-0'
     }
   };
