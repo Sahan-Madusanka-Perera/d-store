@@ -60,11 +60,11 @@ export default function ProfileLayout({
     ];
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12">
+        <div className="min-h-screen bg-background py-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">My Account</h1>
-                    <p className="text-gray-500 mt-1">Manage your profile and orders</p>
+                    <h1 className="text-3xl font-bold text-foreground">My Account</h1>
+                    <p className="text-muted-foreground mt-1">Manage your profile and orders</p>
                 </div>
 
                 <div className="flex flex-col md:flex-row gap-8">
@@ -77,7 +77,7 @@ export default function ProfileLayout({
                                         {user.email?.[0]?.toUpperCase()}
                                     </div>
                                     <div className="font-medium truncate">{user.user_metadata?.full_name || 'User'}</div>
-                                    <div className="text-sm text-gray-400 truncate">{user.email}</div>
+                                    <div className="text-sm text-muted-foreground truncate">{user.email}</div>
                                 </div>
 
                                 <nav className="flex flex-col p-2">
@@ -89,7 +89,7 @@ export default function ProfileLayout({
                                                 href={item.href}
                                                 className={`flex items-center space-x-3 px-4 py-3 rounded-md transition-colors ${isActive
                                                         ? 'bg-primary/5 text-primary font-medium'
-                                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                                                     }`}
                                             >
                                                 <item.icon className="h-5 w-5" />
@@ -98,11 +98,11 @@ export default function ProfileLayout({
                                         );
                                     })}
 
-                                    <div className="my-2 border-t border-gray-100"></div>
+                                    <div className="my-2 border-t border-border"></div>
 
                                     <button
                                         onClick={handleLogout}
-                                        className="flex items-center space-x-3 px-4 py-3 rounded-md text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors text-left w-full"
+                                        className="flex items-center space-x-3 px-4 py-3 rounded-md text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-700 dark:hover:text-red-400 transition-colors text-left w-full"
                                     >
                                         <LogOut className="h-5 w-5" />
                                         <span>Sign Out</span>

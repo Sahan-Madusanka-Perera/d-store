@@ -124,15 +124,15 @@ export default function UserProfile({ onLogout }: UserProfileProps) {
           </span>
         </div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 bg-white">
+      <DropdownMenuContent align="end" className="w-56">
         <div className="px-2 py-2.5">
-          <p className="text-sm font-medium leading-none text-gray-900">{user.user_metadata?.full_name || 'Account'}</p>
-          <p className="text-xs leading-none text-gray-500 mt-1.5 truncate">{user.email}</p>
+          <p className="text-sm font-medium leading-none text-foreground">{user.user_metadata?.full_name || 'Account'}</p>
+          <p className="text-xs leading-none text-muted-foreground mt-1.5 truncate">{user.email}</p>
         </div>
         <DropdownMenuSeparator />
         {isAdmin && (
           <>
-            <DropdownMenuItem asChild className="cursor-pointer bg-black/5 text-black font-bold hover:bg-black/10 focus:bg-black/10">
+            <DropdownMenuItem asChild className="cursor-pointer bg-primary/5 dark:bg-primary/10 text-foreground font-bold hover:bg-primary/10 dark:hover:bg-primary/15 focus:bg-primary/10">
               <Link href="/admin" className="flex items-center">
                 <Shield className="mr-2 h-4 w-4" />
                 <span>Admin Dashboard</span>
@@ -143,13 +143,13 @@ export default function UserProfile({ onLogout }: UserProfileProps) {
         )}
         <DropdownMenuItem asChild className="cursor-pointer">
           <Link href="/profile" className="flex items-center">
-            <UserIcon className="mr-2 h-4 w-4 text-gray-500" />
+            <UserIcon className="mr-2 h-4 w-4 text-muted-foreground" />
             <span>Profile Dashboard</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild className="cursor-pointer">
           <Link href="/profile/orders" className="flex items-center">
-            <Package className="mr-2 h-4 w-4 text-gray-500" />
+            <Package className="mr-2 h-4 w-4 text-muted-foreground" />
             <span>My Orders</span>
           </Link>
         </DropdownMenuItem>

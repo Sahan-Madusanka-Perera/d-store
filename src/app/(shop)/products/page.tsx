@@ -173,7 +173,7 @@ export default async function ProductsPage(props: ProductsPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center relative">
+    <div className="min-h-screen bg-background flex flex-col items-center relative">
       
       {/* Edge-to-Edge Theme Background Overlay */}
       {themeWallpaperUrl && (
@@ -198,8 +198,8 @@ export default async function ProductsPage(props: ProductsPageProps) {
         <div className={`flex flex-col items-center text-center ${themeWallpaperUrl ? 'pt-24 md:pt-40 mb-32 md:mb-48' : 'mb-16 md:mb-24'}`}>
           
           {!themeWallpaperUrl && (
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-white border border-gray-200 rounded-full mb-8 shadow-sm">
-              <ShoppingBag className="h-6 w-6 text-zinc-900" strokeWidth={1.5} />
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-card border border-border rounded-full mb-8 shadow-sm">
+              <ShoppingBag className="h-6 w-6 text-foreground" strokeWidth={1.5} />
             </div>
           )}
 
@@ -209,12 +209,12 @@ export default async function ProductsPage(props: ProductsPageProps) {
               className="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter uppercase mb-6 drop-shadow-2xl text-white" 
             />
           ) : (
-            <h1 className="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter uppercase mb-6 drop-shadow-2xl text-zinc-900">
+            <h1 className="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter uppercase mb-6 drop-shadow-2xl text-foreground">
               {search ? search : 'All Products'}
             </h1>
           )}
           
-          <p className={`text-base sm:text-lg max-w-2xl mx-auto font-medium leading-relaxed drop-shadow-md ${themeWallpaperUrl ? 'text-zinc-100 font-semibold' : 'text-zinc-500'}`}>
+          <p className={`text-base sm:text-lg max-w-2xl mx-auto font-medium leading-relaxed drop-shadow-md ${themeWallpaperUrl ? 'text-zinc-100 font-semibold' : 'text-muted-foreground'}`}>
             {themeWallpaperUrl 
               ? `Explore our exclusive collection of ${search} premium merchandise.`
               : `Browse our entire catalogue of premium anime merchandise. From manga and collectible figures to stylish apparel — find it all here.`}
@@ -222,17 +222,17 @@ export default async function ProductsPage(props: ProductsPageProps) {
 
           {!themeWallpaperUrl && (
             <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-12 w-full">
-              <div className="flex flex-col items-center justify-center bg-white border border-gray-200 rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
-                <div className="text-4xl font-black text-zinc-900 tracking-tight pb-1">{products.length}</div>
-                <div className="text-xs text-zinc-500 font-semibold uppercase tracking-widest">Products</div>
+              <div className="flex flex-col items-center justify-center bg-card border border-border rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
+                <div className="text-4xl font-black text-foreground tracking-tight pb-1">{products.length}</div>
+                <div className="text-xs text-muted-foreground font-semibold uppercase tracking-widest">Products</div>
               </div>
-              <div className="flex flex-col items-center justify-center bg-white border border-gray-200 rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
-                <div className="text-4xl font-black text-zinc-900 tracking-tight pb-1">3</div>
-                <div className="text-xs text-zinc-500 font-semibold uppercase tracking-widest">Categories</div>
+              <div className="flex flex-col items-center justify-center bg-card border border-border rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
+                <div className="text-4xl font-black text-foreground tracking-tight pb-1">3</div>
+                <div className="text-xs text-muted-foreground font-semibold uppercase tracking-widest">Categories</div>
               </div>
-              <div className="flex flex-col items-center justify-center bg-white border border-gray-200 rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
-                <div className="text-4xl font-black text-zinc-900 tracking-tight pb-1">New</div>
-                <div className="text-xs text-zinc-500 font-semibold uppercase tracking-widest">Arrivals</div>
+              <div className="flex flex-col items-center justify-center bg-card border border-border rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
+                <div className="text-4xl font-black text-foreground tracking-tight pb-1">New</div>
+                <div className="text-xs text-muted-foreground font-semibold uppercase tracking-widest">Arrivals</div>
               </div>
             </div>
           )}
@@ -242,7 +242,7 @@ export default async function ProductsPage(props: ProductsPageProps) {
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           {/* Sidebar Filters - Desktop */}
           <div className="w-full lg:w-72 flex-shrink-0 hidden lg:block">
-            <Suspense fallback={<div className="h-[400px] w-full animate-pulse bg-white rounded-2xl border border-gray-200"></div>}>
+            <Suspense fallback={<div className="h-[400px] w-full animate-pulse bg-card rounded-2xl border border-border"></div>}>
               <ProductFilters />
             </Suspense>
           </div>
@@ -253,22 +253,22 @@ export default async function ProductsPage(props: ProductsPageProps) {
             <div className="lg:hidden mb-6 flex justify-end">
               <Sheet>
                 <SheetTrigger asChild>
-                  <button className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold bg-white shadow-sm hover:shadow-md transition-all">
+                  <button className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-xl text-sm font-semibold bg-card shadow-sm hover:shadow-md transition-all">
                     <SlidersHorizontal size={16} /> Filters
                   </button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[85vw] sm:w-[400px] overflow-y-auto bg-white p-6">
+                <SheetContent side="left" className="w-[85vw] sm:w-[400px] overflow-y-auto bg-background p-6">
                   <SheetHeader className="mb-6">
                     <SheetTitle className="text-left font-bold text-2xl">Filters</SheetTitle>
                   </SheetHeader>
-                  <Suspense fallback={<div className="h-[400px] w-full animate-pulse bg-white rounded-2xl border border-gray-200"></div>}>
+                  <Suspense fallback={<div className="h-[400px] w-full animate-pulse bg-card rounded-2xl border border-border"></div>}>
                     <ProductFilters isMobile />
                   </Suspense>
                 </SheetContent>
               </Sheet>
             </div>
 
-            <Suspense fallback={<div className="h-[52px] mb-8 w-full animate-pulse bg-white rounded-lg border border-gray-200"></div>}>
+            <Suspense fallback={<div className="h-[52px] mb-8 w-full animate-pulse bg-card rounded-lg border border-border"></div>}>
               <SearchControls initialSearch={search || ''} initialSort={sort} />
             </Suspense>
 
@@ -279,12 +279,12 @@ export default async function ProductsPage(props: ProductsPageProps) {
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-24 px-4 bg-white border border-gray-200 rounded-3xl shadow-sm text-center">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-50 border border-gray-100 rounded-full mb-6">
-                  <Package className="h-8 w-8 text-zinc-300" strokeWidth={1.5} />
+              <div className="flex flex-col items-center justify-center py-24 px-4 bg-card border border-border rounded-3xl shadow-sm text-center">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-muted border border-border rounded-full mb-6">
+                  <Package className="h-8 w-8 text-muted-foreground/40" strokeWidth={1.5} />
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight mb-3">No Products Found</h2>
-                <p className="text-zinc-500 font-medium max-w-md">
+                <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-3">No Products Found</h2>
+                <p className="text-muted-foreground font-medium max-w-md">
                   {error ? 'Error loading products. Please try again later.' : search ? `No results for "${search}". Try a different search term or adjust your filters.` : "We couldn't find any products matching your current filters."}
                 </p>
               </div>

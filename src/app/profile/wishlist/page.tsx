@@ -97,7 +97,7 @@ export default function WishlistPage() {
     if (isLoading) {
         return (
             <div className="space-y-6">
-                <h2 className="text-2xl font-semibold text-gray-900">My Wishlist</h2>
+                <h2 className="text-2xl font-semibold text-foreground">My Wishlist</h2>
                 <div className="flex justify-center items-center h-64">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
@@ -108,7 +108,7 @@ export default function WishlistPage() {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold text-gray-900">My Wishlist</h2>
+                <h2 className="text-2xl font-semibold text-foreground">My Wishlist</h2>
                 {items.length > 0 && (
                     <Badge variant="outline" className="text-sm">
                         {items.length} {items.length === 1 ? 'item' : 'items'}
@@ -122,12 +122,12 @@ export default function WishlistPage() {
                         <div className="mx-auto w-16 h-16 bg-rose-50 text-rose-400 rounded-full flex items-center justify-center mb-6">
                             <Heart className="h-8 w-8" />
                         </div>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">Your wishlist is empty</h3>
-                        <p className="text-gray-500 max-w-md mx-auto mb-6">
+                        <h3 className="text-xl font-semibold text-foreground mb-2">Your wishlist is empty</h3>
+                        <p className="text-muted-foreground max-w-md mx-auto mb-6">
                             Save items you love to your wishlist so you can easily find them later, track availability, and get notified about status changes.
                         </p>
                         <Link href="/products">
-                            <Button className="bg-black hover:bg-gray-800 text-white">
+                            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
                                 <Package className="h-4 w-4 mr-2" />
                                 Start Browsing
                             </Button>
@@ -147,7 +147,7 @@ export default function WishlistPage() {
                             <Card key={item.id} className="border-0 shadow-sm overflow-hidden hover:shadow-md transition-shadow group">
                                 <div className="flex">
                                     {/* Product Image */}
-                                    <Link href={`/products/${product.id}`} className="relative w-32 h-40 flex-shrink-0 bg-gray-100 overflow-hidden">
+                                    <Link href={`/products/${product.id}`} className="relative w-32 h-40 flex-shrink-0 bg-muted overflow-hidden">
                                         <Image
                                             src={imageUrl}
                                             alt={product.name}
@@ -161,13 +161,13 @@ export default function WishlistPage() {
                                         <div>
                                             <div className="flex items-start justify-between gap-2 mb-1">
                                                 <Link href={`/products/${product.id}`}>
-                                                    <h3 className="font-semibold text-gray-900 hover:text-primary transition-colors text-sm line-clamp-2">
+                                                    <h3 className="font-semibold text-foreground hover:text-primary transition-colors text-sm line-clamp-2">
                                                         {product.name}
                                                     </h3>
                                                 </Link>
                                                 <button
                                                     onClick={() => handleRemove(product.id, product.name)}
-                                                    className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0 p-1"
+                                                    className="text-muted-foreground/70 hover:text-red-500 transition-colors flex-shrink-0 p-1"
                                                     title="Remove from wishlist"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
@@ -181,7 +181,7 @@ export default function WishlistPage() {
                                                 </Badge>
                                             </div>
 
-                                            <p className="text-lg font-bold text-gray-900">
+                                            <p className="text-lg font-bold text-foreground">
                                                 {formatPrice(product.price)}
                                             </p>
                                         </div>
@@ -233,7 +233,7 @@ export default function WishlistPage() {
 
                                 {/* Added date */}
                                 <div className="px-4 pb-3 pt-0">
-                                    <p className="text-[11px] text-gray-400">
+                                    <p className="text-[11px] text-muted-foreground/70">
                                         Added {new Date(item.added_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                     </p>
                                 </div>

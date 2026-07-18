@@ -117,7 +117,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         return (
           <Button
             onClick={handleAddToCart}
-            className="w-full h-11 text-[13px] font-bold tracking-wide shadow-sm hover:shadow-md transition-all bg-violet-600 hover:bg-violet-700 rounded-xl"
+            className="w-full h-11 text-[13px] font-bold tracking-wide shadow-sm hover:shadow-md transition-all bg-violet-600 hover:bg-violet-700 text-white rounded-xl"
           >
             <Zap className="h-4 w-4 mr-2" />
             Pre-order Now
@@ -150,7 +150,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         return (
           <Button
             onClick={handleAddToCart}
-            className="w-full h-11 text-[13px] font-bold tracking-wide shadow-sm hover:shadow-md active:scale-[0.98] transition-all rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white"
+            className="w-full h-11 text-[13px] font-bold tracking-wide shadow-sm hover:shadow-md active:scale-[0.98] transition-all rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             <ShoppingCart className="h-4 w-4 mr-2" />
             Add to Cart
@@ -160,9 +160,9 @@ export default function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <Card className="group relative overflow-hidden border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-xl transition-all duration-300 h-full flex flex-col bg-white p-0 gap-0 rounded-2xl">
+    <Card className="group relative overflow-hidden border border-border hover:border-foreground/20 shadow-sm hover:shadow-xl dark:hover:shadow-black/40 transition-all duration-300 h-full flex flex-col bg-card p-0 gap-0 rounded-2xl">
       {/* Image */}
-      <div className="relative aspect-[4/5] overflow-hidden bg-gray-100">
+      <div className="relative aspect-[4/5] overflow-hidden bg-muted">
         <Link href={`/products/${product.id}`} className="block w-full h-full">
           {product.images && product.images.length > 1 ? (
             <div className="relative w-full h-full">
@@ -195,9 +195,9 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Hover overlay */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 pointer-events-none" />
         <div className="absolute inset-0 flex items-center justify-center gap-2.5 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 z-10">
-          <Button size="icon" variant="secondary" asChild className="h-10 w-10 rounded-full bg-white/90 hover:bg-white shadow-lg border-0">
+          <Button size="icon" variant="secondary" asChild className="h-10 w-10 rounded-full bg-background/90 hover:bg-background shadow-lg border-0">
             <Link href={`/products/${product.id}`}>
-              <Eye className="h-4 w-4 text-zinc-800" />
+              <Eye className="h-4 w-4 text-foreground" />
             </Link>
           </Button>
           <WishlistButton productId={product.id} variant="icon" />
@@ -253,39 +253,39 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Rating */}
         <div className="flex items-center gap-1.5">
           <div className="flex gap-0.5">{renderStars(rating)}</div>
-          <span className="text-xs text-zinc-500 font-medium">
+          <span className="text-xs text-muted-foreground font-medium">
             {rating.toFixed(1)} ({reviewCount})
           </span>
         </div>
 
         {/* Name */}
         <Link href={`/products/${product.id}`}>
-          <h3 className="font-semibold text-[15px] text-zinc-900 line-clamp-2 hover:text-zinc-600 transition-colors leading-snug">
+          <h3 className="font-semibold text-[15px] text-foreground line-clamp-2 hover:text-muted-foreground transition-colors leading-snug">
             {product.name}
           </h3>
         </Link>
 
         {/* Author / Brand / Publisher — clickable */}
         {(product.author || product.brand || product.publisher) && (
-          <div className="flex items-center gap-1 text-xs text-zinc-500 truncate">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground truncate">
             {product.category === 'manga' && product.publisher && (
-              <Link href={`/manga?publisher=${encodeURIComponent(product.publisher)}`} className="hover:text-zinc-800 transition-colors underline decoration-zinc-300 hover:decoration-zinc-500 truncate">
+              <Link href={`/manga?publisher=${encodeURIComponent(product.publisher)}`} className="hover:text-foreground transition-colors underline decoration-muted-foreground/40 hover:decoration-muted-foreground truncate">
                 {product.publisher}
               </Link>
             )}
             {product.category === 'manga' && product.publisher && product.author && (
-              <span className="text-zinc-300 mx-0.5">·</span>
+              <span className="text-muted-foreground/50 mx-0.5">·</span>
             )}
             {product.author && (
               <span className="italic truncate">{product.author}</span>
             )}
             {product.category === 'figures' && product.brand && (
-              <Link href={`/figures?brand=${encodeURIComponent(product.brand)}`} className="hover:text-zinc-800 transition-colors underline decoration-zinc-300 hover:decoration-zinc-500 truncate">
+              <Link href={`/figures?brand=${encodeURIComponent(product.brand)}`} className="hover:text-foreground transition-colors underline decoration-muted-foreground/40 hover:decoration-muted-foreground truncate">
                 {product.brand}
               </Link>
             )}
             {product.category === 'tshirts' && product.brand && (
-              <Link href={`/tshirts?search=${encodeURIComponent(product.brand)}`} className="hover:text-zinc-800 transition-colors underline decoration-zinc-300 hover:decoration-zinc-500 truncate">
+              <Link href={`/tshirts?search=${encodeURIComponent(product.brand)}`} className="hover:text-foreground transition-colors underline decoration-muted-foreground/40 hover:decoration-muted-foreground truncate">
                 {product.brand}
               </Link>
             )}
@@ -297,20 +297,20 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div className="flex flex-wrap gap-1 mt-0.5">
             {product.series && product.series !== 'Various' && (
               <Link href={`/${product.category}?search=${encodeURIComponent(product.series)}`}>
-                <span className="inline-block text-[10px] font-semibold uppercase tracking-wider text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors rounded-md px-2 py-0.5 max-w-[110px] truncate cursor-pointer">
+                <span className="inline-block text-[10px] font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/15 hover:bg-indigo-100 dark:hover:bg-indigo-500/25 transition-colors rounded-md px-2 py-0.5 max-w-[110px] truncate cursor-pointer">
                   {product.series}
                 </span>
               </Link>
             )}
             {product.characterNames?.slice(0, 2).map((char, idx) => (
               <Link key={idx} href={`/${product.category}?search=${encodeURIComponent(char)}`}>
-                <span className="inline-block text-[10px] font-medium text-zinc-600 bg-zinc-100 hover:bg-zinc-200 transition-colors rounded-md px-2 py-0.5 max-w-[90px] truncate cursor-pointer">
+                <span className="inline-block text-[10px] font-medium text-muted-foreground bg-muted hover:bg-accent transition-colors rounded-md px-2 py-0.5 max-w-[90px] truncate cursor-pointer">
                   {char}
                 </span>
               </Link>
             ))}
             {product.characterNames && product.characterNames.length > 2 && (
-              <span className="text-[10px] text-zinc-400 self-center">
+              <span className="text-[10px] text-muted-foreground/70 self-center">
                 +{product.characterNames.length - 2}
               </span>
             )}
@@ -319,11 +319,11 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* Price */}
         <div className="flex items-baseline gap-2 mt-auto pt-3">
-          <span className="text-xl font-bold text-zinc-900">
+          <span className="text-xl font-bold text-foreground">
             {formatPrice(displayPrice)}
           </span>
           {shouldShowDiscount && (
-            <span className="text-sm text-zinc-400 line-through">
+            <span className="text-sm text-muted-foreground/70 line-through">
               {formatPrice(originalPrice)}
             </span>
           )}

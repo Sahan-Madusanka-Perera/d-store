@@ -101,7 +101,11 @@ export default async function Home() {
       <Navbar />
       <HeroCarousel initialSlides={initialSlides} />
       <RecommendedProducts />
-      <ProductShowcase title="NEW ARRIVALS" products={freshDropsData} />
+      <ProductShowcase
+        title="NEW ARRIVALS"
+        subtitle="The latest additions to the store — fresh from Japan and beyond."
+        products={freshDropsData}
+      />
       <CategoryShowcase />
       <CustomOrderForm />
       <CategoryGrid />

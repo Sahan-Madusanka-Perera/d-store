@@ -67,7 +67,7 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
   return (
     <div className="space-y-4 will-change-transform">
       {/* Main Image with Navigation */}
-      <div className="relative w-full aspect-square max-h-[450px] lg:max-h-[550px] bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden shadow-xl group cursor-pointer">
+      <div className="relative w-full aspect-square max-h-[450px] lg:max-h-[550px] bg-muted rounded-2xl overflow-hidden shadow-xl dark:shadow-black/30 group cursor-pointer">
         <div className="overflow-hidden h-full" ref={emblaRef}>
           <div className="flex h-full touch-pan-y">
             {images.map((img, idx) => (
@@ -157,7 +157,7 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
             {images.map((image, index) => (
               <div 
                 key={index} 
-                className={`relative flex-shrink-0 w-20 h-20 bg-gray-100 rounded-lg overflow-hidden cursor-pointer transition-[ring,opacity] duration-200 ${
+                className={`relative flex-shrink-0 w-20 h-20 bg-muted rounded-lg overflow-hidden cursor-pointer transition-[ring,opacity] duration-200 ${
                   selectedImageIndex === index ? 'ring-2 ring-blue-500 opacity-100' : 'opacity-70 hover:opacity-100 hover:ring-2 hover:ring-blue-400'
                 }`}
                 onClick={() => setSelectedImageIndex(index)}
@@ -233,7 +233,7 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
               {images.map((image, index) => (
                 <div
                   key={index}
-                  className={`relative flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-white transition-all ${
+                  className={`relative flex-shrink-0 w-16 h-16 bg-muted rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-white transition-all ${
                     selectedImageIndex === index ? 'ring-2 ring-white scale-110' : 'opacity-70'
                   }`}
                   onClick={() => setSelectedImageIndex(index)}

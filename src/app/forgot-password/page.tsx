@@ -35,36 +35,36 @@ export default function ForgotPasswordPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="flex justify-center">
-                    <div className="text-3xl font-bold text-black">D-Store</div>
+                    <div className="text-3xl font-bold text-foreground">D-Store</div>
                 </div>
-                <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
+                <h2 className="mt-6 text-center text-3xl font-bold text-foreground">
                     Reset your password
                 </h2>
-                <p className="mt-2 text-center text-sm text-gray-600">
+                <p className="mt-2 text-center text-sm text-muted-foreground">
                     Enter your email to receive a reset link
                 </p>
             </div>
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+                <div className="bg-card py-8 px-4 shadow sm:rounded-lg sm:px-10">
                     <form className="space-y-6" onSubmit={handleResetPassword}>
                         {error && (
-                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                            <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 px-4 py-3 rounded">
                                 {error}
                             </div>
                         )}
 
                         {message && (
-                            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+                            <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-400 px-4 py-3 rounded">
                                 {message}
                             </div>
                         )}
 
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                            <label htmlFor="email" className="block text-sm font-medium text-foreground">
                                 Email address
                             </label>
                             <div className="mt-1">
@@ -76,7 +76,7 @@ export default function ForgotPasswordPage() {
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black"
+                                    className="appearance-none block w-full px-3 py-2 border border-border rounded-md placeholder-muted-foreground focus:outline-none focus:ring-ring focus:border-ring"
                                     placeholder="you@example.com"
                                 />
                             </div>
@@ -86,14 +86,14 @@ export default function ForgotPasswordPage() {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {loading ? 'Sending link...' : 'Send reset link'}
                             </button>
                         </div>
 
                         <div className="mt-6 text-center">
-                            <Link href="/login" className="font-medium text-black hover:text-gray-700 text-sm">
+                            <Link href="/login" className="font-medium text-foreground hover:text-muted-foreground text-sm">
                                 Back to sign in
                             </Link>
                         </div>

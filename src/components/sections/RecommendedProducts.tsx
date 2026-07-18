@@ -132,6 +132,9 @@ export function RecommendedProducts() {
           transition={{ duration: 0.6 }}
           className="mb-12 flex flex-col items-center text-center"
         >
+          <p className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.25em] text-muted-foreground mb-3">
+            {isPersonalized ? "Picked for you" : "Community favorites"}
+          </p>
           <h2 className="text-heading">
             {isPersonalized ? "RECOMMENDED FOR YOU" : "TRENDING NOW"}
           </h2>

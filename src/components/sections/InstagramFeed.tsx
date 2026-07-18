@@ -131,27 +131,27 @@ export async function InstagramFeed() {
     })) : DUMMY_POSTS;
 
     return (
-        <section className="w-full bg-white rounded-[2.5rem] md:rounded-[3rem] border border-gray-200 overflow-hidden shadow-2xl transition-all hover:shadow-3xl">
+        <section className="w-full bg-card rounded-[2.5rem] md:rounded-[3rem] border border-border overflow-hidden shadow-2xl dark:shadow-black/30 transition-all hover:shadow-3xl">
             <div className="p-8 md:p-12 flex flex-col gap-10">
                 {/* Header / Profile Info */}
-                <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-8 border-b border-gray-100 pb-10">
+                <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-8 border-b border-border pb-10">
                     <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
                         <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-fuchsia-600 p-1 shrink-0 shadow-lg relative group">
-                            <div className="w-full h-full rounded-full bg-white p-1">
-                                <div className="w-full h-full rounded-full bg-zinc-100 flex items-center justify-center overflow-hidden relative">
+                            <div className="w-full h-full rounded-full bg-card p-1">
+                                <div className="w-full h-full rounded-full bg-muted flex items-center justify-center overflow-hidden relative">
                                     <Image src={displayPic} alt="Instagram Profile" fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
                                 </div>
                             </div>
                         </div>
                         <div className="flex flex-col items-center md:items-start text-center md:text-left">
-                            <a href={`https://instagram.com/${displayHandle.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-2xl md:text-3xl font-black uppercase tracking-tight flex items-center gap-2 hover:opacity-80 transition-opacity">
+                            <a href={`https://instagram.com/${displayHandle.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-2xl md:text-3xl font-black uppercase tracking-tight flex items-center gap-2 hover:opacity-80 transition-opacity text-foreground">
                                 {displayHandle}
                             </a>
-                            <p className="text-zinc-500 font-medium mt-1 mb-5 md:text-lg">{displayBio}</p>
+                            <p className="text-muted-foreground font-medium mt-1 mb-5 md:text-lg">{displayBio}</p>
                             <div className="flex items-center gap-8 md:gap-12">
-                                <div className="flex flex-col items-center"><span className="text-xl md:text-2xl font-black">{displayMetrics.posts}</span><span className="text-zinc-500 text-xs uppercase tracking-wider font-bold mt-1">Posts</span></div>
-                                <div className="flex flex-col items-center"><span className="text-xl md:text-2xl font-black">{displayMetrics.followers}</span><span className="text-zinc-500 text-xs uppercase tracking-wider font-bold mt-1">Followers</span></div>
-                                <div className="flex flex-col items-center"><span className="text-xl md:text-2xl font-black">{displayMetrics.following}</span><span className="text-zinc-500 text-xs uppercase tracking-wider font-bold mt-1">Following</span></div>
+                                <div className="flex flex-col items-center"><span className="text-xl md:text-2xl font-black text-foreground">{displayMetrics.posts}</span><span className="text-muted-foreground text-xs uppercase tracking-wider font-bold mt-1">Posts</span></div>
+                                <div className="flex flex-col items-center"><span className="text-xl md:text-2xl font-black text-foreground">{displayMetrics.followers}</span><span className="text-muted-foreground text-xs uppercase tracking-wider font-bold mt-1">Followers</span></div>
+                                <div className="flex flex-col items-center"><span className="text-xl md:text-2xl font-black text-foreground">{displayMetrics.following}</span><span className="text-muted-foreground text-xs uppercase tracking-wider font-bold mt-1">Following</span></div>
                             </div>
                         </div>
                     </div>
@@ -164,7 +164,7 @@ export async function InstagramFeed() {
                 {/* Posts Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {displayPosts.map((post: any) => (
-                        <a href={post.postUrl} target="_blank" rel="noopener noreferrer" key={post.id} className="group relative aspect-square rounded-[1.5rem] overflow-hidden bg-zinc-100 cursor-pointer block">
+                        <a href={post.postUrl} target="_blank" rel="noopener noreferrer" key={post.id} className="group relative aspect-square rounded-[1.5rem] overflow-hidden bg-muted cursor-pointer block">
                             <Image src={post.image} alt="Instagram post" fill sizes="(max-width: 768px) 50vw, 25vw" className="object-cover transition-transform duration-700 group-hover:scale-110" />
                             {/* Overlay */}
                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3 text-white backdrop-blur-sm">

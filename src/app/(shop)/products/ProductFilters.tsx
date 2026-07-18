@@ -76,12 +76,12 @@ export default function ProductFilters({ isMobile = false }: ProductFiltersProps
     const hasActiveFilters = minPrice || maxPrice || category !== 'all';
 
     return (
-        <div className={isMobile ? 'px-2 py-2' : 'bg-white rounded-2xl border border-gray-200 p-6 shadow-sm sticky top-28'}>
-            <h3 className="font-bold text-lg text-zinc-900 mb-6">Filters</h3>
+        <div className={isMobile ? 'px-2 py-2' : 'bg-card rounded-2xl border border-border p-6 shadow-sm sticky top-28'}>
+            <h3 className="font-bold text-lg text-foreground mb-6">Filters</h3>
 
             {/* Category Filter */}
             <div className="mb-8">
-                <h4 className="font-semibold text-xs text-zinc-400 uppercase tracking-widest mb-4">Category</h4>
+                <h4 className="font-semibold text-xs text-muted-foreground/70 uppercase tracking-widest mb-4">Category</h4>
                 <div className="space-y-2.5">
                     {categories.map((cat) => (
                         <label key={cat.id} className="flex items-center gap-3 cursor-pointer group">
@@ -95,9 +95,9 @@ export default function ProductFilters({ isMobile = false }: ProductFiltersProps
                                     const qs = createQueryString({ category: e.target.value });
                                     router.push(`/products${qs ? `?${qs}` : ''}`);
                                 }}
-                                className="w-4 h-4 text-zinc-900 bg-white border-gray-300 focus:ring-zinc-900 focus:ring-offset-white accent-zinc-900"
+                                className="w-4 h-4 text-foreground bg-background border-border focus:ring-ring focus:ring-offset-background accent-foreground"
                             />
-                            <span className={`text-sm ${category === cat.id ? 'font-semibold text-zinc-900' : 'text-zinc-500 group-hover:text-zinc-800 transition-colors'}`}>
+                            <span className={`text-sm ${category === cat.id ? 'font-semibold text-foreground' : 'text-muted-foreground group-hover:text-foreground transition-colors'}`}>
                                 {cat.name}
                             </span>
                         </label>
@@ -105,11 +105,11 @@ export default function ProductFilters({ isMobile = false }: ProductFiltersProps
                 </div>
             </div>
 
-            <div className="h-px bg-gray-100 w-full mb-8"></div>
+            <div className="h-px bg-border w-full mb-8"></div>
 
             {/* Price Filter */}
             <div className="mb-8">
-                <h4 className="font-semibold text-xs text-zinc-400 uppercase tracking-widest mb-4">Price Range</h4>
+                <h4 className="font-semibold text-xs text-muted-foreground/70 uppercase tracking-widest mb-4">Price Range</h4>
                 <div className="space-y-2.5 mb-6">
                     {priceRanges.map((range, idx) => {
                         const isActive = minPrice === range.min && maxPrice === range.max;
@@ -125,9 +125,9 @@ export default function ProductFilters({ isMobile = false }: ProductFiltersProps
                                         const qs = createQueryString({ minPrice: range.min || null, maxPrice: range.max || null });
                                         router.push(`/products${qs ? `?${qs}` : ''}`);
                                     }}
-                                    className="w-4 h-4 text-zinc-900 bg-white border-gray-300 focus:ring-zinc-900 focus:ring-offset-white accent-zinc-900"
+                                    className="w-4 h-4 text-foreground bg-background border-border focus:ring-ring focus:ring-offset-background accent-foreground"
                                 />
-                                <span className={`text-sm ${isActive ? 'font-semibold text-zinc-900' : 'text-zinc-500 group-hover:text-zinc-800 transition-colors'}`}>
+                                <span className={`text-sm ${isActive ? 'font-semibold text-foreground' : 'text-muted-foreground group-hover:text-foreground transition-colors'}`}>
                                     {range.label}
                                 </span>
                             </label>
@@ -137,35 +137,35 @@ export default function ProductFilters({ isMobile = false }: ProductFiltersProps
 
                 <div className="flex items-center gap-2">
                     <div className="relative flex-1">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400 font-medium">Rs.</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground/70 font-medium">Rs.</span>
                         <input
                             type="number"
                             placeholder="Min"
                             value={minPrice}
                             onChange={(e) => setMinPrice(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-300 transition-all"
+                            className="w-full pl-9 pr-3 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-ring transition-all"
                         />
                     </div>
-                    <span className="text-zinc-300 font-medium">–</span>
+                    <span className="text-muted-foreground/40 font-medium">–</span>
                     <div className="relative flex-1">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400 font-medium">Rs.</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground/70 font-medium">Rs.</span>
                         <input
                             type="number"
                             placeholder="Max"
                             value={maxPrice}
                             onChange={(e) => setMaxPrice(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-300 transition-all"
+                            className="w-full pl-9 pr-3 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-ring transition-all"
                         />
                     </div>
                 </div>
 
-                <Button onClick={applyFilters} className="w-full mt-4 h-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-sm tracking-wide">
+                <Button onClick={applyFilters} className="w-full mt-4 h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm tracking-wide">
                     Apply Range
                 </Button>
             </div>
 
             {hasActiveFilters && (
-                <Button onClick={clearFilters} variant="outline" className="w-full text-zinc-500 hover:text-zinc-900 border-gray-200 hover:border-gray-300 rounded-xl h-10 font-semibold text-sm">
+                <Button onClick={clearFilters} variant="outline" className="w-full text-muted-foreground hover:text-foreground border-border hover:border-border rounded-xl h-10 font-semibold text-sm">
                     <RotateCcw className="h-3.5 w-3.5 mr-2" />
                     Clear All Filters
                 </Button>

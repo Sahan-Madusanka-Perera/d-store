@@ -52,7 +52,7 @@ export default async function OrdersPage() {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold text-gray-900">Order History</h2>
+                <h2 className="text-2xl font-semibold text-foreground">Order History</h2>
                 <Badge variant="secondary" className="px-3 py-1">
                     {orders?.length || 0} Orders
                 </Badge>
@@ -64,8 +64,8 @@ export default async function OrdersPage() {
                         <div className="mx-auto w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
                             <FileText className="h-8 w-8" />
                         </div>
-                        <h3 className="text-xl font-medium text-gray-900 mb-2">Supabase Query Error</h3>
-                        <p className="text-gray-500 max-w-md mx-auto mb-6">
+                        <h3 className="text-xl font-medium text-foreground mb-2">Supabase Query Error</h3>
+                        <p className="text-muted-foreground max-w-md mx-auto mb-6">
                             An error occurred while fetching your orders:
                         </p>
                         <div className="bg-red-50 text-red-800 p-4 rounded-md text-sm text-left font-mono mb-6 overflow-x-auto">
@@ -76,16 +76,16 @@ export default async function OrdersPage() {
             ) : !orders || orders.length === 0 ? (
                 <Card className="border-0 shadow-sm">
                     <CardContent className="p-12 text-center">
-                        <div className="mx-auto w-16 h-16 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center mb-4">
+                        <div className="mx-auto w-16 h-16 bg-muted text-muted-foreground/70 rounded-full flex items-center justify-center mb-4">
                             <Package className="h-8 w-8" />
                         </div>
-                        <h3 className="text-xl font-medium text-gray-900 mb-2">No orders found</h3>
-                        <p className="text-gray-500 max-w-sm mx-auto mb-6">
+                        <h3 className="text-xl font-medium text-foreground mb-2">No orders found</h3>
+                        <p className="text-muted-foreground max-w-sm mx-auto mb-6">
                             You haven't placed any orders yet. Browse our catalog to discover amazing merch!
                         </p>
                         <Link
                             href="/products"
-                            className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-black hover:bg-gray-800 transition-colors"
+                            className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-primary-foreground bg-primary hover:bg-primary/90 transition-colors"
                         >
                             Start Shopping
                         </Link>
@@ -96,18 +96,18 @@ export default async function OrdersPage() {
                     {orders.map((order) => (
                         <Card key={order.id} className="border-0 shadow-sm overflow-hidden">
                             {/* Order Header */}
-                            <div className="bg-gray-50 border-b border-gray-100 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="bg-muted border-b border-border px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                 <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
                                     <div>
-                                        <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Order Placed</p>
-                                        <p className="text-sm font-medium text-gray-900">{new Date(order.created_at).toLocaleDateString()}</p>
+                                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">Order Placed</p>
+                                        <p className="text-sm font-medium text-foreground">{new Date(order.created_at).toLocaleDateString()}</p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Total</p>
-                                        <p className="text-sm font-medium text-gray-900">{formatPrice(order.total_amount)}</p>
+                                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">Total</p>
+                                        <p className="text-sm font-medium text-foreground">{formatPrice(order.total_amount)}</p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Ship To</p>
+                                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">Ship To</p>
                                         <p className="text-sm font-medium text-primary hover:underline cursor-pointer truncate max-w-[150px]" title={typeof order.shipping_address === 'string' ? order.shipping_address : order.shipping_address?.street || JSON.stringify(order.shipping_address)}>
                                             {typeof order.shipping_address === 'string'
                                                 ? order.shipping_address.split(',')[0]
@@ -116,8 +116,8 @@ export default async function OrdersPage() {
                                     </div>
                                 </div>
                                 <div className="flex flex-col items-start sm:items-end">
-                                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1 text-right w-full">Order #</p>
-                                    <p className="text-sm font-medium text-gray-900">
+                                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1 text-right w-full">Order #</p>
+                                    <p className="text-sm font-medium text-foreground">
                                         {typeof order.id === 'string' && order.id.includes('-')
                                             ? `...${order.id.split('-')[4]}`
                                             : `#${order.id}`}
@@ -129,8 +129,8 @@ export default async function OrdersPage() {
                             <CardContent className="p-6">
                                 <div className="flex items-center justify-between mb-6">
                                     <div className="flex items-center space-x-2">
-                                        {order.status === 'delivered' ? <Package className="h-5 w-5 text-emerald-600" /> : <Truck className="h-5 w-5 text-gray-400" />}
-                                        <h4 className="text-lg font-medium text-gray-900">
+                                        {order.status === 'delivered' ? <Package className="h-5 w-5 text-emerald-600" /> : <Truck className="h-5 w-5 text-muted-foreground/70" />}
+                                        <h4 className="text-lg font-medium text-foreground">
                                             {order.status === 'delivered' ? 'Delivered' : order.status === 'shipped' ? 'On the way' : 'Preparing for shipment'}
                                         </h4>
                                     </div>
@@ -143,21 +143,21 @@ export default async function OrdersPage() {
                                     {order.order_items?.map((item: any) => (
                                         <div key={item.id} className="pt-4 first:pt-0 flex items-center justify-between">
                                             <div className="flex items-center space-x-4">
-                                                <div className="h-16 w-16 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
+                                                <div className="h-16 w-16 bg-muted rounded-md overflow-hidden flex-shrink-0">
                                                     {item.products?.image_url ? (
                                                         <img src={item.products.image_url} alt={item.products.name} className="h-full w-full object-cover" />
                                                     ) : (
-                                                        <div className="h-full w-full flex items-center justify-center text-gray-400"><Package className="h-8 w-8" /></div>
+                                                        <div className="h-full w-full flex items-center justify-center text-muted-foreground/70"><Package className="h-8 w-8" /></div>
                                                     )}
                                                 </div>
                                                 <div>
                                                     <p className="text-sm font-medium text-blue-600 hover:text-blue-800 cursor-pointer">
                                                         {item.products?.name || 'Unknown Product'}
                                                     </p>
-                                                    <p className="text-sm text-gray-500 mt-1">Qty: {item.quantity}</p>
+                                                    <p className="text-sm text-muted-foreground mt-1">Qty: {item.quantity}</p>
                                                 </div>
                                             </div>
-                                            <div className="text-sm font-medium text-gray-900">
+                                            <div className="text-sm font-medium text-foreground">
                                                 {formatPrice(item.price_at_time * item.quantity)}
                                             </div>
                                         </div>
@@ -165,11 +165,11 @@ export default async function OrdersPage() {
                                 </div>
 
                                 {/* Footer Actions */}
-                                <div className="mt-6 pt-6 border-t border-gray-100 flex flex-wrap gap-3">
-                                    <button className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                                <div className="mt-6 pt-6 border-t border-border flex flex-wrap gap-3">
+                                    <button className="px-4 py-2 border border-border rounded-md text-sm font-medium text-foreground bg-card hover:bg-muted transition-colors">
                                         Track Package
                                     </button>
-                                    <button className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                                    <button className="px-4 py-2 border border-border rounded-md text-sm font-medium text-foreground bg-card hover:bg-muted transition-colors">
                                         View Invoice
                                     </button>
                                 </div>

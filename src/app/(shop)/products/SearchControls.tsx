@@ -37,18 +37,18 @@ export default function SearchControls({ initialSearch, initialSort }: SearchCon
     return (
         <div className="flex flex-col sm:flex-row gap-3 mb-8">
             <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 pointer-events-none" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70 pointer-events-none" />
                 <input
                     type="text"
                     placeholder="Search all products..."
                     defaultValue={initialSearch || ''}
-                    className="w-full h-11 pl-11 pr-4 rounded-xl bg-white border border-gray-200 text-sm text-zinc-900 placeholder:text-zinc-400 shadow-sm hover:shadow-md focus:shadow-md focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-300 transition-all"
+                    className="w-full h-11 pl-11 pr-4 rounded-xl bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground/70 shadow-sm hover:shadow-md focus:shadow-md focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-ring transition-all"
                     onKeyDown={handleSearch}
                 />
             </div>
 
             <select
-                className="h-11 px-4 rounded-xl bg-white border border-gray-200 text-sm font-medium text-zinc-700 shadow-sm hover:shadow-md focus:shadow-md focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-300 transition-all min-w-[180px] appearance-none cursor-pointer"
+                className="h-11 px-4 rounded-xl bg-background border border-border text-sm font-medium text-foreground shadow-sm hover:shadow-md focus:shadow-md focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-ring transition-all min-w-[180px] appearance-none cursor-pointer"
                 defaultValue={initialSort || 'newest'}
                 onChange={handleSortChange}
                 style={{

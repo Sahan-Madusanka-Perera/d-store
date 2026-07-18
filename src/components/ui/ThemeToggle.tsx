@@ -36,7 +36,7 @@ export function ThemeToggle() {
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
     >
       <Sun
-        className={`h-5 w-5 absolute transition-all duration-500 ease-in-out ${
+        className={`h-5 w-5 absolute inset-0 m-auto transition-all duration-500 ease-in-out ${
           isDark
             ? 'rotate-90 scale-0 opacity-0'
             : 'rotate-0 scale-100 opacity-100'
@@ -44,7 +44,7 @@ export function ThemeToggle() {
         strokeWidth={1.5}
       />
       <Moon
-        className={`h-5 w-5 absolute transition-all duration-500 ease-in-out ${
+        className={`h-5 w-5 absolute inset-0 m-auto transition-all duration-500 ease-in-out ${
           isDark
             ? 'rotate-0 scale-100 opacity-100'
             : '-rotate-90 scale-0 opacity-0'

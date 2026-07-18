@@ -40,11 +40,11 @@ export default function CategorySearchControls({ basePath, initialSearch, initia
         type="text"
         placeholder="Search..."
         defaultValue={initialSearch || ''}
-        className="border border-gray-200 rounded-xl px-4 py-2.5 bg-white flex-1 min-w-[200px] shadow-sm hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10"
+        className="border border-border rounded-xl px-4 py-2.5 bg-background flex-1 min-w-[200px] shadow-sm hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-ring/20"
         onKeyDown={handleSearch}
       />
       <select
-        className="border border-gray-200 rounded-xl px-4 py-2.5 bg-white shadow-sm hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10 font-medium min-w-[180px]"
+        className="border border-border rounded-xl px-4 py-2.5 bg-background shadow-sm hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-ring/20 font-medium min-w-[180px]"
         defaultValue={initialSort || 'newest'}
         onChange={handleSortChange}
       >

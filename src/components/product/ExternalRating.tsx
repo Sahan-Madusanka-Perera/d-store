@@ -51,9 +51,9 @@ export default function ExternalRating({ productId, initialRating, initialCount 
                 stars.push(<Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />);
             } else if (i === fullStars && hasHalfStar) {
                 stars.push(<Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" style={{ clipPath: 'inset(0 50% 0 0)' }} />);
-                stars.push(<Star key={`${i}-empty`} className="w-4 h-4 text-gray-300 absolute" style={{ clipPath: 'inset(0 0 0 50%)' }} />);
+                stars.push(<Star key={`${i}-empty`} className="w-4 h-4 text-muted-foreground/30 absolute" style={{ clipPath: 'inset(0 0 0 50%)' }} />);
             } else {
-                stars.push(<Star key={i} className="w-4 h-4 text-gray-300" />);
+                stars.push(<Star key={i} className="w-4 h-4 text-muted-foreground/30" />);
             }
         }
         return (
@@ -91,8 +91,8 @@ export default function ExternalRating({ productId, initialRating, initialCount 
             </div>
 
             <div className="flex items-center gap-3">
-                <span className="text-sm font-bold text-gray-800">
-                    {rating.toFixed(1)} <span className="text-gray-500 font-medium">({count?.toLocaleString()} reviews)</span>
+                <span className="text-sm font-bold text-foreground">
+                    {rating.toFixed(1)} <span className="text-muted-foreground font-medium">({count?.toLocaleString()} reviews)</span>
                 </span>
 
                 <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full hover:bg-amber-100/50" onClick={fetchRating} title="Refresh external ratings">

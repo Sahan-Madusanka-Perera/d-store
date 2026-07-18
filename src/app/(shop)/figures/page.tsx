@@ -118,32 +118,32 @@ export default async function FiguresPage(props: FiguresPageProps) {
   const products: Product[] = dbProducts?.map(mapDatabaseProduct) || [];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center">
+    <div className="min-h-screen bg-background flex flex-col items-center">
       <div className="w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-12 md:py-20">
         {/* Header */}
         <div className="flex flex-col items-center text-center mb-16 md:mb-20">
-          
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-zinc-900 tracking-tighter uppercase mb-6">
+
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-foreground tracking-tighter uppercase mb-6">
             {search ? search : 'Anime Figures'}
           </h1>
           {/*<Image src="/son_goku.jpg" alt="Anime Figures" width={600} height={400} className="w-full max-w-3xl rounded-2xl mb-6 object-cover" />*/}
-          <p className="text-base sm:text-lg text-zinc-500 max-w-2xl mx-auto font-medium leading-relaxed">
+          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto font-medium leading-relaxed">
             Discover premium collectible figures from your favorite anime series.
             Each piece is carefully crafted with meticulous attention to detail.
           </p>
 
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-12 w-full">
-            <div className="flex flex-col items-center justify-center bg-white border border-gray-200 rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
-              <div className="text-4xl font-black text-zinc-900 tracking-tight pb-1">{products.length}</div>
-              <div className="text-xs text-zinc-500 font-semibold uppercase tracking-widest">Figures</div>
+            <div className="flex flex-col items-center justify-center bg-card border border-border rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
+              <div className="text-4xl font-black text-foreground tracking-tight pb-1">{products.length}</div>
+              <div className="text-xs text-muted-foreground font-semibold uppercase tracking-widest">Figures</div>
             </div>
-            <div className="flex flex-col items-center justify-center bg-white border border-gray-200 rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
-              <div className="text-4xl font-black text-zinc-900 tracking-tight pb-1">Premium</div>
-              <div className="text-xs text-zinc-500 font-semibold uppercase tracking-widest">Quality</div>
+            <div className="flex flex-col items-center justify-center bg-card border border-border rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
+              <div className="text-4xl font-black text-foreground tracking-tight pb-1">Premium</div>
+              <div className="text-xs text-muted-foreground font-semibold uppercase tracking-widest">Quality</div>
             </div>
-            <div className="flex flex-col items-center justify-center bg-white border border-gray-200 rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
-              <div className="text-4xl font-black text-zinc-900 tracking-tight pb-1">Licensed</div>
-              <div className="text-xs text-zinc-500 font-semibold uppercase tracking-widest">Official</div>
+            <div className="flex flex-col items-center justify-center bg-card border border-border rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
+              <div className="text-4xl font-black text-foreground tracking-tight pb-1">Licensed</div>
+              <div className="text-xs text-muted-foreground font-semibold uppercase tracking-widest">Official</div>
             </div>
           </div>
         </div>
@@ -152,7 +152,7 @@ export default async function FiguresPage(props: FiguresPageProps) {
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           {/* Sidebar Filters - Desktop */}
           <div className="w-full lg:w-72 flex-shrink-0 hidden lg:block">
-            <Suspense fallback={<div className="h-[400px] w-full animate-pulse bg-white rounded-2xl border border-gray-200"></div>}>
+            <Suspense fallback={<div className="h-[400px] w-full animate-pulse bg-card rounded-2xl border border-border"></div>}>
               <CategoryPageFilters basePath="/figures" extraFilters={figureFilters} />
             </Suspense>
           </div>
@@ -163,11 +163,11 @@ export default async function FiguresPage(props: FiguresPageProps) {
             <div className="lg:hidden mb-6 flex justify-end">
               <Sheet>
                 <SheetTrigger asChild>
-                  <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium bg-white shadow-sm hover:shadow-md transition-all">
+                  <button className="flex items-center gap-2 px-4 py-2 border border-border rounded-xl text-sm font-medium bg-card shadow-sm hover:shadow-md transition-all">
                     <SlidersHorizontal size={16} /> Filters
                   </button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[85vw] sm:w-[400px] overflow-y-auto bg-white p-6">
+                <SheetContent side="left" className="w-[85vw] sm:w-[400px] overflow-y-auto bg-background p-6">
                   <SheetHeader className="mb-6">
                     <SheetTitle className="text-left font-bold text-2xl">Filters</SheetTitle>
                   </SheetHeader>
@@ -178,7 +178,7 @@ export default async function FiguresPage(props: FiguresPageProps) {
               </Sheet>
             </div>
 
-            <Suspense fallback={<div className="h-[52px] mb-8 w-full animate-pulse bg-white rounded-lg border border-gray-200"></div>}>
+            <Suspense fallback={<div className="h-[52px] mb-8 w-full animate-pulse bg-card rounded-lg border border-border"></div>}>
               <CategorySearchControls basePath="/figures" initialSearch={search || ''} initialSort={sort} />
             </Suspense>
 
@@ -189,12 +189,12 @@ export default async function FiguresPage(props: FiguresPageProps) {
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-24 px-4 bg-white border border-gray-200 rounded-3xl shadow-sm text-center">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-50 border border-gray-100 rounded-full mb-6">
-                  <Package className="h-8 w-8 text-zinc-300" strokeWidth={1.5} />
+              <div className="flex flex-col items-center justify-center py-24 px-4 bg-card border border-border rounded-3xl shadow-sm text-center">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-muted border border-border rounded-full mb-6">
+                  <Package className="h-8 w-8 text-muted-foreground/40" strokeWidth={1.5} />
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight mb-3">No Figures Found</h2>
-                <p className="text-zinc-500 font-medium max-w-md">
+                <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-3">No Figures Found</h2>
+                <p className="text-muted-foreground font-medium max-w-md">
                   {search ? `No results for "${search}". Try a different search term.` : "We're currently stocking our shelves. Check back soon!"}
                 </p>
               </div>

@@ -54,24 +54,24 @@ export default function NewsletterSettings() {
 
     return (
         <Card className="border-0 shadow-sm overflow-hidden">
-            <CardHeader className="bg-gray-50 border-b border-gray-100 flex flex-row items-center justify-between py-4">
+            <CardHeader className="bg-muted border-b border-border flex flex-row items-center justify-between py-4">
                 <div className="flex items-center gap-2">
-                    <Mail className="w-5 h-5 text-gray-500" />
-                    <CardTitle className="text-lg font-medium text-gray-900">Email Preferences</CardTitle>
+                    <Mail className="w-5 h-5 text-muted-foreground" />
+                    <CardTitle className="text-lg font-medium text-foreground">Email Preferences</CardTitle>
                 </div>
             </CardHeader>
             <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h4 className="text-sm font-medium text-gray-900">D-Store Newsletter</h4>
-                        <p className="text-sm text-gray-500 mt-1 max-w-sm">
+                        <h4 className="text-sm font-medium text-foreground">D-Store Newsletter</h4>
+                        <p className="text-sm text-muted-foreground mt-1 max-w-sm">
                             Receive updates about new anime figures, manga restocks, and exclusive promotions directly to your inbox.
                         </p>
                     </div>
 
                     <div className="flex items-center justify-center min-w-[60px]">
                         {isLoading ? (
-                            <Loader2 className="w-5 h-5 animate-spin text-gray-300" />
+                            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground/40" />
                         ) : (
                             <Switch
                                 checked={isSubscribed}

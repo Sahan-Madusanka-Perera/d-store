@@ -363,12 +363,12 @@ I have a question about this order. Can you help me?`;
       <div className="mb-10">
         <div className="flex items-center justify-center gap-0 mb-6">
           <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${step === 'shipping' ? 'bg-primary text-primary-foreground shadow-md' : 'bg-muted text-muted-foreground'}`}>
-            <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">1</span>
+            <span className="w-6 h-6 rounded-full bg-current/20 flex items-center justify-center text-xs">1</span>
             Shipping
           </div>
           <div className="w-8 h-0.5 bg-border" />
           <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${step === 'payment' ? 'bg-primary text-primary-foreground shadow-md' : 'bg-muted text-muted-foreground'}`}>
-            <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">2</span>
+            <span className="w-6 h-6 rounded-full bg-current/20 flex items-center justify-center text-xs">2</span>
             Payment
           </div>
         </div>

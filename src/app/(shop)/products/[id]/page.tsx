@@ -395,7 +395,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                         <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider block mb-2">Sizes</span>
                         <div className="flex flex-wrap gap-1.5">
                           {product.sizes.map((size) => (
-                            <span key={size} className="inline-block text-[13px] font-semibold text-zinc-700 bg-zinc-100 rounded-md px-3 py-1">{size}</span>
+                            <span key={size} className="inline-block text-[13px] font-semibold text-muted-foreground bg-muted rounded-md px-3 py-1">{size}</span>
                           ))}
                         </div>
                       </div>
@@ -405,7 +405,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                         <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider block mb-2">Colors</span>
                         <div className="flex flex-wrap gap-1.5">
                           {product.colors.map((color) => (
-                            <span key={color} className="inline-block text-[13px] font-semibold text-zinc-700 bg-zinc-100 rounded-md px-3 py-1 capitalize">{color}</span>
+                            <span key={color} className="inline-block text-[13px] font-semibold text-muted-foreground bg-muted rounded-md px-3 py-1 capitalize">{color}</span>
                           ))}
                         </div>
                       </div>
@@ -444,19 +444,19 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
               {/* Additional Info - Refined */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                <div className="flex items-center gap-3 text-sm font-semibold text-zinc-700 p-3 bg-zinc-50 border border-zinc-100 rounded-xl">
+                <div className="flex items-center gap-3 text-sm font-semibold text-foreground p-3 bg-muted/50 border border-border rounded-xl">
                   <Truck className="h-5 w-5 text-indigo-500 flex-shrink-0" />
                   <span>Island-Wide Free Delivery</span>
                 </div>
-                <div className="flex items-center gap-3 text-sm font-semibold text-zinc-700 p-3 bg-zinc-50 border border-zinc-100 rounded-xl">
+                <div className="flex items-center gap-3 text-sm font-semibold text-foreground p-3 bg-muted/50 border border-border rounded-xl">
                   <Shield className="h-5 w-5 text-emerald-500 flex-shrink-0" />
                   <span>Authentic Products Guaranteed</span>
                 </div>
-                <div className="flex items-center gap-3 text-sm font-semibold text-zinc-700 p-3 bg-zinc-50 border border-zinc-100 rounded-xl">
+                <div className="flex items-center gap-3 text-sm font-semibold text-foreground p-3 bg-muted/50 border border-border rounded-xl">
                   <Globe className="h-5 w-5 text-blue-500 flex-shrink-0" />
                   <span>Officially Licensed</span>
                 </div>
-                <div className="flex items-center gap-3 text-sm font-semibold text-zinc-700 p-3 bg-zinc-50 border border-zinc-100 rounded-xl">
+                <div className="flex items-center gap-3 text-sm font-semibold text-foreground p-3 bg-muted/50 border border-border rounded-xl">
                   <Lock className="h-5 w-5 text-rose-500 flex-shrink-0" />
                   <span>Secure Shipping</span>
                 </div>

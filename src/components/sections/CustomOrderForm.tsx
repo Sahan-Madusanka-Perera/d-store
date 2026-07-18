@@ -142,13 +142,23 @@ export default function CustomOrderForm() {
 
   return (
     <section
-      className="w-full py-16 sm:py-24 px-4 border-t border-border"
+      className="relative w-full py-16 sm:py-24 px-4 border-t border-border overflow-hidden"
       style={mutedBg}
     >
-      <div className="max-w-4xl mx-auto text-center">
+      {/* Decorative backdrop */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+        <div className="absolute inset-0 bg-[radial-gradient(hsl(var(--border))_1px,transparent_1px)] [background-size:22px_22px] opacity-50 [mask-image:radial-gradient(ellipse_60%_60%_at_50%_40%,#000_40%,transparent_100%)]" />
+        <div className="absolute -top-24 left-1/4 w-80 h-80 bg-indigo-400/10 dark:bg-indigo-500/5 rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 right-1/4 w-80 h-80 bg-purple-400/10 dark:bg-violet-500/5 rounded-full blur-3xl" />
+      </div>
+
+      <div className="relative max-w-4xl mx-auto text-center">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground mb-6 shadow-md">
           <Search className="w-8 h-8" />
         </div>
+        <p className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.25em] text-muted-foreground mb-3">
+          Custom orders
+        </p>
         <h2 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tight mb-4 text-foreground">
           Looking for something specific?
         </h2>

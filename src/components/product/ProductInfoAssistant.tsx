@@ -98,7 +98,7 @@ export default function ProductInfoAssistant({
         variant="outline"
         size="sm"
         onClick={handleToggle}
-        className="flex items-center gap-2 text-blue-500 hover:text-white border-blue-500 hover:border-blue-600 bg-white hover:bg-blue-500 transition-all duration-200"
+        className="flex items-center gap-2 text-blue-500 hover:text-white border-blue-500 hover:border-blue-600 bg-background hover:bg-blue-500 transition-all duration-200"
       >
         <Sparkles className="h-4 w-4" />
         {isManga ? "Series Info" : "Character Info"}
@@ -108,13 +108,13 @@ export default function ProductInfoAssistant({
       {/* Info Modal/Bubble */}
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-lg mx-auto shadow-2xl border-0 bg-gradient-to-br from-white to-blue-50">
+          <Card className="w-full max-w-lg mx-auto shadow-2xl border-0 bg-gradient-to-br from-card to-blue-50 dark:to-blue-950/30">
             <CardHeader className="relative pb-4">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsOpen(false)}
-                className="absolute right-2 top-2 h-8 w-8 p-0 hover:bg-red-100"
+                className="absolute right-2 top-2 h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-500/20"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -132,11 +132,11 @@ export default function ProductInfoAssistant({
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                  <span className="ml-3 text-gray-600">{isManga ? "Finding series details..." : "Analyzing character..."}</span>
+                  <span className="ml-3 text-muted-foreground">{isManga ? "Finding series details..." : "Analyzing character..."}</span>
                 </div>
               ) : characterInfo?.error ? (
-                <div className="text-center py-6 text-gray-600">
-                  <Info className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                <div className="text-center py-6 text-muted-foreground">
+                  <Info className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
                   <p>{characterInfo.error}</p>
                 </div>
               ) : characterInfo ? (
@@ -146,21 +146,21 @@ export default function ProductInfoAssistant({
                     <div className="flex items-center gap-2">
                       <BookOpen className="h-4 w-4 text-purple-500" />
                       <span className="font-semibold">Series:</span>
-                      <span className="text-purple-700 font-medium">{characterInfo.seriesName}</span>
+                      <span className="text-purple-700 dark:text-purple-300 font-medium">{characterInfo.seriesName}</span>
                     </div>
                   )}
                   {isManga && characterInfo.author && (
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-blue-500" />
                       <span className="font-semibold">Mangaka:</span>
-                      <span className="text-blue-700 font-medium">{characterInfo.author}</span>
+                      <span className="text-blue-700 dark:text-blue-300 font-medium">{characterInfo.author}</span>
                     </div>
                   )}
                   {isManga && characterInfo.volumes && (
                     <div className="flex items-center gap-2">
                       <BookOpen className="h-4 w-4 text-green-500" />
                       <span className="font-semibold">Volumes:</span>
-                      <span className="text-green-700 font-medium">{characterInfo.volumes}</span>
+                      <span className="text-green-700 dark:text-green-300 font-medium">{characterInfo.volumes}</span>
                     </div>
                   )}
 
@@ -169,29 +169,29 @@ export default function ProductInfoAssistant({
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-blue-500" />
                       <span className="font-semibold">Character:</span>
-                      <span className="text-blue-700 font-medium">{characterInfo.characterName}</span>
+                      <span className="text-blue-700 dark:text-blue-300 font-medium">{characterInfo.characterName}</span>
                     </div>
                   )}
                   {!isManga && characterInfo.animeName && (
                     <div className="flex items-center gap-2">
                       <Tv className="h-4 w-4 text-purple-500" />
                       <span className="font-semibold">From:</span>
-                      <span className="text-purple-700 font-medium">{characterInfo.animeName}</span>
+                      <span className="text-purple-700 dark:text-purple-300 font-medium">{characterInfo.animeName}</span>
                     </div>
                   )}
                   {!isManga && characterInfo.series && characterInfo.series !== characterInfo.animeName && (
                     <div className="flex items-center gap-2">
                       <BookOpen className="h-4 w-4 text-green-500" />
                       <span className="font-semibold">Series:</span>
-                      <span className="text-green-700 font-medium">{characterInfo.series}</span>
+                      <span className="text-green-700 dark:text-green-300 font-medium">{characterInfo.series}</span>
                     </div>
                   )}
 
                   {/* Shared Info */}
                   {/* Description */}
                   {characterInfo.description && (
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <p className="text-sm text-gray-700 leading-relaxed">
+                    <div className="bg-muted p-3 rounded-lg">
+                      <p className="text-sm text-foreground/80 leading-relaxed">
                         {characterInfo.description}
                       </p>
                     </div>
@@ -200,7 +200,7 @@ export default function ProductInfoAssistant({
                   {/* Traits / Themes */}
                   {!isManga && characterInfo.traits && characterInfo.traits.length > 0 && (
                     <div>
-                      <span className="font-semibold text-sm text-gray-600 mb-2 block">Character Traits:</span>
+                      <span className="font-semibold text-sm text-muted-foreground mb-2 block">Character Traits:</span>
                       <div className="flex flex-wrap gap-2">
                         {characterInfo.traits.map((trait, index) => (
                           <Badge key={index} variant="secondary" className="text-xs">
@@ -212,7 +212,7 @@ export default function ProductInfoAssistant({
                   )}
                   {isManga && characterInfo.themes && characterInfo.themes.length > 0 && (
                     <div>
-                      <span className="font-semibold text-sm text-gray-600 mb-2 block">Themes:</span>
+                      <span className="font-semibold text-sm text-muted-foreground mb-2 block">Themes:</span>
                       <div className="flex flex-wrap gap-2">
                         {characterInfo.themes.map((theme, index) => (
                           <Badge key={index} variant="secondary" className="text-xs">
@@ -226,7 +226,7 @@ export default function ProductInfoAssistant({
                   {/* Genres */}
                   {characterInfo.genre && characterInfo.genre.length > 0 && (
                     <div>
-                      <span className="font-semibold text-sm text-gray-600 mb-2 block">Genres:</span>
+                      <span className="font-semibold text-sm text-muted-foreground mb-2 block">Genres:</span>
                       <div className="flex flex-wrap gap-2">
                         {characterInfo.genre.map((g, index) => (
                           <Badge key={index} variant="outline" className="text-xs">
@@ -239,14 +239,14 @@ export default function ProductInfoAssistant({
 
                   {/* Popularity */}
                   {characterInfo.popularity && (
-                    <div className="text-xs text-gray-500 italic text-center pt-2 border-t">
+                    <div className="text-xs text-muted-foreground italic text-center pt-2 border-t">
                       💫 {characterInfo.popularity}
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="text-center py-6 text-gray-600">
-                  <Sparkles className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                <div className="text-center py-6 text-muted-foreground">
+                  <Sparkles className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
                   <p>{isManga ? "Ready to dive into this series!" : "Ready to learn about this character!"}</p>
                 </div>
               )}

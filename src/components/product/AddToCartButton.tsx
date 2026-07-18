@@ -69,19 +69,19 @@ export default function AddToCartButton({ product, selectedSize, selectedColor }
   return (
     <div className="flex flex-col sm:flex-row items-stretch gap-4 w-full">
       {/* Quantity Selector */}
-      <div className="flex items-center border rounded-xl bg-white shadow-sm h-14 w-full sm:w-auto">
+      <div className="flex items-center border border-border rounded-xl bg-card shadow-sm h-14 w-full sm:w-auto">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setQuantity(Math.max(1, quantity - 1))}
           disabled={quantity <= 1}
-          className="h-full w-14 rounded-r-none hover:bg-gray-100"
+          className="h-full w-14 rounded-r-none hover:bg-muted"
         >
           <Minus className="h-4 w-4" />
         </Button>
 
-        <div className="flex items-center justify-center h-full px-6 border-x bg-gray-50/50 min-w-[70px]">
-          <span className="font-bold text-lg">{quantity}</span>
+        <div className="flex items-center justify-center h-full px-6 border-x border-border bg-muted/50 min-w-[70px]">
+          <span className="font-bold text-lg text-foreground">{quantity}</span>
         </div>
 
         <Button
@@ -89,7 +89,7 @@ export default function AddToCartButton({ product, selectedSize, selectedColor }
           size="icon"
           onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
           disabled={quantity >= product.stock}
-          className="h-full w-14 rounded-l-none hover:bg-gray-100"
+          className="h-full w-14 rounded-l-none hover:bg-muted"
         >
           <Plus className="h-4 w-4" />
         </Button>
@@ -99,7 +99,7 @@ export default function AddToCartButton({ product, selectedSize, selectedColor }
       <Button
         onClick={handleAddToCart}
         disabled={product.stock === 0}
-        className="flex-1 h-14 text-base font-black uppercase tracking-wide rounded-xl bg-black text-white hover:bg-indigo-600 hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-300 active:scale-[0.98]"
+        className="flex-1 h-14 text-base font-black uppercase tracking-wide rounded-xl bg-primary text-primary-foreground hover:bg-indigo-600 hover:text-white hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-300 active:scale-[0.98]"
       >
         <ShoppingCart className="w-5 h-5 mr-3" />
         {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}

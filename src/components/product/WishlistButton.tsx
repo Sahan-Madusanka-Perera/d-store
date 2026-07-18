@@ -75,7 +75,7 @@ export default function WishlistButton({ productId, variant = 'icon', className 
       <Button
         size="icon"
         variant="secondary"
-        className={`h-9 w-9 rounded-full bg-white/90 hover:bg-white shadow-md border-0 transition-all duration-300 ${isAnimating ? 'scale-125' : ''} ${className}`}
+        className={`h-9 w-9 rounded-full bg-background/90 hover:bg-background shadow-md border-0 transition-all duration-300 ${isAnimating ? 'scale-125' : ''} ${className}`}
         onClick={handleToggle}
         title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
       >
