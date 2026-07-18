@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import dynamic from 'next/dynamic';
 import { ShoppingCart, Menu, X, Search, Heart, ChevronDown, BookOpen, Sparkles, Shirt, ShoppingBag, Package, Shield, CheckCircle, Truck, Globe } from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useWishlistStore } from '@/store/wishlist';
 import type { NavCategory as NavCategoryType } from '@/types/navigation';
 
@@ -178,6 +179,10 @@ export default function Navbar() {
                 <UniversalSearch />
               </div>
 
+              <div className="hidden sm:block">
+                <ThemeToggle />
+              </div>
+
               <Button variant="ghost" size="icon" asChild className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full text-zinc-300 hover:text-white hover:bg-white/10 transition-all duration-200">
                 <Link href="/profile/wishlist" className="flex items-center justify-center">
                   <Heart className="h-5 w-5" strokeWidth={1.5} />
@@ -300,6 +305,10 @@ export default function Navbar() {
                 <ShoppingCart className="h-5 w-5" strokeWidth={2} />
                 Cart {totalItems > 0 && `(${totalItems})`}
               </Link>
+            </div>
+            {/* Theme Toggle — Mobile */}
+            <div className="flex justify-center pt-1">
+              <ThemeToggle />
             </div>
           </div>
         </div>

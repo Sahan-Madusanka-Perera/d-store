@@ -3,6 +3,7 @@ import { Oswald, Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Footer } from '@/components/layout/Footer';
+import { ThemeProvider } from '@/components/theme-provider';
 
 const oswald = Oswald({
   variable: "--font-heading",
@@ -25,13 +26,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${oswald.variable} ${inter.variable} antialiased`}
       >
-        {children}
-        <Footer />
-        <Toaster />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange={false}
+        >
+          {children}
+          <Footer />
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

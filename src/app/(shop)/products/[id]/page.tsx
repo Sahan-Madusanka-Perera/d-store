@@ -178,7 +178,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-[55%_45%] gap-12">
           {/* Product Images Gallery + Description (Left) */}
           <div className="space-y-8 lg:sticky lg:top-8 lg:self-start will-change-transform">
             <ProductImageGallery

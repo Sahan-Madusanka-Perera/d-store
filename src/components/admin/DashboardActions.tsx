@@ -1,6 +1,6 @@
 'use client';
 
-import { Package, ShoppingCart, Mail, Tag, FileImage } from 'lucide-react';
+import { Package, ShoppingCart, Mail, Tag, FileImage, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -65,6 +65,17 @@ export default function DashboardActions() {
                     <Tag className="h-4 w-4 mr-2" />
                     Manage Discounts
                 </Link>
+            </Button>
+
+            <Button
+                onClick={() => {
+                    const trigger = document.querySelector<HTMLButtonElement>('[value="custom-orders"]');
+                    if (trigger) trigger.click();
+                }}
+                className="w-full bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200 h-12 shadow-sm"
+            >
+                <Sparkles className="h-4 w-4 mr-2" />
+                View Custom Orders
             </Button>
         </div>
     );

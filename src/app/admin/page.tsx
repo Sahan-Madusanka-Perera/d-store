@@ -5,12 +5,13 @@ import CarouselManager from '@/components/admin/CarouselManager'
 import NavCategoryManager from '@/components/admin/NavCategoryManager'
 import SystemLog from '@/components/admin/SystemLog'
 import InventoryMatrix from '@/components/admin/InventoryMatrix'
+import CustomOrderManager from '@/components/admin/CustomOrderManager'
 import { createClient } from '@/utils/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Package, DollarSign, AlertTriangle, Users, TrendingUp, ShoppingCart, Eye, Settings, Mail, LayoutTemplate, Activity, Menu as MenuIcon } from 'lucide-react'
+import { Package, DollarSign, AlertTriangle, Users, TrendingUp, ShoppingCart, Eye, Settings, Mail, LayoutTemplate, Activity, Menu as MenuIcon, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import DashboardActions from '@/components/admin/DashboardActions'
 export default async function AdminDashboard() {
@@ -21,17 +22,19 @@ export default async function AdminDashboard() {
   // This data is shared between dashboard stats AND ProductManager,
   // eliminating the redundant client-side re-fetch
   const supabase = await createClient()
-  const [{ data: allProducts }, { data: navCategories }, { data: recentOrders }, { data: lowStockProducts }] = await Promise.all([
+  const [{ data: allProducts }, { data: navCategories }, { data: recentOrders }, { data: lowStockProducts }, { data: customOrders }] = await Promise.all([
     supabase.from('products').select('*').order('created_at', { ascending: false }),
     supabase.from('nav_categories').select('*, nav_dropdown_items (*)'),
     supabase.from('orders').select('*, user_profiles(full_name, email)').order('created_at', { ascending: false }).limit(5),
-    supabase.from('products').select('id, name, stock, category').lt('stock', 10).order('stock', { ascending: true }).limit(5)
+    supabase.from('products').select('id, name, stock, category').lt('stock', 10).order('stock', { ascending: true }).limit(5),
+    supabase.from('custom_orders').select('*').order('created_at', { ascending: false })
   ])
 
   const products = allProducts || []
   const totalProducts = products.length
   const lowStockItems = products.filter(p => p.stock < 10).length
   const totalValue = products.reduce((sum, p) => sum + (p.price * p.stock), 0)
+  const pendingCustomOrders = (customOrders || []).filter((o: any) => o.status === 'pending').length
 
   // Category breakdown
   const categoryStats = products.reduce((acc: Record<string, number>, product) => {
@@ -81,6 +84,14 @@ export default async function AdminDashboard() {
               <TabsTrigger value="products" className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-md transition-all"><Package className="w-4 h-4 mr-2" /> Products</TabsTrigger>
               <TabsTrigger value="carousel" className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-md transition-all"><LayoutTemplate className="w-4 h-4 mr-2" /> Carousel</TabsTrigger>
               <TabsTrigger value="navigation" className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-md transition-all"><MenuIcon className="w-4 h-4 mr-2" /> Navigation</TabsTrigger>
+              <TabsTrigger value="custom-orders" className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
+                <Sparkles className="w-4 h-4 mr-2" /> Custom Orders
+                {pendingCustomOrders > 0 && (
+                  <Badge variant="outline" className="ml-2 bg-violet-500/20 text-violet-600 border-violet-500/30 text-[10px] font-bold h-5 min-w-5 flex items-center justify-center">
+                    {pendingCustomOrders}
+                  </Badge>
+                )}
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -227,6 +238,21 @@ export default async function AdminDashboard() {
               </CardHeader>
               <CardContent className="p-6">
                 <NavCategoryManager />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="custom-orders" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <Card className="border-2 border-gray-200 shadow-lg rounded-xl overflow-hidden">
+              <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
+                <CardTitle className="flex items-center gap-2 text-2xl font-black uppercase tracking-tight">
+                  <Sparkles className="h-6 w-6" />
+                  Custom Order Requests
+                </CardTitle>
+                <CardDescription className="text-gray-500 font-medium">Manage customer custom order requests. Contact customers via WhatsApp.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                <CustomOrderManager initialOrders={customOrders || []} />
               </CardContent>
             </Card>
           </TabsContent>

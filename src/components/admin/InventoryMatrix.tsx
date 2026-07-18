@@ -74,9 +74,9 @@ function productMatchesSub(p: ProductSlim, subLabel: string, searchTerm: string 
   return false
 }
 
-// Count products for a subcategory, aware of siblings to avoid double-counting.
-// 1. Direct match: product tagged with THIS subcategory label → counted here
-// 2. Unclaimed: if no direct matches, count products not claimed by any OTHER sibling
+// Count products for a subcategory.
+// - Subs WITH a search param (e.g. "?search=Anime") → direct tag/name matches only.
+// - Subs WITHOUT a search param (e.g. "Other" → /figures) → products not claimed by any sibling.
 function countSubcategoryProducts(
   sub: NavDropdownItem,
   products: ProductSlim[],
@@ -95,31 +95,16 @@ function countSubcategoryProducts(
     ? products.filter(p => p.category === categoryScope)
     : products
 
-  // Get other siblings (excluding this one and any without a search term)
-  const otherSiblings = siblings.filter(s => s.id !== sub.id)
-
   if (!searchTerm) {
-    // No search param (e.g. "Other" → /figures) → unclaimed products only
+    // No search param → this is a catch-all. Count products not claimed by any sibling that HAS a search term.
+    const siblingsWithSearch = siblings.filter(s => s.id !== sub.id && getSearchTerm(s.href))
     return scoped.filter(p =>
-      !otherSiblings.some(sib => productMatchesSub(p, sib.label, getSearchTerm(sib.href)))
+      !siblingsWithSearch.some(sib => productMatchesSub(p, sib.label, getSearchTerm(sib.href)))
     ).length
   }
 
-  // Try direct match first
-  const directMatches = scoped.filter(p => productMatchesSub(p, sub.label, searchTerm))
-  if (directMatches.length > 0) return directMatches.length
-
-  // No direct matches — only the FIRST subcategory (lowest sort_order) gets unclaimed products.
-  // This makes it the "default" bucket (e.g. "Anime Figures" is the default under "Figures").
-  const siblingsWithSearch = siblings.filter(s => getSearchTerm(s.href))
-  const isFirst = siblingsWithSearch.length === 0 ||
-    sub.sort_order <= Math.min(...siblingsWithSearch.map(s => s.sort_order))
-
-  if (!isFirst) return 0
-
-  return scoped.filter(p =>
-    !otherSiblings.some(sib => productMatchesSub(p, sib.label, getSearchTerm(sib.href)))
-  ).length
+  // Has search param → ONLY count direct tag/name matches. No fallback.
+  return scoped.filter(p => productMatchesSub(p, sub.label, searchTerm)).length
 }
 
 export default function InventoryMatrix({ initialProducts, initialNavCategories }: InventoryMatrixProps) {

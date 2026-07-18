@@ -6,6 +6,7 @@ import { CategoryShowcase } from "@/components/sections/CategoryShowcase";
 import Navbar from '@/components/layout/Navbar';
 import { createClient } from '@/utils/supabase/server'
 import { Shield, CheckCircle, Truck, Globe } from 'lucide-react';
+import CustomOrderForm from '@/components/sections/CustomOrderForm';
 
 const FRESH_DROPS = [
   { id: '1', name: 'Jujutsu Kaisen Vol. 25', price: 'LKR 2,500', rating: 5, images: [] },
@@ -102,6 +103,7 @@ export default async function Home() {
       <RecommendedProducts />
       <ProductShowcase title="NEW ARRIVALS" products={freshDropsData} />
       <CategoryShowcase />
+      <CustomOrderForm />
       <CategoryGrid />
     </div>
   );
