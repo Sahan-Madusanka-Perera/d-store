@@ -2,7 +2,7 @@ import Image from 'next/image';
 import type { Metadata } from 'next';
 import { Instagram, Facebook, MessageCircle } from 'lucide-react';
 import ComingSoonSignup from '@/components/sections/ComingSoonSignup';
-import { BRAND_TAGLINE, getWhatsAppUrl } from '@/lib/constants';
+import { BRAND_TAGLINE, SOCIAL_LINKS, getWhatsAppUrl } from '@/lib/constants';
 
 /**
  * Pre-launch splash. Everything except the admin panel and sign-in redirects here
@@ -20,10 +20,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const SOCIALS = [
-  { href: 'https://www.instagram.com/dstore.lk/', label: 'Instagram', Icon: Instagram },
-  { href: 'https://www.facebook.com/dstore.lk/', label: 'Facebook', Icon: Facebook },
-];
+const SOCIAL_ICONS: Record<string, typeof Instagram> = {
+  Instagram,
+  Facebook,
+};
 
 export default function ComingSoonPage() {
   const whatsappUrl = getWhatsAppUrl(
@@ -96,7 +96,9 @@ export default function ComingSoonPage() {
             Message us
           </a>
 
-          {SOCIALS.map(({ href, label, Icon }) => (
+          {SOCIAL_LINKS.map(({ href, label }) => {
+            const Icon = SOCIAL_ICONS[label];
+            return (
             <a
               key={label}
               href={href}
@@ -107,7 +109,8 @@ export default function ComingSoonPage() {
             >
               <Icon className="h-4 w-4" />
             </a>
-          ))}
+            );
+          })}
         </div>
 
         <p

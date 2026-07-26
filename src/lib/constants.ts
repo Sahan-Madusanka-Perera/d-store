@@ -40,6 +40,14 @@ export function getCategoryLabel(category: string): string {
 export const BRAND_NAME = 'D-Store';
 export const BRAND_TAGLINE = 'The Ultimate Hobby Store';
 
+// Public profiles. Defined once so the splash and the footer can't drift apart.
+// Facebook is deliberately www. rather than web. — the web. subdomain forces the
+// desktop layout, which is rough on the phones most visitors arrive on.
+export const SOCIAL_LINKS = [
+  { label: 'Instagram', href: 'https://www.instagram.com/dstore.lk/' },
+  { label: 'Facebook', href: 'https://www.facebook.com/profile.php?id=100086961261023' },
+] as const;
+
 // Stock at or below this is flagged in the admin dashboard. Single source so the
 // summary card and the "low stock" query can't drift apart.
 export const LOW_STOCK_THRESHOLD = 10;

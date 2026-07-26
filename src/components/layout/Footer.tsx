@@ -3,9 +3,10 @@ import { ConditionalNewsletter } from '@/components/sections/ConditionalNewslett
 import { Newsletter } from '@/components/sections/Newsletter';
 import { InstagramFeed } from '@/components/sections/InstagramFeed';
 import { FacebookRecommendations } from '@/components/sections/FacebookRecommendations';
-import { Twitter, Facebook, Instagram, CreditCard } from "lucide-react";
+import { Facebook, Instagram, CreditCard } from "lucide-react";
 import { ConditionalInstagram } from '@/components/sections/ConditionalInstagram';
 import Image from "next/image";
+import { SOCIAL_LINKS } from "@/lib/constants";
 
 export function Footer() {
     return (
@@ -54,11 +55,21 @@ export function Footer() {
                                 Premium anime merchandise for the modern otaku. From exclusive action figures to high-quality apparel, we bring your favorite worlds to life.
                             </p>
                             <div className="flex gap-5">
-                                {[Twitter, Facebook, Instagram].map((Icon, i) => (
-                                    <a key={i} href="#" className="p-2.5 bg-background rounded-full shadow-sm text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400 hover:shadow-md hover:-translate-y-1 transition-all duration-300 border border-border/60">
-                                        <Icon className="w-4 h-4" />
-                                    </a>
-                                ))}
+                                {SOCIAL_LINKS.map(({ href, label }) => {
+                                    const Icon = label === 'Facebook' ? Facebook : Instagram;
+                                    return (
+                                        <a
+                                            key={label}
+                                            href={href}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            aria-label={label}
+                                            className="p-2.5 bg-background rounded-full shadow-sm text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400 hover:shadow-md hover:-translate-y-1 transition-all duration-300 border border-border/60"
+                                        >
+                                            <Icon className="w-4 h-4" />
+                                        </a>
+                                    );
+                                })}
                             </div>
                         </div>
 
