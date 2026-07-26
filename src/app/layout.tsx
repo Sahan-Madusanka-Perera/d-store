@@ -3,7 +3,7 @@ import { Oswald, Inter } from "next/font/google";
 import "./globals.css";
 import { BRAND_TAGLINE } from "@/lib/constants";
 import { Toaster } from "@/components/ui/sonner";
-import { Footer } from '@/components/layout/Footer';
+import { ConditionalFooter } from '@/components/layout/ConditionalFooter';
 import { ThemeProvider } from '@/components/theme-provider';
 
 const oswald = Oswald({
@@ -38,7 +38,7 @@ export default function RootLayout({
           disableTransitionOnChange={false}
         >
           {children}
-          <Footer />
+          <ConditionalFooter />
           <Toaster />
         </ThemeProvider>
       </body>

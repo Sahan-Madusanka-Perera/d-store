@@ -214,6 +214,51 @@
   animation: float 4s ease-in-out infinite;
 }
 
+/* Pre-launch splash: one orchestrated entrance, staggered per element. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-rise-in {
+  /* Visible by default, so a headless renderer or a paused tab never ships a blank
+     page; the animation only replays the arrival. */
+  animation: rise-in 0.85s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* Echoes the cyan glow baked into the logo artwork. */
+@keyframes bloom-pulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.07);
+  }
+}
+
+.animate-bloom {
+  animation: bloom-pulse 7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise-in {
+    animation: none;
+  }
+
+  .animate-bloom {
+    animation: none;
+    opacity: 0.35;
+  }
+}
+
 .hover-underline-animation {
   display: inline-block;
   position: relative;
