@@ -51,6 +51,16 @@ export const useWishlistStore = create<WishlistStore>()((set, get) => ({
   },
 
   fetchWishlist: async () => {
+    // The navbar calls this on every page load. Reading the cached session first means
+    // a logged-out visitor — most traffic — never makes the request at all, instead of
+    // spending a server round trip to be told 401.
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      set({ items: [], productIds: new Set(), isAuthenticated: false, isLoading: false });
+      return;
+    }
+
     set({ isLoading: true });
     try {
       const res = await fetch('/api/wishlist');
