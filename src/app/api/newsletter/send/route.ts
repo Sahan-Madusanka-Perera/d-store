@@ -121,8 +121,18 @@ export async function POST(request: Request) {
             console.log(`[NEWSLETTER] Dispatch complete: ${messages.length} messages.`);
         } catch (dispatchError) {
             console.error('[NEWSLETTER] Failed to dispatch via Resend:', dispatchError);
+
+            // This route is admin-only, so surfacing the provider's own message costs
+            // nothing and saves a trip to the server logs. The sandbox-sender rejection
+            // in particular is easy to hit and impossible to guess from a generic error.
+            const providerMessage = dispatchError instanceof Error ? dispatchError.message : '';
+            const usingSandbox = fromAddress.includes('onboarding@resend.dev');
+            const hint = usingSandbox
+                ? ' Set NEWSLETTER_FROM to an address at your verified domain — the default onboarding@resend.dev only delivers to the address that owns your Resend account.'
+                : '';
+
             return NextResponse.json({
-                error: 'Failed to deliver emails through the provider. Please check server logs.'
+                error: `Email provider rejected the send${providerMessage ? `: ${providerMessage}` : '.'}${hint}`
             }, { status: 502 });
         }
 
