@@ -7,6 +7,8 @@ export interface Product {
   images: string[];
   stock: number;
   status?: 'available' | 'coming_soon' | 'pre_order' | 'out_of_stock';
+  /** Hidden from logged-out visitors — see src/lib/product-visibility.ts */
+  membersOnly?: boolean;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

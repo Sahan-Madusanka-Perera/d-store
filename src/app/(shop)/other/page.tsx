@@ -1,4 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
+import { viewerCanSeeMembersOnly, publicListingsOnly } from '@/lib/product-visibility';
+import { buildSearchFilter } from '@/lib/product-search';
 import ProductCard from '@/components/product/ProductCard';
 import CategorySearchControls from '@/components/category/CategorySearchControls';
 import CategoryPageFilters from '@/components/category/CategoryPageFilters';
@@ -35,6 +37,7 @@ function mapDatabaseProduct(dbProduct: any): Product {
     series: dbProduct.series || undefined,
     characterNames: dbProduct.character_names || undefined,
     status: dbProduct.status || 'available',
+    membersOnly: Boolean(dbProduct.members_only),
     scale: '1/8',
     height: '20cm'
   };
@@ -52,22 +55,17 @@ export default async function OtherPage(props: OtherPageProps) {
   const sort = typeof searchParams.sort === 'string' ? searchParams.sort : 'newest';
 
   const supabase = await createClient();
+  const canSeeMembersOnly = await viewerCanSeeMembersOnly(supabase);
 
   let query = supabase
     .from('products')
     .select('*')
     .eq('category', 'other');
 
+  if (!canSeeMembersOnly) query = publicListingsOnly(query);
+
   if (search) {
-    const searchSafe = search.replace(/[%_]/g, '\\$&');
-    let orQuery = `name.ilike.%${searchSafe}%,description.ilike.%${searchSafe}%,brand.ilike.%${searchSafe}%,series.ilike.%${searchSafe}%,tags.cs.{${searchSafe}}`;
-
-    const exactLower = search.toLowerCase().trim();
-    if (['other', 'tcg', 'card', 'cards', 'trading card', 'trading cards', 'collectible', 'collectibles'].includes(exactLower)) {
-      orQuery += `,category.eq.other`;
-    }
-
-    query = query.or(orQuery);
+    query = query.or(buildSearchFilter(search, 'other'));
   }
 
   if (minPrice && !isNaN(minPrice)) query = query.gte('price', minPrice);

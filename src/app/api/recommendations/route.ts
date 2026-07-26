@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { publicListingsOnly } from '@/lib/product-visibility';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
     
     let recommendedProducts = [];
     let isPersonalized = false;
-    let purchasedProductIds: string[] = [];
+    const purchasedProductIds: string[] = [];
 
     // Strategy 1: History-Based Recommendations (If Authenticated)
     if (session?.user) {
@@ -83,7 +84,12 @@ export async function GET(request: NextRequest) {
         .select('*')
         .gt('stock', 0)
         .order('created_at', { ascending: false }); // Fallback to newest drops as trending
-      
+
+      // Guests get the public catalogue only — members-only listings stay hidden
+      if (!session?.user) {
+        fallbackQuery = publicListingsOnly(fallbackQuery);
+      }
+
     // Exclude already recommended items and purchased items
     const excludeIds = [
       ...recommendedProducts.map(p => p.id),

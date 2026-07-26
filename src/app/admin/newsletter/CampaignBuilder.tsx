@@ -1,8 +1,16 @@
-import { useState } from 'react';
+'use client';
+
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Send, Eye, PenTool, LayoutTemplate, X, Image as ImageIcon } from 'lucide-react';
+import { Send, Eye, PenTool, LayoutTemplate, Image as ImageIcon, Loader2, FlaskConical } from 'lucide-react';
+import { toast } from 'sonner';
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
+import { renderNewsletterHtml } from '@/lib/newsletter-template';
 
 export default function CampaignBuilder({ products, subscribersCount }: { products: any[], subscribersCount: number }) {
     const [subject, setSubject] = useState('');
@@ -14,6 +22,7 @@ export default function CampaignBuilder({ products, subscribersCount }: { produc
 
     const [view, setView] = useState<'edit' | 'preview'>('edit');
     const [isSending, setIsSending] = useState(false);
+    const [isTesting, setIsTesting] = useState(false);
 
     const toggleProduct = (product: any) => {
         if (selectedProducts.find(p => p.id === product.id)) {
@@ -23,8 +32,8 @@ export default function CampaignBuilder({ products, subscribersCount }: { produc
         }
     };
 
-    const handleSend = async () => {
-        setIsSending(true);
+    const dispatch = async (testOnly: boolean) => {
+        testOnly ? setIsTesting(true) : setIsSending(true);
         try {
             const res = await fetch('/api/newsletter/send', {
                 method: 'POST',
@@ -33,7 +42,8 @@ export default function CampaignBuilder({ products, subscribersCount }: { produc
                     subject,
                     heading,
                     body,
-                    products: selectedProducts
+                    products: selectedProducts,
+                    testOnly,
                 })
             });
 
@@ -43,17 +53,33 @@ export default function CampaignBuilder({ products, subscribersCount }: { produc
                 throw new Error(data.error || 'Failed to send campaign');
             }
 
-            alert(data.message + '\\n(Note: This is currently logging the HTML to your terminal console instead of sending real emails until Resend is configured)');
-            setSubject('');
-            setSelectedProducts([]);
-            // Optional: You could trigger a router.refresh() here or use a callback to refresh history if we were on the history tab
-        } catch (error: any) {
-            alert('Error: ' + error.message);
+            toast.success(data.message);
+
+            // A test leaves the draft intact so it can be sent for real next.
+            if (!testOnly) {
+                setSubject('');
+                setSelectedProducts([]);
+            }
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            toast.error(testOnly ? `Test send failed: ${message}` : `Send failed: ${message}`);
             console.error(error);
         } finally {
-            setIsSending(false);
+            testOnly ? setIsTesting(false) : setIsSending(false);
         }
     };
+
+    // Same renderer the send route uses, so the preview is the email.
+    const previewHtml = useMemo(() => {
+        const siteUrl = typeof window !== 'undefined' ? window.location.origin : '';
+        return renderNewsletterHtml({
+            heading,
+            body,
+            products: selectedProducts,
+            siteUrl,
+            unsubscribeUrl: `${siteUrl}/newsletter/unsubscribe?status=ok`,
+        });
+    }, [heading, body, selectedProducts]);
 
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('en-LK', {
@@ -171,14 +197,69 @@ export default function CampaignBuilder({ products, subscribersCount }: { produc
                         </CardContent>
                     </Card>
 
-                    <Button
-                        onClick={handleSend}
-                        disabled={!subject || isSending || subscribersCount === 0}
-                        className="w-full h-14 text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl shadow-blue-500/20"
-                    >
-                        {isSending ? 'Sending Campaign...' : `Send to ${subscribersCount} Subscribers`}
-                        <Send className="w-5 h-5 ml-2" />
-                    </Button>
+                    <div className="space-y-3">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => dispatch(true)}
+                            disabled={!subject || isTesting || isSending}
+                            className="w-full h-12 font-semibold border-gray-300"
+                        >
+                            {isTesting ? (
+                                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending test...</>
+                            ) : (
+                                <><FlaskConical className="w-4 h-4 mr-2" /> Send test to myself</>
+                            )}
+                        </Button>
+
+                        {/* A campaign send is irreversible and hits every subscriber at once,
+                            so it gets a confirmation step rather than a single click. */}
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button
+                                    type="button"
+                                    disabled={!subject || isSending || isTesting || subscribersCount === 0}
+                                    className="w-full h-14 text-lg font-bold bg-gray-900 hover:bg-black shadow-lg"
+                                >
+                                    {isSending ? (
+                                        <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Sending campaign...</>
+                                    ) : (
+                                        <>Send to {subscribersCount} Subscriber{subscribersCount === 1 ? '' : 's'} <Send className="w-5 h-5 ml-2" /></>
+                                    )}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="bg-white">
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                        Send to {subscribersCount} subscriber{subscribersCount === 1 ? '' : 's'}?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription asChild>
+                                        <div className="space-y-3 text-gray-600">
+                                            <p>This sends immediately and cannot be undone or recalled.</p>
+                                            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm">
+                                                <div className="font-semibold text-gray-900 break-words">{subject}</div>
+                                                <div className="text-gray-500 mt-1">
+                                                    {selectedProducts.length > 0
+                                                        ? `${selectedProducts.length} featured product${selectedProducts.length === 1 ? '' : 's'}`
+                                                        : 'No featured products'}
+                                                </div>
+                                            </div>
+                                            <p className="text-sm">Sent a test to yourself and checked how it looks?</p>
+                                        </div>
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                        onClick={() => dispatch(false)}
+                                        className="bg-gray-900 hover:bg-black font-bold"
+                                    >
+                                        Send now
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
                 </div>
             </div>
 
@@ -207,66 +288,16 @@ export default function CampaignBuilder({ products, subscribersCount }: { produc
                         </div>
                     </div>
 
-                    {/* Email Content Preview (The exact HTML structure we will send) */}
-                    <div className="bg-neutral-900 flex-1 overflow-y-auto p-4 sm:p-8">
-                        {/* Premium Email Template Re-creation */}
-                        <div className="max-w-[600px] mx-auto bg-black text-white rounded-3xl overflow-hidden border border-gray-800 font-sans">
-                            {/* Header Image/Logo Area */}
-                            <div className="bg-gradient-to-b from-gray-900 to-black p-8 text-center border-b border-gray-800">
-                                <h1 className="text-3xl font-black tracking-tighter uppercase text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
-                                    D-STORE
-                                </h1>
-                                <p className="text-gray-400 text-sm mt-2 tracking-widest uppercase">Premium Otaku Lifestyle</p>
-                            </div>
-
-                            {/* Body Area */}
-                            <div className="p-8 space-y-6">
-                                <h2 className="text-2xl font-bold leading-tight">{heading}</h2>
-                                <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{body}</p>
-
-                                {/* Featured Products */}
-                                {selectedProducts.length > 0 && (
-                                    <div className="pt-6 mt-6 border-t border-gray-800">
-                                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6 text-center">Featured Picks</h3>
-
-                                        <div className="space-y-6">
-                                            {selectedProducts.map((p) => (
-                                                <div key={p.id} className="flex gap-4 bg-gray-900/50 p-4 rounded-xl border border-gray-800">
-                                                    <div className="w-24 h-24 bg-gray-800 rounded-lg overflow-hidden flex-shrink-0">
-                                                        {p.image_url ? (
-                                                            <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            <div className="w-full h-full flex items-center justify-center text-gray-600"><ImageIcon className="w-6 h-6" /></div>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex flex-col justify-center flex-1">
-                                                        <h4 className="font-semibold text-lg line-clamp-2">{p.name}</h4>
-                                                        <p className="text-purple-400 font-bold mt-1">{formatPrice(p.price)}</p>
-                                                        <a href="#" className="mt-2 text-sm text-gray-400 hover:text-white underline">View Details →</a>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Call to Action */}
-                                <div className="pt-8 text-center">
-                                    <a href="#" className="inline-block bg-white text-black px-8 py-4 rounded-full font-bold uppercase tracking-wider text-sm hover:bg-gray-200 transition-colors">
-                                        Shop All New Arrivals
-                                    </a>
-                                </div>
-                            </div>
-
-                            {/* Footer */}
-                            <div className="p-8 text-center bg-gray-900/50 border-t border-gray-800">
-                                <p className="text-gray-500 text-xs">
-                                    You are receiving this email because you subscribed to updates from D-Store.<br />
-                                    <a href="#" className="underline hover:text-white">Unsubscribe</a>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+                    {/* The preview renders the exact template the send route uses, in an
+                        iframe so the email's own styles stay sealed off from the admin page.
+                        Previously this was a hand-written re-creation and had already drifted
+                        from what actually shipped. */}
+                    <iframe
+                        title="Email preview"
+                        srcDoc={previewHtml}
+                        className="flex-1 w-full border-0 bg-neutral-900"
+                        sandbox=""
+                    />
                 </div>
             </div>
         </div>

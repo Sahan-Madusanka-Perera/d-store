@@ -14,6 +14,8 @@ export default function SearchControls({ initialSearch, initialSort }: SearchCon
 
     const createQueryString = (name: string, value: string) => {
         const params = new URLSearchParams(searchParams.toString());
+        // New search or sort order means a new result set — go back to page one.
+        params.delete('page');
         if (value && value !== 'all') {
             params.set(name, value);
         } else {

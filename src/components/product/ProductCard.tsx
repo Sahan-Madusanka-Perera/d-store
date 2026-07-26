@@ -7,9 +7,10 @@ import { useCartStore } from '@/store/cart';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Star, Eye, Sparkles, BookOpen, Shirt, ShoppingBag, Clock, Zap, Bell, Layers } from 'lucide-react';
+import { ShoppingCart, Star, Eye, Sparkles, BookOpen, Shirt, ShoppingBag, Clock, Zap, Bell, Layers, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import WishlistButton from '@/components/product/WishlistButton';
+import { getCategoryLabel } from '@/lib/constants';
 
 interface ProductCardProps {
   product: Product;
@@ -207,6 +208,14 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* Top-left: stock + discount stacked */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
+          {/* Only signed-in visitors ever receive this product, so the badge is a
+              reminder that it is not part of the public catalogue. */}
+          {product.membersOnly && (
+            <Badge className="text-[11px] px-2.5 py-1 bg-foreground text-background shadow-md border-0 font-semibold">
+              <Lock className="h-3 w-3 mr-1" />
+              Members Only
+            </Badge>
+          )}
           {productStatus === 'coming_soon' && (
             <Badge className="text-[11px] px-2.5 py-1 bg-blue-500 text-white shadow-md border-0 font-semibold">
               <Clock className="h-3 w-3 mr-1" />
@@ -245,7 +254,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         <Badge className={`absolute top-3 right-3 z-10 text-[11px] px-2.5 py-1 shadow-md border-0 font-semibold ${getCategoryStyle(product.category)}`}>
           <span className="flex items-center gap-1">
             {getCategoryIcon(product.category)}
-            {product.category}
+            {getCategoryLabel(product.category)}
           </span>
         </Badge>
       </div>

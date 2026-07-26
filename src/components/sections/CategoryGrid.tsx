@@ -37,7 +37,7 @@ const REALMS: RealmTile[] = [
     },
     {
         href: "/other",
-        title: "Other",
+        title: "Other Collectibles",
         tagline: "TCG cards & collectibles",
         imageUrl:
             "https://images.unsplash.com/photo-1613771404721-1f92d799e49f?q=80&w=1600&auto=format&fit=crop",

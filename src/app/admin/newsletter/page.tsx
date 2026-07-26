@@ -1,6 +1,7 @@
 import { requireAdmin } from '@/lib/auth';
 import { createClient } from '@/utils/supabase/server';
 import NewsletterClient from './NewsletterClient';
+import NewsletterReadiness from '@/components/admin/NewsletterReadiness';
 
 export default async function NewsletterAdminPage() {
     await requireAdmin();
@@ -33,6 +34,8 @@ export default async function NewsletterAdminPage() {
                         Manage your subscribers, compose beautiful marketing emails, and track your campaigns.
                     </p>
                 </div>
+
+                <NewsletterReadiness />
 
                 <NewsletterClient
                     initialSubscribers={subscribers || []}

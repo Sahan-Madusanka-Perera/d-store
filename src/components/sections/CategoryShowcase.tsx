@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
+import { viewerCanSeeMembersOnly, publicListingsOnly } from '@/lib/product-visibility';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
@@ -36,8 +37,11 @@ const DEFAULT_META = {
   gradient: 'from-slate-500/10 to-gray-500/10',
 };
 
+const PRODUCTS_PER_SECTION = 8;
+
 export async function CategoryShowcase() {
   const supabase = await createClient();
+  const canSeeMembersOnly = await viewerCanSeeMembersOnly(supabase);
 
   // Fetch nav categories to know which categories to display
   const { data: navCategories } = await supabase
@@ -47,37 +51,46 @@ export async function CategoryShowcase() {
 
   if (!navCategories || navCategories.length === 0) return null;
 
-  // Build category sections — only for categories that map to a product category
-  const sections: {
-    label: string;
-    href: string;
-    categoryKey: string;
-    products: any[];
-  }[] = [];
-
+  // Which product categories to show, in nav order, without duplicates
+  // (two nav items can point at the same /figures).
+  const categoryKeys: string[] = [];
+  const navByKey = new Map<string, (typeof navCategories)[number]>();
   for (const nav of navCategories) {
     const key = getCategoryKey(nav.href);
-    if (!key) continue; // Skip generic categories like "Series" or "Goods"
-
-    // Avoid duplicate category sections (e.g. two nav items pointing to /figures)
-    if (sections.some(s => s.categoryKey === key)) continue;
-
-    const { data: products } = await supabase
-      .from('products')
-      .select('id, name, price, image_url, image_urls, stock, category, series, brand, author, publisher, external_rating, external_rating_count, character_names, description, created_at, updated_at')
-      .eq('category', key)
-      .order('created_at', { ascending: false })
-      .limit(8);
-
-    if (products && products.length > 0) {
-      sections.push({
-        label: nav.label.toUpperCase(),
-        href: nav.href,
-        categoryKey: key,
-        products,
-      });
-    }
+    if (!key || navByKey.has(key)) continue; // Skip generic categories like "Series" or "Goods"
+    categoryKeys.push(key);
+    navByKey.set(key, nav);
   }
+
+  if (categoryKeys.length === 0) return null;
+
+  // One round trip's worth of latency instead of one per nav item. Per-category
+  // queries (rather than a single `.in()` with a global limit) keep each section's
+  // "newest 8" exact — a busy category can't starve a quiet one out of the results.
+  const results = await Promise.all(
+    categoryKeys.map(async key => {
+      let productsQuery = supabase
+        .from('products')
+        .select('id, name, price, image_url, image_urls, stock, category, series, brand, author, publisher, external_rating, external_rating_count, character_names, description, created_at, updated_at')
+        .eq('category', key)
+        .order('created_at', { ascending: false })
+        .limit(PRODUCTS_PER_SECTION);
+
+      if (!canSeeMembersOnly) productsQuery = publicListingsOnly(productsQuery);
+
+      const { data } = await productsQuery;
+      return { key, products: data || [] };
+    })
+  );
+
+  const sections = results
+    .filter(({ products }) => products.length > 0)
+    .map(({ key, products }) => ({
+      label: navByKey.get(key)!.label.toUpperCase(),
+      href: navByKey.get(key)!.href,
+      categoryKey: key,
+      products,
+    }));
 
   if (sections.length === 0) return null;
 

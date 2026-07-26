@@ -1,6 +1,8 @@
 import ProductCard from '@/components/product/ProductCard';
 import { Product } from '@/types/product';
 import { createClient } from '@/utils/supabase/server';
+import { viewerCanSeeMembersOnly, publicListingsOnly } from '@/lib/product-visibility';
+import { buildSearchFilter } from '@/lib/product-search';
 import { Package, ShoppingBag, SlidersHorizontal, Sparkles, TrendingUp } from 'lucide-react';
 import { Suspense } from 'react';
 import SearchControls from './SearchControls';
@@ -13,6 +15,9 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import AnimatedHeroText from '@/components/ui/AnimatedHeroText';
+import Pagination from '@/components/product/Pagination';
+
+const PRODUCTS_PER_PAGE = 24;
 
 interface DatabaseProduct {
   id: number;
@@ -33,6 +38,7 @@ interface DatabaseProduct {
   series?: string;
   character_names?: string[];
   status?: string;
+  members_only?: boolean;
 }
 
 function mapDatabaseProduct(dbProduct: DatabaseProduct): Product {
@@ -71,6 +77,7 @@ function mapDatabaseProduct(dbProduct: DatabaseProduct): Product {
     series: dbProduct.series || undefined,
     characterNames: dbProduct.character_names || undefined,
     status: (dbProduct.status as 'available' | 'coming_soon' | 'pre_order' | 'out_of_stock') || 'available',
+    membersOnly: Boolean(dbProduct.members_only),
     scale: '1/8',
     height: '20cm'
   };
@@ -87,12 +94,17 @@ export default async function ProductsPage(props: ProductsPageProps) {
   const minPrice = typeof searchParams.minPrice === 'string' ? parseFloat(searchParams.minPrice) : null;
   const maxPrice = typeof searchParams.maxPrice === 'string' ? parseFloat(searchParams.maxPrice) : null;
   const sort = typeof searchParams.sort === 'string' ? searchParams.sort : 'newest';
+  const requestedPage = typeof searchParams.page === 'string' ? parseInt(searchParams.page, 10) : 1;
+  const page = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
 
   const supabase = await createClient();
+  const canSeeMembersOnly = await viewerCanSeeMembersOnly(supabase);
 
   let query = supabase
     .from('products')
-    .select('*, image_url, image_urls');
+    .select('*', { count: 'exact' });
+
+  if (!canSeeMembersOnly) query = publicListingsOnly(query);
 
   if (category && category !== 'all') {
     query = query.eq('category', category);
@@ -107,21 +119,8 @@ export default async function ProductsPage(props: ProductsPageProps) {
   }
 
   if (search) {
-    const searchSafe = search.replace(/[%_]/g, '\\$&');
-    let orQuery = `name.ilike.%${searchSafe}%,description.ilike.%${searchSafe}%,author.ilike.%${searchSafe}%,brand.ilike.%${searchSafe}%,series.ilike.%${searchSafe}%,character_names.cs.{${searchSafe}},tags.cs.{${searchSafe}}`;
-    
-    const exactLower = search.toLowerCase().trim();
-    if (['manga'].includes(exactLower)) {
-      orQuery += `,category.eq.manga`;
-    }
-    if (['figure', 'figures', 'anime figure', 'anime figures'].includes(exactLower)) {
-      orQuery += `,category.eq.figures`;
-    }
-    if (['shirt', 'shirts', 'tshirt', 't-shirt', 'tshirts', 't-shirts', 'apparel', 'graphic tshirt', 'graphic tshirts'].includes(exactLower)) {
-      orQuery += `,category.eq.tshirts`;
-    }
-    
-    query = query.or(orQuery);
+    // Sitewide search spans every category, so a category synonym widens to that category
+    query = query.or(buildSearchFilter(search, 'all', true));
   }
 
   // Apply Sorting
@@ -144,13 +143,18 @@ export default async function ProductsPage(props: ProductsPageProps) {
       break;
   }
 
-  const { data: dbProducts, error } = await query;
+  // Fetch one page at a time. This query previously returned the entire catalogue on
+  // every request, which is fine at 30 products and not at 3,000.
+  const from = (page - 1) * PRODUCTS_PER_PAGE;
+  const { data: dbProducts, error, count } = await query.range(from, from + PRODUCTS_PER_PAGE - 1);
 
   if (error) {
     console.error('Error fetching products:', error);
   }
 
   const products: Product[] = dbProducts?.map(mapDatabaseProduct) || [];
+  const totalProducts = count ?? products.length;
+  const totalPages = Math.max(1, Math.ceil(totalProducts / PRODUCTS_PER_PAGE));
 
   // Category breakdown for stats
   const mangaCount = products.filter(p => p.category === 'manga').length;
@@ -223,7 +227,7 @@ export default async function ProductsPage(props: ProductsPageProps) {
           {!themeWallpaperUrl && (
             <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-12 w-full">
               <div className="flex flex-col items-center justify-center bg-card border border-border rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
-                <div className="text-4xl font-black text-foreground tracking-tight pb-1">{products.length}</div>
+                <div className="text-4xl font-black text-foreground tracking-tight pb-1">{totalProducts}</div>
                 <div className="text-xs text-muted-foreground font-semibold uppercase tracking-widest">Products</div>
               </div>
               <div className="flex flex-col items-center justify-center bg-card border border-border rounded-2xl py-6 px-10 shadow-sm min-w-[160px]">
@@ -273,11 +277,21 @@ export default async function ProductsPage(props: ProductsPageProps) {
             </Suspense>
 
             {products.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5">
-                {products.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5">
+                  {products.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+                <Suspense fallback={<div className="mt-12 h-11" />}>
+                  <Pagination
+                    currentPage={page}
+                    totalPages={totalPages}
+                    totalItems={totalProducts}
+                    pageSize={PRODUCTS_PER_PAGE}
+                  />
+                </Suspense>
+              </>
             ) : (
               <div className="flex flex-col items-center justify-center py-24 px-4 bg-card border border-border rounded-3xl shadow-sm text-center">
                 <div className="inline-flex items-center justify-center w-20 h-20 bg-muted border border-border rounded-full mb-6">

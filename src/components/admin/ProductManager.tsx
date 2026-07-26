@@ -8,13 +8,15 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Plus, Edit, Trash2, Save, X, Image as ImageIcon, Package } from 'lucide-react'
+import { Plus, Edit, Trash2, Save, X, Image as ImageIcon, Package, Lock } from 'lucide-react'
 import { toast } from 'sonner'
 import Image from 'next/image'
+import { getCategoryLabel } from '@/lib/constants'
 
 interface Product {
   id: number
@@ -34,6 +36,7 @@ interface Product {
   sizes?: string[]
   colors?: string[]
   status?: string
+  members_only?: boolean
   specifications?: Record<string, any>
 }
 
@@ -117,6 +120,7 @@ export default function ProductManager({
     sizes: '',
     colors: '',
     status: 'available',
+    members_only: false,
     specifications: {} as Record<string, any>,
     images: [] as File[]
   })
@@ -222,7 +226,7 @@ export default function ProductManager({
   }, [])
 
   // Handle form input changes
-  const handleInputChange = (name: string, value: string) => {
+  const handleInputChange = (name: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
@@ -357,6 +361,7 @@ export default function ProductManager({
       sizes: '',
       colors: '',
       status: 'available',
+      members_only: false,
       specifications: {},
       images: []
     })
@@ -411,6 +416,7 @@ export default function ProductManager({
         sizes: formData.sizes ? formData.sizes.split(',').map(s => s.trim()).filter(Boolean) : null,
         colors: formData.colors ? formData.colors.split(',').map(c => c.trim()).filter(Boolean) : null,
         status: formData.status || 'available',
+        members_only: formData.members_only,
         specifications: Object.keys(formData.specifications).length > 0 ? formData.specifications : null,
       }
 
@@ -524,6 +530,7 @@ export default function ProductManager({
       sizes: product.sizes?.join(', ') || '',
       colors: product.colors?.join(', ') || '',
       status: product.status || 'available',
+      members_only: Boolean(product.members_only),
       specifications: product.specifications || {},
       images: []
     })
@@ -651,7 +658,7 @@ export default function ProductManager({
                         <SelectItem value="manga" className="focus:bg-gray-50 focus:text-black cursor-pointer">Manga</SelectItem>
                         <SelectItem value="figures" className="focus:bg-gray-50 focus:text-black cursor-pointer">Figures</SelectItem>
                         <SelectItem value="tshirts" className="focus:bg-gray-50 focus:text-black cursor-pointer">T-Shirts</SelectItem>
-                        <SelectItem value="other" className="focus:bg-gray-50 focus:text-black cursor-pointer">Other (TCG, Collectibles, etc.)</SelectItem>
+                        <SelectItem value="other" className="focus:bg-gray-50 focus:text-black cursor-pointer">Other Collectibles (TCG, etc.)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -695,6 +702,22 @@ export default function ProductManager({
                       required
                       placeholder="0"
                       className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 rounded-xl h-11"
+                    />
+                  </div>
+
+                  <div className="col-span-1 md:col-span-2 mt-2 flex items-start justify-between gap-6 rounded-xl border border-gray-200 bg-white p-4">
+                    <div>
+                      <Label htmlFor="members_only" className="text-gray-900 font-bold mb-1 block">Members Only</Label>
+                      <p className="text-sm text-gray-500 font-medium">
+                        Hide this listing from logged-out visitors. It stays out of the catalogue, search
+                        and recommendations until a visitor signs in.
+                      </p>
+                    </div>
+                    <Switch
+                      id="members_only"
+                      checked={formData.members_only}
+                      onCheckedChange={(checked) => handleInputChange('members_only', checked)}
+                      className="mt-1 shrink-0"
                     />
                   </div>
 
@@ -1229,7 +1252,15 @@ export default function ProductManager({
                             )}
                           </div>
                           <div className="min-w-0">
-                            <div className="font-medium text-gray-900 truncate">{product.name}</div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-900 truncate">{product.name}</span>
+                              {product.members_only && (
+                                <Badge className="shrink-0 gap-1 bg-gray-900 text-white border-0 text-[11px] font-semibold">
+                                  <Lock className="h-3 w-3" />
+                                  Members Only
+                                </Badge>
+                              )}
+                            </div>
                             <div className="text-sm text-gray-500 truncate">{product.description}</div>
                             {product.author && (
                               <div className="text-xs text-gray-400 truncate">by {product.author}</div>
@@ -1242,7 +1273,7 @@ export default function ProductManager({
                       </TableCell>
                       <TableCell>
                         <Badge className={getCategoryColor(product.category)}>
-                          {product.category}
+                          {getCategoryLabel(product.category)}
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium">

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { Badge } from '@/components/ui/badge'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight, AlertCircle } from 'lucide-react'
+import { productMatchesSearch } from '@/lib/product-search'
 
 interface NavDropdownItem {
   id: number
@@ -25,9 +26,16 @@ interface ProductSlim {
   id: number
   category: string
   name: string
+  description?: string
+  author?: string
+  brand?: string
   series?: string
   tags?: string[]
+  character_names?: string[]
 }
+
+// Columns the in-memory matcher reads — must cover every field in SEARCH_SCOPES
+const MATCH_COLUMNS = 'id, category, name, description, author, brand, series, tags, character_names'
 
 interface InventoryMatrixProps {
   initialProducts: any[]
@@ -51,60 +59,44 @@ function getSearchTerm(href: string): string | null {
   }
 }
 
-// Check if a product matches a specific subcategory by tag or name/series
-function productMatchesSub(p: ProductSlim, subLabel: string, searchTerm: string | null): boolean {
-  const label = subLabel.toLowerCase().trim()
-  const term = (searchTerm || '').toLowerCase().trim()
-
-  // Tag match: product's tags contain the subcategory label
-  if (p.tags && Array.isArray(p.tags)) {
-    if (p.tags.some(t => {
-      const tag = t.toLowerCase().trim()
-      return tag === label || (term && tag === term)
-    })) return true
-  }
-
-  // Name/series match
-  if (term) {
-    const name = p.name?.toLowerCase() || ''
-    const series = p.series?.toLowerCase() || ''
-    if (name.includes(term) || series.includes(term)) return true
-    if (label !== term && (name.includes(label) || series.includes(label))) return true
-  }
-  return false
+// Resolve which product category a nav link is scoped to. `/products` means "everything".
+function getCategoryScope(subHref: string, parentHref: string): string | null {
+  const basePath = subHref.split('?')[0].replace(/^\//, '')
+  const parentPath = parentHref.split('?')[0].replace(/^\//, '')
+  if (basePath && basePath !== 'products') return basePath
+  if (parentPath && parentPath !== 'products') return parentPath
+  return null
 }
 
-// Count products for a subcategory.
-// - Subs WITH a search param (e.g. "?search=Anime") → direct tag/name matches only.
-// - Subs WITHOUT a search param (e.g. "Other" → /figures) → products not claimed by any sibling.
-function countSubcategoryProducts(
+// The products a nav link actually lands the customer on. This calls the same matcher
+// the storefront query is built from, so these counts equal what the page will show.
+function productsForSub(
   sub: NavDropdownItem,
   products: ProductSlim[],
   parentHref: string,
   siblings: NavDropdownItem[]
-): number {
-  const basePath = sub.href.split('?')[0].replace(/^\//, '')
-  const parentPath = parentHref.split('?')[0].replace(/^\//, '')
+): ProductSlim[] {
   const searchTerm = getSearchTerm(sub.href)
-
-  // Scope to parent category
-  const categoryScope = (basePath && basePath !== 'products') ? basePath
-    : (parentPath && parentPath !== 'products') ? parentPath
-    : null
-  const scoped = categoryScope
-    ? products.filter(p => p.category === categoryScope)
-    : products
+  const categoryScope = getCategoryScope(sub.href, parentHref)
+  const scoped = categoryScope ? products.filter(p => p.category === categoryScope) : products
 
   if (!searchTerm) {
-    // No search param → this is a catch-all. Count products not claimed by any sibling that HAS a search term.
-    const siblingsWithSearch = siblings.filter(s => s.id !== sub.id && getSearchTerm(s.href))
-    return scoped.filter(p =>
-      !siblingsWithSearch.some(sib => productMatchesSub(p, sib.label, getSearchTerm(sib.href)))
-    ).length
+    // No search param → the link opens the bare category page. Treat it as the catch-all:
+    // whatever no sibling with a search term claims.
+    const claiming = siblings.filter(s => s.id !== sub.id && getSearchTerm(s.href))
+    return scoped.filter(p => !claiming.some(sib => matchesSub(p, sib, parentHref)))
   }
 
-  // Has search param → ONLY count direct tag/name matches. No fallback.
-  return scoped.filter(p => productMatchesSub(p, sub.label, searchTerm)).length
+  return scoped.filter(p => matchesSub(p, sub, parentHref))
+}
+
+function matchesSub(p: ProductSlim, sub: NavDropdownItem, parentHref: string): boolean {
+  const searchTerm = getSearchTerm(sub.href)
+  if (!searchTerm) return false
+  const categoryScope = getCategoryScope(sub.href, parentHref)
+  // Sitewide links (/products?search=…) let a category synonym widen; scoped pages are
+  // already filtered to one category, so widening there would be a no-op.
+  return productMatchesSearch(p, searchTerm, categoryScope ?? 'all', categoryScope === null)
 }
 
 export default function InventoryMatrix({ initialProducts, initialNavCategories }: InventoryMatrixProps) {
@@ -148,7 +140,7 @@ export default function InventoryMatrix({ initialProducts, initialNavCategories 
         async () => {
           const { data } = await supabase
             .from('products')
-            .select('id, category, name, series, tags')
+            .select(MATCH_COLUMNS)
           if (data) setProducts(data)
         }
       )
@@ -186,6 +178,20 @@ export default function InventoryMatrix({ initialProducts, initialNavCategories 
         const subs = nav.nav_dropdown_items?.sort((a, b) => a.sort_order - b.sort_order) || []
         const hasSubs = subs.length > 0
         const isExpanded = expanded.has(nav.id)
+
+        const subCounts = subs.map(sub => ({
+          sub,
+          products: productsForSub(sub, products, nav.href, subs),
+        }))
+
+        // Products in this category that no subcategory link would ever show. Without this
+        // row the sub-counts silently fail to add up to the category total — which is how
+        // untagged products stay invisible. A sub with no search term is already a
+        // catch-all, so it absorbs them and this row is unnecessary.
+        const scopeForNav = categoryKey ? products.filter(p => p.category === categoryKey) : products
+        const hasCatchAll = subs.some(sub => !getSearchTerm(sub.href))
+        const claimed = new Set(subCounts.flatMap(({ products: matched }) => matched.map(p => p.id)))
+        const unassigned = hasCatchAll ? [] : scopeForNav.filter(p => !claimed.has(p.id))
 
         return (
           <div key={nav.id}>
@@ -231,32 +237,46 @@ export default function InventoryMatrix({ initialProducts, initialNavCategories 
             {/* Subcategories (expanded) */}
             {isExpanded && hasSubs && (
               <div className="ml-6 pl-4 border-l-2 border-gray-100 space-y-0.5 py-1">
-                {subs.map((sub) => {
-                  const subCount = countSubcategoryProducts(sub, products, nav.href, subs)
-                  return (
-                    <div
-                      key={sub.id}
-                      className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-gray-50 transition-colors group"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div
-                          className="w-1.5 h-1.5 rounded-full shrink-0"
-                          style={{ backgroundColor: color, opacity: 0.6 }}
-                        />
-                        <span className="text-sm text-gray-600 font-medium group-hover:text-gray-800 transition-colors">
-                          {sub.label}
-                        </span>
-                      </div>
-                      <span className={`text-xs font-mono px-2 py-0.5 rounded-full ${
-                        subCount > 0
-                          ? 'bg-gray-100 text-gray-600'
-                          : 'bg-gray-50 text-gray-300'
-                      }`}>
-                        {subCount}
+                {subCounts.map(({ sub, products: matched }) => (
+                  <div
+                    key={sub.id}
+                    className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-gray-50 transition-colors group"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className="w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{ backgroundColor: color, opacity: 0.6 }}
+                      />
+                      <span className="text-sm text-gray-600 font-medium group-hover:text-gray-800 transition-colors">
+                        {sub.label}
                       </span>
                     </div>
-                  )
-                })}
+                    <span className={`text-xs font-mono px-2 py-0.5 rounded-full ${
+                      matched.length > 0
+                        ? 'bg-gray-100 text-gray-600'
+                        : 'bg-gray-50 text-gray-300'
+                    }`}>
+                      {matched.length}
+                    </span>
+                  </div>
+                ))}
+
+                {unassigned.length > 0 && (
+                  <div
+                    className="flex items-center justify-between px-3 py-2 rounded-md bg-amber-50/60 hover:bg-amber-50 transition-colors group"
+                    title="These products are in the category but match no subcategory link, so customers can only reach them from the main category page. Tag them to file them under a subcategory."
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <AlertCircle className="h-3 w-3 text-amber-500 shrink-0" />
+                      <span className="text-sm text-amber-700 font-medium">
+                        Unassigned
+                      </span>
+                    </div>
+                    <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                      {unassigned.length}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </div>

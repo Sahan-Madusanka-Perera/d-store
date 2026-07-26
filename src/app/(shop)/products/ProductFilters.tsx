@@ -27,6 +27,10 @@ export default function ProductFilters({ isMobile = false }: ProductFiltersProps
     const createQueryString = (paramsToUpdate: Record<string, string | null>) => {
         const params = new URLSearchParams(searchParams.toString());
 
+        // Changing a filter changes the result set, so page 3 of the old results is
+        // meaningless — always return to the first page.
+        params.delete('page');
+
         Object.entries(paramsToUpdate).forEach(([name, value]) => {
             if (value && value !== 'all') {
                 params.set(name, value);
@@ -64,7 +68,7 @@ export default function ProductFilters({ isMobile = false }: ProductFiltersProps
         { id: 'manga', name: 'Manga' },
         { id: 'figures', name: 'Figures' },
         { id: 'tshirts', name: 'Apparel' },
-        { id: 'other', name: 'Other' }
+        { id: 'other', name: 'Other Collectibles' }
     ];
 
     const priceRanges = [

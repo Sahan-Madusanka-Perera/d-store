@@ -24,6 +24,26 @@ export const PRODUCT_CATEGORIES = {
   TSHIRTS: 'tshirts'
 } as const;
 
+// Customer-facing names for the stored category values.
+// The database keeps the short keys ('other'); only the labels below are shown.
+export const CATEGORY_LABELS: Record<string, string> = {
+  manga: 'Manga',
+  figures: 'Figures',
+  tshirts: 'Apparel',
+  other: 'Other Collectibles'
+};
+
+export function getCategoryLabel(category: string): string {
+  return CATEGORY_LABELS[category] ?? category;
+}
+
+export const BRAND_NAME = 'D-Store';
+export const BRAND_TAGLINE = 'The Ultimate Hobby Store';
+
+// Stock at or below this is flagged in the admin dashboard. Single source so the
+// summary card and the "low stock" query can't drift apart.
+export const LOW_STOCK_THRESHOLD = 10;
+
 export const ORDER_STATUSES = {
   PENDING: 'pending',
   CONFIRMED: 'confirmed',

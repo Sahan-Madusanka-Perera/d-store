@@ -5,6 +5,7 @@ import { RecommendedProducts } from "@/components/sections/RecommendedProducts";
 import { CategoryShowcase } from "@/components/sections/CategoryShowcase";
 import Navbar from '@/components/layout/Navbar';
 import { createClient } from '@/utils/supabase/server'
+import { viewerCanSeeMembersOnly, publicListingsOnly } from '@/lib/product-visibility';
 import { Shield, CheckCircle, Truck, Globe } from 'lucide-react';
 import CustomOrderForm from '@/components/sections/CustomOrderForm';
 
@@ -18,12 +19,24 @@ const FRESH_DROPS = [
 export default async function Home() {
   const supabase = await createClient()
 
-  // Fetch Carousel Slides
-  const { data: slides } = await supabase
-    .from('carousel_slides')
-    .select('*')
-    .eq('is_active', true)
-    .order('sort_order', { ascending: true })
+  // Carousel and Latest Arrivals are independent — fetch them together rather than
+  // paying two sequential round trips before the page can render.
+  let latestQuery = supabase
+    .from('products')
+    .select('id, name, price, image_url, image_urls')
+    .order('created_at', { ascending: false })
+    .limit(4);
+
+  if (!(await viewerCanSeeMembersOnly(supabase))) latestQuery = publicListingsOnly(latestQuery);
+
+  const [{ data: slides }, { data: latestProducts }] = await Promise.all([
+    supabase
+      .from('carousel_slides')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true }),
+    latestQuery,
+  ])
 
   // Fallback slides in case of DB error or empty
   const initialSlides = slides && slides.length > 0 ? slides : [
@@ -61,13 +74,6 @@ export default async function Home() {
       sort_order: 3
     }
   ];
-
-  // Fetch Latest Arrivals
-  const { data: latestProducts } = await supabase
-    .from('products')
-    .select('id, name, price, image_url, image_urls')
-    .order('created_at', { ascending: false })
-    .limit(4);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-LK', {

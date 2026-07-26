@@ -1,6 +1,7 @@
 import { Product } from '@/types/product';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
+import { viewerCanSeeMembersOnly, publicListingsOnly } from '@/lib/product-visibility';
 import { notFound } from 'next/navigation';
 import AddToCartButton from '@/components/product/AddToCartButton';
 import WhatsAppInquiryButton from '@/components/product/WhatsAppInquiryButton';
@@ -14,6 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { Star, ArrowLeft, Truck, Shield, RotateCcw, Heart, Sparkles, Clock, Zap, Bell, BookOpen, Languages, Calendar, Hash, Weight, Maximize, Palette, Brush, Gift, Ruler, Puzzle, Box, Battery, Factory, Info, Book, Globe, Lock } from 'lucide-react';
 import ExternalRating from '@/components/product/ExternalRating';
 import WishlistButton from '@/components/product/WishlistButton';
+import { getCategoryLabel } from '@/lib/constants';
 
 interface DatabaseProduct {
   id: number;
@@ -34,6 +36,7 @@ interface DatabaseProduct {
   series?: string;
   character_names?: string[];
   status?: string;
+  members_only?: boolean;
   specifications?: Record<string, any>;
 }
 
@@ -73,6 +76,7 @@ function mapDatabaseProduct(dbProduct: DatabaseProduct): Product {
     series: dbProduct.series || 'Various',
     characterNames: dbProduct.character_names,
     status: (dbProduct.status as 'available' | 'coming_soon' | 'pre_order' | 'out_of_stock') || 'available',
+    membersOnly: Boolean(dbProduct.members_only),
     scale: '1/8',
     height: '20cm',
     specifications: dbProduct.specifications
@@ -86,59 +90,70 @@ interface ProductPageProps {
 export default async function ProductPage({ params }: ProductPageProps) {
   const { id } = await params;
   const supabase = await createClient();
+  const canSeeMembersOnly = await viewerCanSeeMembersOnly(supabase);
 
-  const { data: dbProduct, error } = await supabase
+  let productQuery = supabase
     .from('products')
     .select('*, image_url, image_urls')
-    .eq('id', id)
-    .single();
+    .eq('id', id);
 
+  if (!canSeeMembersOnly) productQuery = publicListingsOnly(productQuery);
+
+  const { data: dbProduct, error } = await productQuery.single();
+
+  // A members-only listing is indistinguishable from a missing one for guests.
   if (error || !dbProduct) {
     notFound();
   }
 
   const product = mapDatabaseProduct(dbProduct);
 
-  let discountPercent = 0;
-  if (product.category === 'manga' && product.publisher) {
-    const { data: discountData } = await supabase
-      .from('publisher_discounts')
-      .select('discount_percentage')
-      .ilike('publisher', product.publisher)
-      .eq('is_active', true)
-      .maybeSingle();
-
-    if (discountData) {
-      discountPercent = discountData.discount_percentage;
-    }
-  }
-
   // Fetch related products
   const filterParts: string[] = [];
   if (dbProduct.brand) filterParts.push(`brand.eq."${dbProduct.brand.replace(/"/g, '""')}"`);
   if (dbProduct.publisher) filterParts.push(`publisher.eq."${dbProduct.publisher.replace(/"/g, '""')}"`);
   if (dbProduct.series) filterParts.push(`series.eq."${dbProduct.series.replace(/"/g, '""')}"`);
-  
+
   let relatedQuery = supabase
     .from('products')
     .select('*, image_url, image_urls')
     .eq('category', dbProduct.category)
     .neq('id', dbProduct.id);
-    
+
+  if (!canSeeMembersOnly) relatedQuery = publicListingsOnly(relatedQuery);
+
   if (filterParts.length > 0) {
     relatedQuery = relatedQuery.or(filterParts.join(','));
   }
-  
-  let { data: relatedData } = await relatedQuery.limit(4);
-  
+
+  // The publisher discount and the related rail don't depend on each other —
+  // run them together instead of back to back.
+  const [discountResult, relatedResult] = await Promise.all([
+    product.category === 'manga' && product.publisher
+      ? supabase
+          .from('publisher_discounts')
+          .select('discount_percentage')
+          .ilike('publisher', product.publisher)
+          .eq('is_active', true)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    relatedQuery.limit(4),
+  ]);
+
+  const discountPercent: number = discountResult.data?.discount_percentage ?? 0;
+  let relatedData = relatedResult.data;
+
   // Fallback if no specific matches found
   if (!relatedData || relatedData.length === 0) {
-    const { data: fallbackData } = await supabase
+    let fallbackQuery = supabase
       .from('products')
       .select('*, image_url, image_urls')
       .eq('category', dbProduct.category)
-      .neq('id', dbProduct.id)
-      .limit(4);
+      .neq('id', dbProduct.id);
+
+    if (!canSeeMembersOnly) fallbackQuery = publicListingsOnly(fallbackQuery);
+
+    const { data: fallbackData } = await fallbackQuery.limit(4);
     relatedData = fallbackData;
   }
   
@@ -202,8 +217,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
             {/* Category and Stock Status */}
             <div className="flex items-center gap-3 flex-wrap">
               <Badge className={getCategoryColor(product.category)}>
-                {product.category}
+                {getCategoryLabel(product.category)}
               </Badge>
+              {product.membersOnly && (
+                <Badge className="bg-foreground text-background border-0">
+                  <Lock className="h-3 w-3 mr-1" />
+                  Members Only
+                </Badge>
+              )}
               {product.status === 'coming_soon' && (
                 <Badge className="bg-blue-500/10 text-blue-600 border-blue-200">
                   <Clock className="h-3 w-3 mr-1" />
@@ -474,7 +495,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               <div className="text-center max-w-2xl mx-auto mb-12">
                 <h2 className="text-3xl font-bold text-foreground mb-4">You might also like</h2>
                 <p className="text-muted-foreground text-lg">
-                  Discover more products in the {product.category} category
+                  Discover more products in the {getCategoryLabel(product.category)} category
                 </p>
               </div>
               
@@ -487,7 +508,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               <div className="mt-12 text-center">
                 <Button asChild variant="outline" size="lg" className="shadow-sm hover:shadow-md">
                   <Link href={`/${product.category}`}>
-                    View More {product.category}
+                    View More {getCategoryLabel(product.category)}
                   </Link>
                 </Button>
               </div>

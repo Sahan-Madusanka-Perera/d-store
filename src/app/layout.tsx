@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Oswald, Inter } from "next/font/google";
 import "./globals.css";
+import { BRAND_TAGLINE } from "@/lib/constants";
 import { Toaster } from "@/components/ui/sonner";
 import { Footer } from '@/components/layout/Footer';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -16,7 +17,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "D-STORE | The Ultimate Hobby Store",
+  title: `D-STORE | ${BRAND_TAGLINE}`,
   description: "Authentic Anime Merchandise, Figures, and Streetwear.",
 };
 

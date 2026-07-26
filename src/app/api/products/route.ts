@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { viewerCanSeeMembersOnly, publicListingsOnly } from '@/lib/product-visibility';
+import { buildSearchFilter } from '@/lib/product-search';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,6 +14,11 @@ export async function GET(request: NextRequest) {
 
     let query = supabase.from('products').select('*', { count: 'exact' });
 
+    // Members-only listings never reach logged-out callers (this route backs the search bar)
+    if (!(await viewerCanSeeMembersOnly(supabase))) {
+      query = publicListingsOnly(query);
+    }
+
     // Filter by category
     if (category && category !== 'all') {
       query = query.eq('category', category);
@@ -19,21 +26,7 @@ export async function GET(request: NextRequest) {
 
     // Filter by search term
     if (search) {
-      const searchSafe = search.replace(/[%_]/g, '\\$&'); // Escape special chars for LIKE
-      let orQuery = `name.ilike.%${searchSafe}%,description.ilike.%${searchSafe}%,author.ilike.%${searchSafe}%,brand.ilike.%${searchSafe}%,series.ilike.%${searchSafe}%`;
-      
-      const exactLower = search.toLowerCase().trim();
-      if (['manga'].includes(exactLower)) {
-        orQuery += `,category.eq.manga`;
-      }
-      if (['figure', 'figures', 'anime figure', 'anime figures'].includes(exactLower)) {
-        orQuery += `,category.eq.figures`;
-      }
-      if (['shirt', 'shirts', 'tshirt', 't-shirt', 'tshirts', 't-shirts', 'apparel', 'graphic tshirt', 'graphic tshirts'].includes(exactLower)) {
-        orQuery += `,category.eq.tshirts`;
-      }
-      
-      query = query.or(orQuery);
+      query = query.or(buildSearchFilter(search, category && category !== 'all' ? category : 'all', !category || category === 'all'));
     }
 
     // Pagination
