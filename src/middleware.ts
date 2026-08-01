@@ -6,9 +6,15 @@ import { NextResponse, type NextRequest } from 'next/server'
 const COMING_SOON = process.env.COMING_SOON === 'true'
 
 // Routes that must keep working while the gate is up: the splash itself, everything
-// needed to sign in as an admin, the admin panel, and the one API the splash calls.
+// needed to sign in as an admin, the admin panel, and both ends of the newsletter.
 // Everything else — including /api/products — is sealed, so nothing about the
 // catalogue leaks to someone poking at endpoints directly.
+//
+// Unsubscribe has to be here even though nothing on the splash links to it. Every mail
+// we send carries a List-Unsubscribe header, and Gmail and Yahoo require that one-click
+// endpoint to actually work for bulk senders. Gated, it answered their POST with a 307
+// to the splash and the row was never updated — a silent failure whose only symptom is
+// people marking the mail as spam instead.
 const GATE_EXEMPT = [
   '/coming-soon',
   '/login',
@@ -20,6 +26,8 @@ const GATE_EXEMPT = [
   '/admin',
   '/api/auth',
   '/api/newsletter/subscribe',
+  '/api/newsletter/unsubscribe',
+  '/newsletter/unsubscribe',
 ]
 
 function isExempt(pathname: string): boolean {
