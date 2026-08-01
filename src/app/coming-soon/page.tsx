@@ -100,7 +100,7 @@ export default function ComingSoonPage() {
             className="animate-rise-in mt-5 max-w-md text-pretty text-base leading-relaxed text-white/80 sm:text-lg"
             style={{ ...HALO, animationDelay: '170ms' }}
           >
-            Manga, scale figures and apparel worth queuing for. Sri Lanka&rsquo;s ultimate
+            Manga, figures and apparel worth queuing for. Sri Lanka&rsquo;s ultimate
             hobby store opens shortly &mdash; we&rsquo;re still stocking the shelves.
           </p>
 
