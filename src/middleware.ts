@@ -128,7 +128,12 @@ export const config = {
      * - favicon.ico (favicon file)
      * - api/webhook (webhook endpoints that shouldn't be protected)
      * Feel free to modify this pattern to include more paths.
+     *
+     * Static media is listed here so it never pays for a Supabase session lookup and
+     * never gets swept into the pre-launch redirect — a request for the splash's own
+     * backdrop video is not a page view, and answering it with a redirect to
+     * /coming-soon leaves the page with no backdrop at all.
      */
-    '/((?!_next/static|_next/image|favicon.ico|api/webhook|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/webhook|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|mp4|webm)$).*)',
   ],
 }

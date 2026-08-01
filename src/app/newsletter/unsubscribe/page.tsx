@@ -32,7 +32,7 @@ export default async function UnsubscribePage(props: PageProps) {
           width={140}
           height={140}
           priority
-          className="mx-auto mb-8 h-32 w-32 object-contain"
+          className="logo-neon mx-auto mb-8 h-32 w-32 object-contain"
         />
 
         <div

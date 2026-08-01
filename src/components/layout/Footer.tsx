@@ -48,7 +48,7 @@ export function Footer() {
                         <div className="flex flex-col items-start max-w-md">
                             <div className="relative mb-4 p-2 bg-background/50 backdrop-blur-md rounded-2xl border border-border/40 shadow-sm">
                                 <Link href="/" className="inline-block">
-                                    <Image src="/Logo.Trns.png" alt="D-Store Logo" width={256} height={256} className="h-16 w-auto object-contain" />
+                                    <Image src="/Logo.Trns.png" alt="D-Store Logo" width={256} height={256} className="logo-neon h-16 w-auto object-contain" />
                                 </Link>
                             </div>
                             <p className="text-sm text-muted-foreground mb-6 leading-relaxed font-medium">

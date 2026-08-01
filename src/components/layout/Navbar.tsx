@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useState, useRef } from 'react';
 import { useCartStore } from '@/store/cart';
 import UserProfile from '@/components/profile/UserProfile';
@@ -164,7 +165,14 @@ export default function Navbar() {
           <div className="flex justify-between items-center h-14 sm:h-16">
             <Link href="/" className="flex items-center space-x-2 group flex-shrink-0">
               <div className="relative h-8 w-24 sm:h-9 sm:w-28 overflow-hidden transition-transform group-hover:opacity-80 duration-300">
-                <img src="/Logo.Trns.png" alt="D-Store Logo" className="h-full w-full object-contain" />
+                <Image
+                  src="/Logo.Trns.png"
+                  alt="D-Store Logo"
+                  fill
+                  priority
+                  sizes="(min-width: 640px) 112px, 96px"
+                  className="logo-neon object-contain"
+                />
               </div>
             </Link>
 
@@ -238,7 +246,13 @@ export default function Navbar() {
         >
           <div className="flex flex-shrink-0 items-center justify-between mb-8">
             <Link href="/" onClick={() => setMobileOpen(false)} className="h-8 w-24 relative">
-              <img src="/Logo.Trns.png" alt="D-Store" className="h-full w-full object-contain" />
+              <Image
+                src="/Logo.Trns.png"
+                alt="D-Store"
+                fill
+                sizes="96px"
+                className="logo-neon object-contain"
+              />
             </Link>
             <button
               onClick={() => setMobileOpen(false)}

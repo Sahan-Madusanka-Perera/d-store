@@ -114,7 +114,9 @@ export function HeroCarousel({ initialSlides }: HeroCarouselProps) {
                             src="/Logo.Trns.png"
                             alt="D-Store Official Logo"
                             fill
-                            className="object-contain drop-shadow-[0_0_25px_rgba(255,255,255,0.4)]"
+                            priority
+                            sizes="(min-width: 768px) 500px, (min-width: 640px) 200px, 140px"
+                            className="logo-neon-lg object-contain"
                           />
                         </div>
                       ) : (

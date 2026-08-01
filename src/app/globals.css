@@ -259,6 +259,23 @@
   }
 }
 
+/* Neon halo for the D-Store mark, so the logo reads as lit signage rather than a
+   flat sticker. Both colours are sampled out of the ring in Logo.Trns.png itself:
+   #FCF09C is the hot core of the tube, #FC300C the orange it burns out to. Kept
+   tight and low-alpha — it should register as glow, not as a coloured shadow.
+
+   drop-shadow rather than box-shadow, because it traces the PNG's alpha and hugs
+   the ring and sword instead of boxing the whole image. */
+.logo-neon {
+  filter: drop-shadow(0 0 5px rgba(252, 240, 156, 0.4)) drop-shadow(0 0 16px rgba(252, 48, 12, 0.28));
+}
+
+/* drop-shadow blur is an absolute length, so the tight halo above disappears against
+   the 500px mark on the hero. Same two colours, scaled to that mark. */
+.logo-neon-lg {
+  filter: drop-shadow(0 0 12px rgba(252, 240, 156, 0.42)) drop-shadow(0 0 40px rgba(252, 48, 12, 0.3));
+}
+
 .hover-underline-animation {
   display: inline-block;
   position: relative;

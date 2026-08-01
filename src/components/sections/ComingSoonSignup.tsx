@@ -7,6 +7,9 @@ import { ArrowRight, Check, Loader2 } from 'lucide-react';
  * Compact signup for the pre-launch splash. Posts to the same
  * /api/newsletter/subscribe endpoint the storefront footer uses, so early interest
  * lands in the existing subscriber list and can be mailed with the launch campaign.
+ *
+ * Styled in literal white-on-black rather than theme tokens, because it only ever
+ * renders over the splash's video backdrop — see src/app/coming-soon/page.tsx.
  */
 export default function ComingSoonSignup() {
   const [email, setEmail] = useState('');
@@ -54,13 +57,13 @@ export default function ComingSoonSignup() {
           disabled={status === 'loading' || status === 'done'}
           placeholder="you@example.com"
           aria-describedby={message ? 'notify-status' : undefined}
-          className="h-14 w-full rounded-none border-b-2 border-foreground/15 bg-transparent pr-14 text-base text-foreground placeholder:text-muted-foreground/60 transition-colors focus:border-foreground focus:outline-none disabled:opacity-60"
+          className="h-14 w-full rounded-none border-b-2 border-white/30 bg-transparent pr-14 text-base text-white placeholder:text-white/65 transition-colors focus:border-white focus:outline-none disabled:opacity-60"
         />
         <button
           type="submit"
           disabled={status === 'loading' || status === 'done'}
           aria-label="Notify me at launch"
-          className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center bg-foreground text-background transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 disabled:opacity-60 disabled:hover:scale-100 motion-reduce:transition-none motion-reduce:hover:scale-100"
+          className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center bg-white text-black transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:opacity-60 disabled:hover:scale-100 motion-reduce:transition-none motion-reduce:hover:scale-100"
         >
           {status === 'loading' ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -76,8 +79,9 @@ export default function ComingSoonSignup() {
         id="notify-status"
         aria-live="polite"
         className={`mt-3 min-h-5 text-sm font-medium ${
-          status === 'error' ? 'text-red-600' : 'text-muted-foreground'
+          status === 'error' ? 'text-red-300' : 'text-white/75'
         }`}
+        style={{ textShadow: '0 1px 20px rgba(0,0,0,0.6)' }}
       >
         {message || 'Be first to know when the doors open.'}
       </p>
