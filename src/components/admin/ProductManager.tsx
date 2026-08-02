@@ -17,6 +17,7 @@ import { Plus, Edit, Trash2, Save, X, Image as ImageIcon, Package, Lock } from '
 import { toast } from 'sonner'
 import Image from 'next/image'
 import { getCategoryLabel } from '@/lib/constants'
+import { BUNDLE_DISCOUNT_BLURB, BUNDLE_DISCOUNT_MIN_ITEMS } from '@/lib/bundle-discount'
 
 interface Product {
   id: number
@@ -37,6 +38,8 @@ interface Product {
   colors?: string[]
   status?: string
   members_only?: boolean
+  discount_eligible?: boolean
+  compare_at_price?: number | null
   specifications?: Record<string, any>
 }
 
@@ -121,6 +124,8 @@ export default function ProductManager({
     colors: '',
     status: 'available',
     members_only: false,
+    discount_eligible: false,
+    compare_at_price: '',
     specifications: {} as Record<string, any>,
     images: [] as File[]
   })
@@ -362,6 +367,8 @@ export default function ProductManager({
       colors: '',
       status: 'available',
       members_only: false,
+      discount_eligible: false,
+      compare_at_price: '',
       specifications: {},
       images: []
     })
@@ -417,6 +424,8 @@ export default function ProductManager({
         colors: formData.colors ? formData.colors.split(',').map(c => c.trim()).filter(Boolean) : null,
         status: formData.status || 'available',
         members_only: formData.members_only,
+        discount_eligible: formData.discount_eligible,
+        compare_at_price: formData.compare_at_price ? parseFloat(formData.compare_at_price) : null,
         specifications: Object.keys(formData.specifications).length > 0 ? formData.specifications : null,
       }
 
@@ -531,6 +540,8 @@ export default function ProductManager({
       colors: product.colors?.join(', ') || '',
       status: product.status || 'available',
       members_only: Boolean(product.members_only),
+      discount_eligible: Boolean(product.discount_eligible),
+      compare_at_price: product.compare_at_price?.toString() || '',
       specifications: product.specifications || {},
       images: []
     })
@@ -718,6 +729,46 @@ export default function ProductManager({
                       checked={formData.members_only}
                       onCheckedChange={(checked) => handleInputChange('members_only', checked)}
                       className="mt-1 shrink-0"
+                    />
+                  </div>
+
+                  <div className="col-span-1 md:col-span-2 mt-2 flex items-start justify-between gap-6 rounded-xl border border-gray-200 bg-white p-4">
+                    <div>
+                      <Label htmlFor="discount_eligible" className="text-gray-900 font-bold mb-1 block">Discount Eligible</Label>
+                      <p className="text-sm text-gray-500 font-medium">
+                        {BUNDLE_DISCOUNT_BLURB}. The listing says so under the price, and the
+                        cart applies it once {BUNDLE_DISCOUNT_MIN_ITEMS} eligible items are in
+                        the basket — counted across every eligible product, not per listing.
+                      </p>
+                    </div>
+                    <Switch
+                      id="discount_eligible"
+                      checked={formData.discount_eligible}
+                      onCheckedChange={(checked) => handleInputChange('discount_eligible', checked)}
+                      className="mt-1 shrink-0"
+                    />
+                  </div>
+
+                  <div className="col-span-1 md:col-span-2 mt-2 rounded-xl border border-gray-200 bg-white p-4">
+                    <Label htmlFor="compare_at_price" className="text-gray-900 font-bold mb-1 block">
+                      Compare-at price <span className="font-medium text-gray-400">(optional)</span>
+                    </Label>
+                    <p className="text-sm text-gray-500 font-medium mb-3">
+                      Shown struck through beside the real price, so a compare-at of 12,500 on a
+                      9,500 listing reads as <span className="line-through">Rs. 12,500</span>{' '}
+                      Rs. 9,500. Leave empty for no strike-through. Must be higher than the actual
+                      price — the database rejects anything lower. Use the RRP or a price this item
+                      genuinely sold at; an invented one is misleading pricing.
+                    </p>
+                    <Input
+                      id="compare_at_price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.compare_at_price}
+                      onChange={(e) => handleInputChange('compare_at_price', e.target.value)}
+                      placeholder="e.g. 12500"
+                      className="bg-white border-gray-200 focus:border-black focus:ring-1 focus:ring-black text-black placeholder:text-gray-400 rounded-xl h-11"
                     />
                   </div>
 

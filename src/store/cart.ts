@@ -3,6 +3,11 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { Cart, CartItem, CartActions } from '@/types/cart';
 import { Product } from '@/types/product';
 import { createClient } from '@/utils/supabase/client';
+import {
+  BUNDLE_DISCOUNT_ID,
+  BUNDLE_DISCOUNT_LABEL,
+  bundleDiscountFor,
+} from '@/lib/bundle-discount';
 
 interface CartStore extends Cart, CartActions { }
 
@@ -17,7 +22,6 @@ export const useCartStore = create<CartStore>()(
       discountTotal: 0,
       appliedDiscounts: [],
       availableDiscounts: [],
-      availablePublisherDiscounts: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
 
@@ -130,16 +134,8 @@ export const useCartStore = create<CartStore>()(
             .eq('is_active', true)
             .order('min_quantity', { ascending: false }); // Highest quantity threshold first
 
-          const { data: pubData, error: pubError } = await supabase
-            .from('publisher_discounts')
-            .select('*')
-            .eq('is_active', true);
-
           if (!qtyError && qtyData) {
             set({ availableDiscounts: qtyData });
-          }
-          if (!pubError && pubData) {
-            set({ availablePublisherDiscounts: pubData });
           }
 
           get().evaluateDiscounts();
@@ -149,7 +145,7 @@ export const useCartStore = create<CartStore>()(
       },
 
       evaluateDiscounts: () => {
-        const { items, availableDiscounts, availablePublisherDiscounts, totalAmount } = get();
+        const { items, availableDiscounts } = get();
 
         let newDiscountTotal = 0;
         const newAppliedDiscounts: any[] = [];
@@ -201,26 +197,23 @@ export const useCartStore = create<CartStore>()(
           });
         }
 
-        // --- 2. Evaluate Publisher Discounts ---
-        if (availablePublisherDiscounts && availablePublisherDiscounts.length > 0) {
-          items.forEach(item => {
-            if (item.product.category === 'manga' && item.product.publisher) {
-              const applicableDiscount = availablePublisherDiscounts.find(
-                d => d.publisher.toLowerCase() === item.product.publisher?.toLowerCase()
-              );
+        // --- 1b. Evaluate the eligible-items bundle ---
+        // Counts units across every eligible product in the basket, not per listing,
+        // which is what the blurb on the product page promises.
+        const bundle = bundleDiscountFor(
+          items.map(item => ({
+            eligible: Boolean(item.product.discountEligible),
+            quantity: item.quantity,
+            lineTotal: item.priceAtTime * item.quantity,
+          })),
+        );
 
-              if (applicableDiscount) {
-                const itemTotal = item.priceAtTime * item.quantity;
-                const amountOff = (itemTotal * applicableDiscount.discount_percentage) / 100;
-
-                newDiscountTotal += amountOff;
-                newAppliedDiscounts.push({
-                  discountId: applicableDiscount.id,
-                  description: `${applicableDiscount.discount_percentage}% off on ${applicableDiscount.publisher} items`,
-                  amountOff
-                });
-              }
-            }
+        if (bundle.qualifies && bundle.amountOff > 0) {
+          newDiscountTotal += bundle.amountOff;
+          newAppliedDiscounts.push({
+            discountId: BUNDLE_DISCOUNT_ID,
+            description: BUNDLE_DISCOUNT_LABEL,
+            amountOff: bundle.amountOff,
           });
         }
 
@@ -233,6 +226,28 @@ export const useCartStore = create<CartStore>()(
     {
       name: 'd-store-cart',
       storage: createJSONStorage(() => localStorage),
+
+      // Persist the basket, never the arithmetic done on it. discountTotal,
+      // appliedDiscounts and availableDiscounts are derived, and storing them froze a
+      // shopper's cart at whatever the rules were the last time they touched a line —
+      // so a basket saved before a rule changed kept showing, and checking out with,
+      // a discount that no longer exists. Rehydrate the items, then recompute.
+      partialize: state => ({
+        id: state.id,
+        userId: state.userId,
+        items: state.items,
+        totalItems: state.totalItems,
+        totalAmount: state.totalAmount,
+        createdAt: state.createdAt,
+        updatedAt: state.updatedAt,
+      }),
+
+      // Runs once the saved basket is back in memory. The bundle rule needs nothing
+      // from the database so it settles immediately; database-backed rules apply a
+      // moment later, when fetchAvailableDiscounts resolves and evaluates again.
+      onRehydrateStorage: () => state => {
+        state?.evaluateDiscounts();
+      },
     }
   )
 );

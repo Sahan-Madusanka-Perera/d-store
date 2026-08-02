@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,14 @@ interface ProductImageGalleryProps {
 export default function ProductImageGallery({ images, productName, stock }: ProductImageGalleryProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  // document.body only exists once we're on the client; the portal target has to wait.
+  // Server snapshot false, client snapshot true, and nothing to subscribe to — this
+  // never changes after hydration.
+  const isMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
 
@@ -63,6 +72,17 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
     document.addEventListener('keydown', handleKeyPress);
     return () => document.removeEventListener('keydown', handleKeyPress);
   }, [isFullScreen, images.length]);
+
+  // The overlay covers the viewport but the page underneath still took the wheel, so
+  // closing it dropped you somewhere else on the page than where you opened it.
+  useEffect(() => {
+    if (!isFullScreen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [isFullScreen]);
 
   return (
     <div className="space-y-4 will-change-transform">
@@ -174,9 +194,14 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
         </div>
       )}
 
-      {/* Full Screen Modal */}
-      {isFullScreen && (
-        <div className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center">
+      {/* Full Screen Modal.
+          Rendered into <body> rather than in place. `position: fixed` is resolved
+          against the nearest ancestor with a transform, filter, or will-change —
+          and this gallery sits inside two `will-change-transform` wrappers on the
+          product page. In place, `inset-0` therefore meant "the gallery column",
+          so full screen was only ever as big as the left half of the page. */}
+      {isFullScreen && isMounted && createPortal(
+        <div className="fixed inset-0 z-modal bg-black/95 flex items-center justify-center">
           {/* Close Button */}
           <Button
             variant="ghost"
@@ -187,14 +212,21 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
             <X className="h-6 w-6" />
           </Button>
 
-          {/* Full Screen Image */}
-          <div className="relative w-full h-full max-w-6xl max-h-[90vh] mx-4">
+          {/* Full Screen Image.
+              Fills the viewport rather than a 1152px box: the old max-w-6xl/max-h-[90vh]
+              wrapper meant "full screen" showed the figure smaller than a large monitor
+              could manage. object-contain still protects the aspect ratio, and the
+              controls below sit at z-10 so they overlay the image instead of stealing
+              room from it. */}
+          <div className="absolute inset-0 p-2 sm:p-6">
             <Image
               src={images[selectedImageIndex]}
               alt={productName}
               fill
+              sizes="100vw"
               className="object-contain"
               quality={100}
+              priority
             />
           </div>
 
@@ -204,7 +236,7 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20"
+                className="absolute left-4 top-1/2 z-10 -translate-y-1/2 text-white hover:bg-white/20"
                 onClick={prevImage}
               >
                 <ChevronLeft className="h-8 w-8" />
@@ -212,7 +244,7 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20"
+                className="absolute right-4 top-1/2 z-10 -translate-y-1/2 text-white hover:bg-white/20"
                 onClick={nextImage}
               >
                 <ChevronRight className="h-8 w-8" />
@@ -222,7 +254,7 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
 
           {/* Image Counter */}
           {images.length > 1 && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white bg-black/50 px-3 py-1 rounded-full text-sm">
+            <div className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2 text-white bg-black/50 px-3 py-1 rounded-full text-sm">
               {selectedImageIndex + 1} / {images.length}
             </div>
           )}
@@ -248,7 +280,8 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
               ))}
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

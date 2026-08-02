@@ -695,7 +695,9 @@ I have a question about this order. Can you help me?`;
 
                 <div className="flex justify-between text-lg font-bold border-t border-border/50 pt-3">
                   <span>Total</span>
-                  <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{formatPrice(finalTotal)}</span>
+                  {/* Solid, not gradient-clipped: `accent` is 90% white in the light
+                      theme, so the last digits of the total were fading out. */}
+                  <span className="tabular-nums text-foreground">{formatPrice(finalTotal)}</span>
                 </div>
               </div>
 

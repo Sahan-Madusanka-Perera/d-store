@@ -1,6 +1,29 @@
 @import "tailwindcss";
 
+/* Bind the `dark:` variant to the .dark class next-themes puts on <html>.
+   Without this, Tailwind v4 compiles `dark:` to @media (prefers-color-scheme: dark),
+   so the palette below (driven by the .dark class) and every dark: utility in the app
+   answered to two different authorities. A visitor whose OS was dark but who used the
+   light theme got light surfaces painted with dark-mode text colours — which is why
+   emerald-200 body copy was landing on an emerald-50 panel. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
+  /* Semantic stacking order, in Tailwind's own --z-index-* namespace so these compile
+     to real `z-header` / `z-modal` utilities instead of arbitrary values.
+
+     The layers were previously picked ad hoc — nav pill 50, promo ticker 60, dialog
+     50 — which is how a modal backdrop ended up *underneath* the ticker, dimming the
+     page but leaving a bright strip across the top. Header values match what already
+     shipped so nothing moves; only the overlay tiers are new. Use these, not new
+     numbers, and never a bare 9999. */
+  --z-index-sticky: 30;
+  --z-index-header: 50;      /* nav pill */
+  --z-index-header-bar: 60;  /* promo ticker, above the pill */
+  --z-index-overlay: 100;    /* full-screen scrims, mobile nav */
+  --z-index-modal: 110;      /* dialogs and lightboxes — must clear every header layer */
+  --z-index-toast: 120;
+
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
   --color-card: hsl(var(--card));
@@ -147,6 +170,15 @@
   }
 
   body {
+    /* Nothing should ever scroll the page sideways. `clip` rather than `hidden` on
+       purpose: `hidden` would make the body a scroll container and every
+       `position: sticky` on the site — the product gallery among them — would stop
+       sticking. `clip` suppresses the scroll without creating a scrollport.
+
+       This is a backstop, not a licence to overflow. Wide things (the brand ticker,
+       the category rails) still clip themselves; if something new spills past the
+       edge, fix it there rather than relying on this. */
+    overflow-x: clip;
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     font-family: var(--font-sans);

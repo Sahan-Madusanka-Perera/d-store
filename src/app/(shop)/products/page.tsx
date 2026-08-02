@@ -39,6 +39,8 @@ interface DatabaseProduct {
   character_names?: string[];
   status?: string;
   members_only?: boolean;
+  discount_eligible?: boolean;
+  compare_at_price?: number | null;
 }
 
 function mapDatabaseProduct(dbProduct: DatabaseProduct): Product {
@@ -78,6 +80,8 @@ function mapDatabaseProduct(dbProduct: DatabaseProduct): Product {
     characterNames: dbProduct.character_names || undefined,
     status: (dbProduct.status as 'available' | 'coming_soon' | 'pre_order' | 'out_of_stock') || 'available',
     membersOnly: Boolean(dbProduct.members_only),
+    discountEligible: Boolean(dbProduct.discount_eligible),
+    compareAtPrice: dbProduct.compare_at_price ?? undefined,
     scale: '1/8',
     height: '20cm'
   };

@@ -38,6 +38,8 @@ function mapDatabaseProduct(dbProduct: any): Product {
     characterNames: dbProduct.character_names || undefined,
     status: dbProduct.status || 'available',
     membersOnly: Boolean(dbProduct.members_only),
+    discountEligible: Boolean(dbProduct.discount_eligible),
+    compareAtPrice: dbProduct.compare_at_price ?? undefined,
     scale: '1/8',
     height: '20cm'
   };

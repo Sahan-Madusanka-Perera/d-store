@@ -1,5 +1,5 @@
 import { Product } from './product';
-import type { QuantityDiscount, PublisherDiscount } from './database';
+import type { QuantityDiscount } from './database';
 
 export type PaymentMethod = 'bank_transfer';
 
@@ -27,7 +27,6 @@ export interface Cart {
     amountOff: number;
   }>;
   availableDiscounts: QuantityDiscount[]; // Fetched from DB to evaluate against cart
-  availablePublisherDiscounts: PublisherDiscount[]; // Fetched from DB
   createdAt: string;
   updatedAt: string;
 }

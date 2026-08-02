@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +42,32 @@ export default function ProductInfoAssistant({
   const [isOpen, setIsOpen] = useState(false);
   const [characterInfo, setCharacterInfo] = useState<CharacterInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // document.body only exists on the client; the portal target has to wait for it.
+  const isMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+
+  // Escape closes, and the page behind stops scrolling — both expected of a dialog and
+  // neither present before, so the page scrolled away underneath the open modal.
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsOpen(false);
+    };
+    const previousOverflow = document.body.style.overflow;
+
+    document.addEventListener('keydown', onKeyDown);
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
 
   const fetchCharacterInfo = async () => {
     if (characterInfo && !characterInfo.error) return; // Already fetched successfully
@@ -98,29 +125,45 @@ export default function ProductInfoAssistant({
         variant="outline"
         size="sm"
         onClick={handleToggle}
-        className="flex items-center gap-2 text-blue-500 hover:text-white border-blue-500 hover:border-blue-600 bg-background hover:bg-blue-500 transition-all duration-200"
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
+        className="flex items-center gap-2 transition-colors duration-200"
       >
         <Sparkles className="h-4 w-4" />
         {isManga ? "Series Info" : "Character Info"}
         <Info className="h-4 w-4" />
       </Button>
 
-      {/* Info Modal/Bubble */}
-      {isOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-lg mx-auto shadow-2xl border-0 bg-gradient-to-br from-card to-blue-50 dark:to-blue-950/30">
+      {/* Info Modal.
+          Portalled to <body>: `fixed` resolves against the nearest transformed ancestor,
+          and the product page wraps this column in will-change-transform wrappers.
+          Stacked at --z-modal because the old z-50 sat *below* the promo ticker's 60,
+          so the scrim dimmed the page but left the ticker bright across the top. */}
+      {isOpen && isMounted && createPortal(
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={isManga ? 'AI series reference' : 'AI character assistant'}
+          onClick={() => setIsOpen(false)}
+          className="fixed inset-0 z-modal flex items-center justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm"
+        >
+          <Card
+            onClick={event => event.stopPropagation()}
+            className="mx-auto my-auto w-full max-w-lg border border-border bg-card shadow-2xl"
+          >
             <CardHeader className="relative pb-4">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsOpen(false)}
-                className="absolute right-2 top-2 h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-500/20"
+                aria-label="Close"
+                className="absolute right-2 top-2 h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 <X className="h-4 w-4" />
               </Button>
 
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Sparkles className="h-5 w-5 text-blue-500" />
+              <CardTitle className="flex items-center gap-2 pr-10 text-lg">
+                <Sparkles className="h-5 w-5 text-[#0284C7]" />
                 {isManga ? "AI Series Reference" : "AI Character Assistant"}
               </CardTitle>
               <CardDescription>
@@ -131,7 +174,7 @@ export default function ProductInfoAssistant({
             <CardContent className="space-y-4">
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
                   <span className="ml-3 text-muted-foreground">{isManga ? "Finding series details..." : "Analyzing character..."}</span>
                 </div>
               ) : characterInfo?.error ? (
@@ -144,46 +187,46 @@ export default function ProductInfoAssistant({
                   {/* Manga Specific Info */}
                   {isManga && characterInfo.seriesName && (
                     <div className="flex items-center gap-2">
-                      <BookOpen className="h-4 w-4 text-purple-500" />
+                      <BookOpen className="h-4 w-4 text-muted-foreground" />
                       <span className="font-semibold">Series:</span>
-                      <span className="text-purple-700 dark:text-purple-300 font-medium">{characterInfo.seriesName}</span>
+                      <span className="font-medium text-foreground">{characterInfo.seriesName}</span>
                     </div>
                   )}
                   {isManga && characterInfo.author && (
                     <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-blue-500" />
+                      <User className="h-4 w-4 text-muted-foreground" />
                       <span className="font-semibold">Mangaka:</span>
-                      <span className="text-blue-700 dark:text-blue-300 font-medium">{characterInfo.author}</span>
+                      <span className="font-medium text-foreground">{characterInfo.author}</span>
                     </div>
                   )}
                   {isManga && characterInfo.volumes && (
                     <div className="flex items-center gap-2">
-                      <BookOpen className="h-4 w-4 text-green-500" />
+                      <BookOpen className="h-4 w-4 text-muted-foreground" />
                       <span className="font-semibold">Volumes:</span>
-                      <span className="text-green-700 dark:text-green-300 font-medium">{characterInfo.volumes}</span>
+                      <span className="font-medium text-foreground">{characterInfo.volumes}</span>
                     </div>
                   )}
 
                   {/* Character Specific Info */}
                   {!isManga && characterInfo.characterName && (
                     <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-blue-500" />
+                      <User className="h-4 w-4 text-muted-foreground" />
                       <span className="font-semibold">Character:</span>
-                      <span className="text-blue-700 dark:text-blue-300 font-medium">{characterInfo.characterName}</span>
+                      <span className="font-medium text-foreground">{characterInfo.characterName}</span>
                     </div>
                   )}
                   {!isManga && characterInfo.animeName && (
                     <div className="flex items-center gap-2">
-                      <Tv className="h-4 w-4 text-purple-500" />
+                      <Tv className="h-4 w-4 text-muted-foreground" />
                       <span className="font-semibold">From:</span>
-                      <span className="text-purple-700 dark:text-purple-300 font-medium">{characterInfo.animeName}</span>
+                      <span className="font-medium text-foreground">{characterInfo.animeName}</span>
                     </div>
                   )}
                   {!isManga && characterInfo.series && characterInfo.series !== characterInfo.animeName && (
                     <div className="flex items-center gap-2">
-                      <BookOpen className="h-4 w-4 text-green-500" />
+                      <BookOpen className="h-4 w-4 text-muted-foreground" />
                       <span className="font-semibold">Series:</span>
-                      <span className="text-green-700 dark:text-green-300 font-medium">{characterInfo.series}</span>
+                      <span className="font-medium text-foreground">{characterInfo.series}</span>
                     </div>
                   )}
 
@@ -252,7 +295,8 @@ export default function ProductInfoAssistant({
               )}
             </CardContent>
           </Card>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

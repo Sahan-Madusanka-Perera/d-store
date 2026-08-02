@@ -18,7 +18,6 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore(state => state.addItem);
-  const availablePublisherDiscounts = useCartStore(state => state.availablePublisherDiscounts);
 
   const handleAddToCart = () => {
     addItem(product, 1);
@@ -95,17 +94,15 @@ export default function ProductCard({ product }: ProductCardProps) {
     }
   };
 
-  const applicableDiscount =
-    product.category === 'manga' && product.publisher
-      ? availablePublisherDiscounts.find(
-          d => d.publisher.toLowerCase() === product.publisher?.toLowerCase()
-        )
-      : null;
-
-  const shouldShowDiscount = !!applicableDiscount;
-  const discountPercent = applicableDiscount ? applicableDiscount.discount_percentage : 0;
-  const originalPrice = product.price;
-  const displayPrice = shouldShowDiscount ? originalPrice * (1 - discountPercent / 100) : originalPrice;
+  // The card shows the shelf price. Quantity and bundle discounts depend on what else
+  // is in the basket, so they belong to the cart, not to a single card — the only
+  // markdown expressible here is the compare-at price on the product itself.
+  const displayPrice = product.price;
+  const referencePrice = product.compareAtPrice ?? 0;
+  const showReferencePrice = referencePrice > displayPrice;
+  const savingPercent = showReferencePrice
+    ? Math.round(((referencePrice - displayPrice) / referencePrice) * 100)
+    : 0;
 
   // Derive effective product status
   const productStatus = product.status || (product.stock === 0 ? 'out_of_stock' : 'available');
@@ -243,9 +240,9 @@ export default function ProductCard({ product }: ProductCardProps) {
               Out of Stock
             </Badge>
           )}
-          {shouldShowDiscount && productStatus === 'available' && (
+          {savingPercent > 0 && productStatus === 'available' && (
             <Badge className="text-[11px] px-2.5 py-1 bg-rose-500 text-white shadow-md border-0 font-semibold">
-              -{discountPercent}%
+              -{savingPercent}%
             </Badge>
           )}
         </div>
@@ -333,9 +330,9 @@ export default function ProductCard({ product }: ProductCardProps) {
           <span className="text-xl font-bold text-foreground">
             {formatPrice(displayPrice)}
           </span>
-          {shouldShowDiscount && (
+          {showReferencePrice && (
             <span className="text-sm text-muted-foreground/70 line-through">
-              {formatPrice(originalPrice)}
+              {formatPrice(referencePrice)}
             </span>
           )}
         </div>

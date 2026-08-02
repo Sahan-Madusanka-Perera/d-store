@@ -1,12 +1,15 @@
 import DiscountManager from '@/components/admin/DiscountManager'
-import PublisherDiscountManager from '@/components/admin/PublisherDiscountManager'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Tag, BookOpen } from 'lucide-react'
 
 export const metadata = {
     title: 'Discount Management | Admin',
 }
 
+/**
+ * Quantity discounts are the only rule set left here — publisher discounts were
+ * removed, so the tab strip that used to switch between the two went with them.
+ * Per-product discount eligibility lives on the product itself, under
+ * Products → edit → Discount Eligible.
+ */
 export default function AdminDiscountsPage() {
     return (
         <div className="max-w-5xl mx-auto space-y-6 pt-4">
@@ -17,24 +20,7 @@ export default function AdminDiscountsPage() {
                 </div>
             </div>
 
-            <Tabs defaultValue="quantity" className="space-y-6">
-                <TabsList className="bg-gray-100 p-1 border border-gray-200 w-full sm:w-auto flex flex-wrap sm:inline-flex">
-                    <TabsTrigger value="quantity" className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-md transition-all flex-1 sm:flex-none">
-                        <Tag className="w-4 h-4 mr-2" /> Quantity Discounts
-                    </TabsTrigger>
-                    <TabsTrigger value="publisher" className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-md transition-all flex-1 sm:flex-none">
-                        <BookOpen className="w-4 h-4 mr-2" /> Publisher Discounts
-                    </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="quantity" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <DiscountManager />
-                </TabsContent>
-
-                <TabsContent value="publisher" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <PublisherDiscountManager />
-                </TabsContent>
-            </Tabs>
+            <DiscountManager />
         </div>
     )
 }

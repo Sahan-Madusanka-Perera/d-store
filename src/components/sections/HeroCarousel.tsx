@@ -12,6 +12,24 @@ interface HeroCarouselProps {
   initialSlides: any[];
 }
 
+// Publishers and makers we actually stock. One list, used by both halves of the ticker
+// below — the marquee slides exactly -50%, so the two halves have to stay identical or
+// the loop visibly jumps.
+const BRANDS = [
+  'VIZ MEDIA',
+  'YEN PRESS',
+  'SEVEN SEAS',
+  'KODANSHA',
+  'TITAN BOOKS',
+  'BANDAI',
+  'SEGA',
+  'GOOD SMILE COMPANY',
+  'TAITO',
+  'FURYU',
+  'KOTOBUKIYA',
+  'TOEI ANIMATION',
+];
+
 export function HeroCarousel({ initialSlides }: HeroCarouselProps) {
   const [emblaRef, emblaApi] = useEmblaCarousel(
     { loop: true, duration: 30, skipSnaps: false },
@@ -165,14 +183,14 @@ export function HeroCarousel({ initialSlides }: HeroCarouselProps) {
       <div className="absolute bottom-0 left-0 right-0 bg-black text-white py-4 sm:py-6 border-t border-white/10 z-20 overflow-hidden">
         <div className="flex animate-ticker whitespace-nowrap w-max">
           <div className="flex gap-10 sm:gap-16 px-5 sm:px-8">
-            {["SHONEN JUMP", "BANDAI", "GOOD SMILE", "VIZ MEDIA", "TOEI ANIMATION", "MAPPA", "SHUEISHA", "KADOKAWA"].concat(["SHONEN JUMP", "BANDAI", "GOOD SMILE", "VIZ MEDIA", "TOEI ANIMATION", "MAPPA", "SHUEISHA", "KADOKAWA"]).map((brand, i) => (
+            {BRANDS.map((brand, i) => (
               <span key={`b1-${i}`} className="text-sm sm:text-xl md:text-2xl font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] opacity-80 shrink-0 select-none">
                 {brand}
               </span>
             ))}
           </div>
           <div className="flex gap-10 sm:gap-16 px-5 sm:px-8" aria-hidden="true">
-            {["SHONEN JUMP", "BANDAI", "GOOD SMILE", "VIZ MEDIA", "TOEI ANIMATION", "MAPPA", "SHUEISHA", "KADOKAWA"].concat(["SHONEN JUMP", "BANDAI", "GOOD SMILE", "VIZ MEDIA", "TOEI ANIMATION", "MAPPA", "SHUEISHA", "KADOKAWA"]).map((brand, i) => (
+            {BRANDS.map((brand, i) => (
               <span key={`b2-${i}`} className="text-sm sm:text-xl md:text-2xl font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] opacity-80 shrink-0 select-none">
                 {brand}
               </span>

@@ -12,10 +12,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Star, ArrowLeft, Truck, Shield, RotateCcw, Heart, Sparkles, Clock, Zap, Bell, BookOpen, Languages, Calendar, Hash, Weight, Maximize, Palette, Brush, Gift, Ruler, Puzzle, Box, Battery, Factory, Info, Book, Globe, Lock } from 'lucide-react';
+import { Star, ArrowLeft, Truck, Shield, RotateCcw, Heart, Sparkles, Clock, Zap, Bell, BookOpen, Languages, Calendar, Hash, Weight, Maximize, Palette, Brush, Gift, Ruler, Puzzle, Box, Battery, Factory, Info, Book, Globe, Lock, Tag } from 'lucide-react';
 import ExternalRating from '@/components/product/ExternalRating';
 import WishlistButton from '@/components/product/WishlistButton';
 import { getCategoryLabel } from '@/lib/constants';
+import { BUNDLE_DISCOUNT_BLURB } from '@/lib/bundle-discount';
 
 interface DatabaseProduct {
   id: number;
@@ -37,6 +38,8 @@ interface DatabaseProduct {
   character_names?: string[];
   status?: string;
   members_only?: boolean;
+  discount_eligible?: boolean;
+  compare_at_price?: number | null;
   specifications?: Record<string, any>;
 }
 
@@ -77,6 +80,8 @@ function mapDatabaseProduct(dbProduct: DatabaseProduct): Product {
     characterNames: dbProduct.character_names,
     status: (dbProduct.status as 'available' | 'coming_soon' | 'pre_order' | 'out_of_stock') || 'available',
     membersOnly: Boolean(dbProduct.members_only),
+    discountEligible: Boolean(dbProduct.discount_eligible),
+    compareAtPrice: dbProduct.compare_at_price ?? undefined,
     scale: '1/8',
     height: '20cm',
     specifications: dbProduct.specifications
@@ -126,21 +131,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
     relatedQuery = relatedQuery.or(filterParts.join(','));
   }
 
-  // The publisher discount and the related rail don't depend on each other —
-  // run them together instead of back to back.
-  const [discountResult, relatedResult] = await Promise.all([
-    product.category === 'manga' && product.publisher
-      ? supabase
-          .from('publisher_discounts')
-          .select('discount_percentage')
-          .ilike('publisher', product.publisher)
-          .eq('is_active', true)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-    relatedQuery.limit(4),
-  ]);
+  const relatedResult = await relatedQuery.limit(4);
 
-  const discountPercent: number = discountResult.data?.discount_percentage ?? 0;
   let relatedData = relatedResult.data;
 
   // Fallback if no specific matches found
@@ -159,9 +151,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
   
   const relatedProducts = (relatedData || []).map(mapDatabaseProduct);
 
-  const shouldShowDiscount = discountPercent > 0;
-  const originalPrice = product.price;
-  const displayPrice = shouldShowDiscount ? originalPrice * (1 - discountPercent / 100) : originalPrice;
+  // The page shows the shelf price. Quantity and bundle discounts depend on the rest of
+  // the basket, so they are applied in the cart; the only markdown a single listing can
+  // express is its own compare-at price, and only when that is above what we charge.
+  const displayPrice = product.price;
+  const referencePrice = product.compareAtPrice ?? 0;
+  const showReferencePrice = referencePrice > displayPrice;
+  const savingPercent = showReferencePrice
+    ? Math.round(((referencePrice - displayPrice) / referencePrice) * 100)
+    : 0;
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-LK', {
@@ -195,21 +193,44 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[55%_45%] gap-12">
-          {/* Product Images Gallery + Description (Left) */}
-          <div className="space-y-8 lg:sticky lg:top-8 lg:self-start will-change-transform">
+          {/* Product Images Gallery + Description (Left).
+              top-32 is not arbitrary: the header is two fixed bars — the promo ticker
+              (top-0, h-9) and the nav pill (top-12, h-16) — so nothing is clear of it
+              until 112px. Sticking at the old top-8 parked the gallery *behind* the
+              translucent pill, which is exactly where you could read it through the
+              blur. 128px clears the pill with a little air. */}
+          <div className="space-y-8 lg:sticky lg:top-32 lg:self-start will-change-transform">
             <ProductImageGallery
               images={product.images}
               productName={product.name}
               stock={product.stock}
             />
 
-            {/* Description - Left side below gallery */}
-            <div>
-              <h3 className="font-semibold text-xl mb-3 text-foreground">Description</h3>
-              <p className="text-muted-foreground leading-relaxed text-base">
-                {product.description}
-              </p>
-            </div>
+            {/* Description - Left side below gallery.
+                Whatever the admin typed is plain text, so the paragraphing has to be
+                reconstructed here: blank lines become real paragraphs, and a lone
+                newline inside one stays a line break via whitespace-pre-line. Rendering
+                the raw string in a single <p> collapsed all of it into one block. */}
+            {product.description.trim() && (
+              <div>
+                <h3 className="font-semibold text-xl mb-3 text-foreground">Description</h3>
+                <div className="space-y-4">
+                  {product.description
+                    .replace(/\r\n/g, '\n')
+                    .split(/\n\s*\n/)
+                    .map(paragraph => paragraph.trim())
+                    .filter(Boolean)
+                    .map((paragraph, index) => (
+                      <p
+                        key={index}
+                        className="whitespace-pre-line text-muted-foreground leading-relaxed text-base"
+                      >
+                        {paragraph}
+                      </p>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Product Details */}
@@ -272,18 +293,29 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 {formatPrice(displayPrice)}
               </span>
 
-              {/* Show discount if applicable */}
-              {shouldShowDiscount && (
-                <>
-                  <span className="text-xl text-muted-foreground/70 line-through">
-                    {formatPrice(originalPrice)}
-                  </span>
-                  <Badge className="bg-gradient-to-r from-rose-500 to-pink-600 text-white border-0">
-                    -{discountPercent}% Off
-                  </Badge>
-                </>
+              {showReferencePrice && (
+                <span className="text-xl text-muted-foreground/70 line-through">
+                  {formatPrice(referencePrice)}
+                </span>
+              )}
+
+              {savingPercent > 0 && (
+                <Badge className="bg-gradient-to-r from-rose-500 to-pink-600 text-white border-0">
+                  -{savingPercent}% Off
+                </Badge>
               )}
             </div>
+
+            {/* The bundle promise, directly under the price where the shopper is
+                already looking. Counted across every eligible product in the basket. */}
+            {product.discountEligible && (
+              <div className="flex items-start gap-2.5 rounded-xl border border-emerald-600/20 bg-emerald-50 px-4 py-3 dark:border-emerald-400/20 dark:bg-emerald-500/10">
+                <Tag className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-300" />
+                <p className="text-sm font-medium text-emerald-900 dark:text-emerald-200">
+                  {BUNDLE_DISCOUNT_BLURB}.
+                </p>
+              </div>
+            )}
 
             {/* AI Character Assistant */}
             <div className="bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10 rounded-xl p-5">

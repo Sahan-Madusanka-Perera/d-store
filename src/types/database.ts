@@ -51,11 +51,3 @@ export interface QuantityDiscount {
   is_active: boolean;
   created_at: string;
 }
-
-export interface PublisherDiscount {
-  id: string;
-  publisher: string;
-  discount_percentage: number;
-  is_active: boolean;
-  created_at: string;
-}

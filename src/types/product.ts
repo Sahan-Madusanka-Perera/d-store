@@ -9,6 +9,10 @@ export interface Product {
   status?: 'available' | 'coming_soon' | 'pre_order' | 'out_of_stock';
   /** Hidden from logged-out visitors — see src/lib/product-visibility.ts */
   membersOnly?: boolean;
+  /** Opted in to the bundle rule — see src/lib/bundle-discount.ts */
+  discountEligible?: boolean;
+  /** Reference price struck through above `price`. Only rendered when above it. */
+  compareAtPrice?: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

@@ -100,8 +100,10 @@ export default function ComingSoonPage() {
             className="animate-rise-in mt-5 max-w-md text-pretty text-base leading-relaxed text-white/80 sm:text-lg"
             style={{ ...HALO, animationDelay: '170ms' }}
           >
-            Manga, figures and apparel worth queuing for. Sri Lanka&rsquo;s ultimate
-            hobby store opens shortly &mdash; we&rsquo;re still stocking the shelves.
+            Manga, figures and apparel worth queuing for.
+            <br />
+            Sri Lanka&rsquo;s ultimate
+            hobby store opens shortly! We&rsquo;re still stocking the shelves.
           </p>
 
           <div className="animate-rise-in mt-8 flex w-full justify-center" style={{ animationDelay: '250ms' }}>
