@@ -296,7 +296,7 @@ export default function CarouselManager() {
                     <p className="text-gray-500">Manage the sliding banners on the home page.</p>
                 </div>
                 {!isAdding && !isEditing && (
-                    <Button onClick={handleAdd} className="bg-brand-gradient text-white">
+                    <Button onClick={handleAdd} className=" text-white">
                         <Plus className="w-4 h-4 mr-2" /> Add Slide
                     </Button>
                 )}
@@ -584,7 +584,7 @@ export default function CarouselManager() {
                         <ImageIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                         <h3 className="text-lg font-medium text-gray-900 mb-1">No slides found</h3>
                         <p className="text-gray-500 mb-4">You haven't added any slides to the carousel yet.</p>
-                        <Button onClick={handleAdd} className="bg-brand-gradient text-white">
+                        <Button onClick={handleAdd} className=" text-white">
                             Create First Slide
                         </Button>
                     </div>

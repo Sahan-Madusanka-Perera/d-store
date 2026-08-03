@@ -144,7 +144,7 @@ export default function DiscountManager() {
                     <p className="text-gray-500">Manage flexible auto-discounts based on cart quantities.</p>
                 </div>
                 {!isAdding && !isEditing && (
-                    <Button onClick={handleAdd} className="bg-brand-gradient text-white">
+                    <Button onClick={handleAdd} className=" text-white">
                         <Plus className="w-4 h-4 mr-2" /> Add Discount Rule
                     </Button>
                 )}
@@ -242,7 +242,7 @@ export default function DiscountManager() {
                 <div className="text-center p-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
                     <h3 className="text-lg font-medium text-gray-900 mb-1">No discount rules found</h3>
                     <p className="text-gray-500 mb-4">Create auto-discounts (like "Buy 3 Manga, get 10% off") to boost sales.</p>
-                    <Button onClick={handleAdd} className="bg-brand-gradient text-white">
+                    <Button onClick={handleAdd} className=" text-white">
                         Create First Rule
                     </Button>
                 </div>

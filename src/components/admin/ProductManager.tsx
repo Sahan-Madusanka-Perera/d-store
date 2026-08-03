@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Plus, Edit, Trash2, Save, X, Image as ImageIcon, Package, Lock } from 'lucide-react'
+import { Plus, Edit, Trash2, Save, X, Image as ImageIcon, Package, Lock, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import Image from 'next/image'
 import { getCategoryLabel } from '@/lib/constants'
@@ -58,6 +58,7 @@ export default function ProductManager({
     }))
   })
   const [isLoading, setIsLoading] = useState(!initialProducts)
+  const [productQuery, setProductQuery] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -129,6 +130,33 @@ export default function ProductManager({
     specifications: {} as Record<string, any>,
     images: [] as File[]
   })
+
+  // Every field an admin might reasonably recall a product by — the id included, since
+  // that is what order records and support emails quote. Terms are ANDed so a query
+  // like "chainsaw viz" narrows instead of widening.
+  const visibleProducts = useMemo(() => {
+    const terms = productQuery.trim().toLowerCase().split(/\s+/).filter(Boolean)
+    if (terms.length === 0) return products
+
+    return products.filter(product => {
+      const haystack = [
+        product.name,
+        product.brand,
+        product.publisher,
+        product.author,
+        product.series,
+        product.category,
+        String(product.id),
+        ...(product.tags ?? []),
+        ...(product.character_names ?? []),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+
+      return terms.every(term => haystack.includes(term))
+    })
+  }, [products, productQuery])
 
   // Preview images state
   const [previewImages, setPreviewImages] = useState<string[]>([])
@@ -613,7 +641,7 @@ export default function ProductManager({
             console.log('Add Product button clicked, showAddForm:', showAddForm);
             setShowAddForm(true);
           }}
-          className="bg-brand-gradient hover:opacity-90 shadow-brand"
+          className=" hover:opacity-90"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Product
@@ -1238,28 +1266,60 @@ export default function ProductManager({
 
       {/* Products Table */}
       <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
-        <CardHeader>
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
-            Products ({products.length})
+            Products ({productQuery ? `${visibleProducts.length} of ${products.length}` : products.length})
           </CardTitle>
+
+          {/* Filters as you type — no submit button, because a search that only runs on
+              click is slower than scanning the table it was meant to replace. */}
+          <div className="relative w-full sm:w-80">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
+            <Input
+              type="search"
+              value={productQuery}
+              onChange={(e) => setProductQuery(e.target.value)}
+              placeholder="Search name, brand, series, SKU…"
+              aria-label="Search products"
+              className="h-10 border-gray-200 bg-white pl-9 pr-9 text-black placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+            />
+            {productQuery && (
+              <button
+                type="button"
+                onClick={() => setProductQuery('')}
+                aria-label="Clear search"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-900"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
             </div>
           ) : products.length === 0 ? (
             <div className="text-center py-12">
               <Package className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-4 text-lg font-medium text-gray-900">No products found</h3>
               <p className="mt-2 text-gray-500">Get started by adding your first product.</p>
-              <Button
-                onClick={() => setShowAddForm(true)}
-                className="mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-              >
+              <Button onClick={() => setShowAddForm(true)} className="mt-4">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Product
+              </Button>
+            </div>
+          ) : visibleProducts.length === 0 ? (
+            <div className="text-center py-12">
+              <Search className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-4 text-lg font-medium text-gray-900">
+                Nothing matches “{productQuery}”
+              </h3>
+              <p className="mt-2 text-gray-500">Try a shorter term, or check the spelling.</p>
+              <Button variant="outline" onClick={() => setProductQuery('')} className="mt-4">
+                Clear search
               </Button>
             </div>
           ) : (
@@ -1276,7 +1336,7 @@ export default function ProductManager({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {products.map((product) => (
+                  {visibleProducts.map((product) => (
                     <TableRow key={product.id} className="hover:bg-gray-50/50">
                       <TableCell>
                         <div className="flex items-center gap-3">

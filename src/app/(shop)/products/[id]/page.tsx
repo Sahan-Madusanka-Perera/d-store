@@ -181,7 +181,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <div className="min-h-screen">
-      <div className="container mx-auto px-4 py-8">
+      {/* Was the one shop page still on Tailwind's `container` with a flat px-4, which
+          gave it the tightest gutters on the site and let it run to 1536px on a wide
+          monitor. Now the same max-w-7xl shell the catalogue and cart use, with a
+          roomier padding ramp — this page is a two-column reading surface, so it wants
+          more air at the edges than a grid of cards does. */}
+      <div className="mx-auto w-full max-w-7xl px-5 py-8 sm:px-8 lg:px-12">
         {/* Breadcrumb - Refined */}
         <div className="mb-8">
           <Button variant="ghost" size="sm" asChild className="hover:bg-primary/5">
@@ -287,8 +292,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </div>
             </div>
 
-            {/* Price - Elegant */}
-            <div className="flex items-baseline gap-4">
+            {/* Price - Elegant.
+                flex-wrap because price + struck reference + saving badge is wider than
+                a 390px phone: without it the badge ran 9px past the viewport edge. */}
+            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
               <span className="text-4xl font-bold text-foreground">
                 {formatPrice(displayPrice)}
               </span>

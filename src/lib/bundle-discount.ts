@@ -14,10 +14,16 @@
 export const BUNDLE_DISCOUNT_MIN_ITEMS = 3;
 export const BUNDLE_DISCOUNT_PERCENT = 10;
 
-/** Copy for the product page, below the price. */
+/**
+ * Copy for the product page, below the price.
+ *
+ * Leads with the saving rather than with the qualification: the old wording opened
+ * "This item is eligible for…" and said "eligible" twice in one sentence, so the number
+ * that actually matters arrived last.
+ */
 export const BUNDLE_DISCOUNT_BLURB =
-  `This item is eligible for ${BUNDLE_DISCOUNT_PERCENT}% discount when buying ` +
-  `${BUNDLE_DISCOUNT_MIN_ITEMS} or more eligible items`;
+  `Save ${BUNDLE_DISCOUNT_PERCENT}% when you buy any ` +
+  `${BUNDLE_DISCOUNT_MIN_ITEMS} items marked Discount eligible`;
 
 /** Line item shown in the cart and checkout summary once the rule fires. */
 export const BUNDLE_DISCOUNT_LABEL =
