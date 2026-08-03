@@ -21,9 +21,13 @@ export const BUNDLE_DISCOUNT_PERCENT = 10;
  * "This item is eligible for…" and said "eligible" twice in one sentence, so the number
  * that actually matters arrived last.
  */
-export const BUNDLE_DISCOUNT_BLURB =
-  `Save ${BUNDLE_DISCOUNT_PERCENT}% when you buy any ` +
-  `${BUNDLE_DISCOUNT_MIN_ITEMS} items marked Discount eligible`;
+// Deliberately ONE template literal, not two concatenated with `+`.
+// Concatenating two template literals here made the production minifier fold them
+// wrongly and swallow everything from the `%` to the end of the first part: the
+// storefront shipped "Save 103 items marked Discount eligible" while dev showed the
+// full sentence. Verified against a real `next build` — the single-literal form
+// survives, the concatenated one does not. Keep it on one line.
+export const BUNDLE_DISCOUNT_BLURB = `Save ${BUNDLE_DISCOUNT_PERCENT}% when you buy any ${BUNDLE_DISCOUNT_MIN_ITEMS} items marked Discount eligible`;
 
 /** Line item shown in the cart and checkout summary once the rule fires. */
 export const BUNDLE_DISCOUNT_LABEL =
