@@ -112,7 +112,9 @@ export default async function AdminDashboard() {
               <Link href="/" className="hover:opacity-80 transition-opacity">
                 <h1 className="text-3xl font-black uppercase tracking-tighter">
                   D-Store
-                  <span className="text-brand-gradient bg-clip-text text-transparent ml-2 hidden sm:inline-block">Admin System</span>
+                  {/* `text-brand-gradient` was never defined in CSS, so this was just
+                      `text-transparent` — the label rendered invisible in both themes. */}
+                  <span className="ml-2 hidden text-white/70 sm:inline-block">Admin System</span>
                 </h1>
               </Link>
             </div>

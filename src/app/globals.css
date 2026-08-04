@@ -6,7 +6,14 @@
    answered to two different authorities. A visitor whose OS was dark but who used the
    light theme got light surfaces painted with dark-mode text colours — which is why
    emerald-200 body copy was landing on an emerald-50 panel. */
-@custom-variant dark (&:where(.dark, .dark *));
+/* `:not(.admin-light …)` pins the admin panel to its light design. The admin was built
+   light-only — 600-odd hardcoded gray/white utilities and no dark: variants — layered
+   on shadcn components that DO follow the theme. In dark mode the two disagreed: token
+   cards went dark while the hardcoded `bg-gray-50` headers and `text-gray-500` labels
+   stayed light, landing at 1.4:1. Excluding that subtree here stops the dark: rules
+   inside the shared ui components from firing there too, so the panel is consistently
+   light whatever the storefront toggle says. */
+@custom-variant dark (&:where(.dark, .dark *):not(:where(.admin-light, .admin-light *)));
 
 @theme inline {
   /* Semantic stacking order, in Tailwind's own --z-index-* namespace so these compile
@@ -54,7 +61,12 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-:root {
+/* .admin-light re-declares the light palette locally. Custom properties inherit, so a
+   declaration on the admin wrapper beats the .dark values coming down from <html> and
+   every token-driven component inside resolves light again. Paired with the dark:
+   exclusion above, that is the whole of the admin pin. */
+:root,
+.admin-light {
   --radius: 0.5rem;
 
   /* Monochrome Palette */
@@ -306,6 +318,12 @@
    the 500px mark on the hero. Same two colours, scaled to that mark. */
 .logo-neon-lg {
   filter: drop-shadow(0 0 12px rgba(252, 240, 156, 0.42)) drop-shadow(0 0 40px rgba(252, 48, 12, 0.3));
+}
+
+/* Native form controls and scrollbars follow color-scheme, not our tokens, so the pin
+   has to say so explicitly or selects and date pickers render dark inside a light panel. */
+.admin-light {
+  color-scheme: light;
 }
 
 .hover-underline-animation {
