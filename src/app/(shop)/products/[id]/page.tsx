@@ -199,12 +199,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
         <div className="grid grid-cols-1 lg:grid-cols-[55%_45%] gap-12">
           {/* Product Images Gallery + Description (Left).
-              top-32 is not arbitrary: the header is two fixed bars — the promo ticker
-              (top-0, h-9) and the nav pill (top-12, h-16) — so nothing is clear of it
-              until 112px. Sticking at the old top-8 parked the gallery *behind* the
-              translucent pill, which is exactly where you could read it through the
-              blur. 128px clears the pill with a little air. */}
-          <div className="space-y-8 lg:sticky lg:top-32 lg:self-start will-change-transform">
+              The offset tracks the header height, which on this route is the nav pill
+              alone — the promo ribbon is hidden on product pages (see Navbar). That
+              puts the pill's bottom edge at 12 + 64 = 76px, so 96px clears it with air.
+              It was 128px when the ribbon was still here; before that it was 32px, which
+              parked the gallery behind the translucent pill. */}
+          <div className="space-y-8 lg:sticky lg:top-24 lg:self-start will-change-transform">
             <ProductImageGallery
               images={product.images}
               productName={product.name}

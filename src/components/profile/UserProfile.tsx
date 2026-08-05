@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
+import { readUserFromCookie } from '@/lib/session-cookie'
 import { User } from '@supabase/supabase-js'
 import Link from 'next/link'
 import {
@@ -20,19 +21,30 @@ interface UserProfileProps {
 export default function UserProfile({ onLogout }: UserProfileProps) {
   const [user, setUser] = useState<User | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [loading, setLoading] = useState(true)
+  // Start from the auth cookie, which is synchronous and cannot hang. The previous
+  // version began at `loading: true` and only cleared it after awaiting
+  // supabase.auth.getSession() — and that call hangs under Turbopack, which left the
+  // account icon stuck in its grey, non-interactive skeleton with no way to click it.
+  const [loading, setLoading] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
     let mounted = true;
 
     const checkSession = async () => {
-      // getSession reads from local storage instantly
+      // Seed from the cookie first. This is synchronous and cannot hang, so the trigger
+      // reaches its correct state without waiting on supabase-js.
+      const cookieUser = readUserFromCookie()
+      if (cookieUser && mounted) {
+        setUser(prev => prev ?? ({ id: cookieUser.id, email: cookieUser.email } as User))
+      }
+
+      // Then upgrade to the real session if it ever arrives. If it hangs, the
+      // cookie-seeded state stands and the UI stays interactive.
       const { data: { session } } = await supabase.auth.getSession()
-      
+
       if (mounted) {
         setUser(session?.user ?? null)
-        setLoading(false) // Remove skeleton immediately
       }
 
       if (session?.user && mounted) {
@@ -42,7 +54,7 @@ export default function UserProfile({ onLogout }: UserProfileProps) {
           .select('role')
           .eq('id', session.user.id)
           .single()
-          
+
         if (mounted && profile?.role === 'admin') {
           setIsAdmin(true)
         }
@@ -80,8 +92,21 @@ export default function UserProfile({ onLogout }: UserProfileProps) {
   }, [supabase.auth])
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+    // The server route is what actually ends the session: it clears the auth cookies
+    // the middleware reads, and it runs in Node where supabase-js does not hang.
+    //
+    // Navigation is never gated on the result. The old version awaited the browser
+    // client's signOut(), and when that hung the redirect below simply never ran — the
+    // button looked dead and the user stayed signed in. The race caps the wait so a
+    // slow or failed request still lands you on /login.
+    await Promise.race([
+      fetch('/api/auth/logout', { method: 'POST' }).catch(() => undefined),
+      new Promise(resolve => setTimeout(resolve, 2000)),
+    ])
+
     onLogout?.()
+    // Hard navigation, not router.push: it discards every cached server component and
+    // client store holding the signed-in user, so nothing survives the sign-out.
     window.location.href = '/login'
   }
 

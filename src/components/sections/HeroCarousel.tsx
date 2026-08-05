@@ -83,7 +83,14 @@ export function HeroCarousel({ initialSlides }: HeroCarouselProps) {
                 </div>
               )}
 
-              <div className="max-w-7xl mx-auto px-5 sm:px-6 w-full grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center pt-32 sm:pt-40 md:pt-0 pb-24 md:pb-20 z-10">
+              {/* md:pt-36 replaces md:pt-0. The header is fixed and 112px tall, but the
+                  homepage renders the hero straight under it with no offset — so at
+                  desktop widths this grid centred its content in the full viewport as
+                  though the header weren't there, and the taller slides had their top
+                  tucked behind the nav pill. Padding the top makes `items-center` centre
+                  within the space actually visible. 144px rather than a bare 112 so the
+                  tallest slides clear the pill with room to breathe, not by 3px. */}
+              <div className="max-w-7xl mx-auto px-5 sm:px-6 w-full grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center pt-32 sm:pt-40 md:pt-36 pb-24 md:pb-20 z-10">
 
                 {/* Content */}
                 <div className={`space-y-4 md:space-y-8 text-center ${slide.image_alignment === 'left' ? 'md:text-right md:order-last' : 'md:text-left'}`}>

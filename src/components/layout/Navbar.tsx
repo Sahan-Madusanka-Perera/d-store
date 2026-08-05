@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { useCartStore } from '@/store/cart';
 import UserProfile from '@/components/profile/UserProfile';
@@ -56,6 +57,7 @@ function getDropdownHref(item: NavItem, subItem: string): string {
 }
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [totalItems, setTotalItems] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [navItems, setNavItems] = useState<NavItem[]>(FALLBACK_NAV);
@@ -104,9 +106,15 @@ export default function Navbar() {
     };
   }, [mobileOpen]);
 
+  // A product page is a decision surface — the shopper is reading specs and a price, and
+  // a scrolling ribbon of slogans above that is noise. Dropping it also buys back 36px
+  // of vertical space right where the gallery and the buy button want it.
+  const isProductPage = /^\/products\/[^/]+$/.test(pathname ?? '');
+
   return (
     <>
       {/* Top Marquee Ribbon */}
+      {!isProductPage && (
       <div className="fixed top-0 left-0 right-0 z-[60] bg-black border-b border-white/5 overflow-hidden h-8 sm:h-9 flex items-center">
         <div className="flex animate-ticker whitespace-nowrap w-max">
           {/* Group 1 */}
@@ -159,8 +167,15 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+      )}
 
-      <div className="fixed top-11 sm:top-12 left-0 right-0 z-50 flex justify-center px-4 sm:px-6 pointer-events-none transition-all duration-300">
+      {/* The pill rides up to fill the gap when the ribbon is gone, otherwise the page
+          would open with 44px of empty black above it. */}
+      <div
+        className={`fixed left-0 right-0 z-50 flex justify-center px-4 sm:px-6 pointer-events-none transition-all duration-300 ${
+          isProductPage ? 'top-3' : 'top-11 sm:top-12'
+        }`}
+      >
         <nav className="pointer-events-auto w-full max-w-7xl bg-black/75 backdrop-blur-xl border border-white/15 shadow-xl shadow-black/20 rounded-full px-4 sm:px-6 transition-all duration-300 supports-[backdrop-filter]:bg-black/50">
           <div className="flex justify-between items-center h-14 sm:h-16">
             <Link href="/" className="flex items-center space-x-2 group flex-shrink-0">

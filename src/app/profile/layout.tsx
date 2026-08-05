@@ -34,7 +34,13 @@ export default function ProfileLayout({
     }, [supabase]);
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
+        // Same shape as the navbar's: the server route ends the session, and the
+        // redirect is never gated on it. Awaiting the browser client's signOut() left
+        // this button dead whenever supabase-js hung — see src/lib/session-cookie.ts.
+        await Promise.race([
+            fetch('/api/auth/logout', { method: 'POST' }).catch(() => undefined),
+            new Promise(resolve => setTimeout(resolve, 2000)),
+        ]);
         window.location.href = '/login';
     };
 
