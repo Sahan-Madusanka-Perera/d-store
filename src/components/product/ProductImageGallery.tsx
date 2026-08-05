@@ -85,9 +85,42 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
   }, [isFullScreen]);
 
   return (
-    <div className="space-y-4 will-change-transform">
-      {/* Main Image with Navigation */}
-      <div className="relative w-full aspect-square max-h-[450px] lg:max-h-[550px] bg-muted rounded-2xl overflow-hidden shadow-xl dark:shadow-black/30 group cursor-pointer">
+    <div className="will-change-transform">
+      {/* Thumbnails lead in the DOM but `flex-col-reverse` puts them under the main
+          image on phones, where an 80px side rail would eat a quarter of the width;
+          from sm up the row direction turns them into the left-hand column. */}
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:gap-4">
+        {images.length > 1 && (
+          <ul className="scrollbar-hide flex shrink-0 gap-3 overflow-x-auto pb-1 sm:max-h-[450px] sm:w-20 sm:flex-col sm:overflow-x-visible sm:overflow-y-auto sm:pb-0 lg:max-h-[550px]">
+            {images.map((image, index) => (
+              <li key={index} className="shrink-0 sm:w-full">
+                <button
+                  type="button"
+                  onClick={() => setSelectedImageIndex(index)}
+                  aria-label={`Show image ${index + 1} of ${images.length}`}
+                  aria-current={selectedImageIndex === index}
+                  className={`relative block h-20 w-20 overflow-hidden rounded-lg bg-muted transition-opacity duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:aspect-square sm:h-auto sm:w-full ${
+                    selectedImageIndex === index
+                      ? 'opacity-100 ring-2 ring-foreground'
+                      : 'opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  <Image
+                    src={image}
+                    alt=""
+                    fill
+                    sizes="80px"
+                    className="object-cover"
+                  />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* Main Image with Navigation. min-w-0 so the flex child can shrink instead of
+            forcing the rail off the edge. */}
+        <div className="relative aspect-square min-w-0 flex-1 max-h-[450px] lg:max-h-[550px] bg-muted rounded-2xl overflow-hidden shadow-xl dark:shadow-black/30 group cursor-pointer">
         <div className="overflow-hidden h-full" ref={emblaRef}>
           <div className="flex h-full touch-pan-y">
             {images.map((img, idx) => (
@@ -168,31 +201,8 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
             ))}
           </div>
         )}
-      </div>
-      
-      {/* Horizontal Scrollable Thumbnail Gallery */}
-      {images.length > 1 && (
-        <div className="relative">
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-            {images.map((image, index) => (
-              <div 
-                key={index} 
-                className={`relative flex-shrink-0 w-20 h-20 bg-muted rounded-lg overflow-hidden cursor-pointer transition-[ring,opacity] duration-200 ${
-                  selectedImageIndex === index ? 'ring-2 ring-blue-500 opacity-100' : 'opacity-70 hover:opacity-100 hover:ring-2 hover:ring-blue-400'
-                }`}
-                onClick={() => setSelectedImageIndex(index)}
-              >
-                <Image
-                  src={image}
-                  alt={`${productName} ${index + 1}`}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            ))}
-          </div>
         </div>
-      )}
+      </div>
 
       {/* Full Screen Modal.
           Rendered into <body> rather than in place. `position: fixed` is resolved
