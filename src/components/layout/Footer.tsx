@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ConditionalNewsletter } from '@/components/sections/ConditionalNewsletter';
 import { Newsletter } from '@/components/sections/Newsletter';
 import { InstagramFeed } from '@/components/sections/InstagramFeed';
-import { FacebookRecommendations } from '@/components/sections/FacebookRecommendations';
+import { CustomerReviews } from '@/components/sections/CustomerReviews';
 import { Facebook, Instagram, CreditCard } from "lucide-react";
 import { ConditionalInstagram } from '@/components/sections/ConditionalInstagram';
 import Image from "next/image";
@@ -19,7 +19,7 @@ export function Footer() {
                             <InstagramFeed />
                         </div>
                         <div className="w-full px-4 md:px-8 max-w-7xl mx-auto mb-16 sm:mb-24">
-                            <FacebookRecommendations />
+                            <CustomerReviews />
                         </div>
                     </ConditionalInstagram>
                     {/* The negative margin makes it overlap the footer which is conceptually directly after this component */}

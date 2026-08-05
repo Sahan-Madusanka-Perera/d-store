@@ -11,10 +11,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Package, DollarSign, AlertTriangle, Users, TrendingUp, ShoppingCart, Eye, Settings, Mail, LayoutTemplate, Activity, Menu as MenuIcon, Sparkles, Lock } from 'lucide-react'
+import { Package, DollarSign, AlertTriangle, Users, TrendingUp, ShoppingCart, Eye, Settings, Mail, LayoutTemplate, Activity, Menu as MenuIcon, Sparkles, Lock, MessageSquareQuote } from 'lucide-react'
 import Link from 'next/link'
 import DashboardActions from '@/components/admin/DashboardActions'
 import VisibilityManager from '@/components/admin/VisibilityManager'
+import ReviewManager from '@/components/admin/ReviewManager'
 import { LOW_STOCK_THRESHOLD } from '@/lib/constants'
 
 /**
@@ -154,6 +155,7 @@ export default async function AdminDashboard() {
               </TabsTrigger>
               <TabsTrigger value="carousel" className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-md transition-all"><LayoutTemplate className="w-4 h-4 mr-2" /> Carousel</TabsTrigger>
               <TabsTrigger value="navigation" className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-md transition-all"><MenuIcon className="w-4 h-4 mr-2" /> Navigation</TabsTrigger>
+              <TabsTrigger value="reviews" className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-md transition-all"><MessageSquareQuote className="w-4 h-4 mr-2" /> Reviews</TabsTrigger>
               <TabsTrigger value="custom-orders" className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-md transition-all">
                 <Sparkles className="w-4 h-4 mr-2" /> Custom Orders
                 {pendingCustomOrders > 0 && (
@@ -351,6 +353,10 @@ export default async function AdminDashboard() {
                 <NavCategoryManager />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="reviews" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <ReviewManager />
           </TabsContent>
 
           <TabsContent value="custom-orders" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
