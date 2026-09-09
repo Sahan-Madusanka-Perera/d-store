@@ -38,14 +38,18 @@ Hi! I'd like to know more about this product. Can you help me?`;
     window.open(getWhatsAppUrl(message), '_blank');
   };
 
+  // The emerald treatment this carried put emerald-700 text on the dark theme's #0e0e11
+  // at about 3.0:1, under the 4.5:1 floor, and its emerald-200 border had no dark
+  // variant at all. This is the secondary action beside Add to Cart, so it takes the
+  // palette's own outline weight instead of a hue borrowed from WhatsApp's brand.
   return (
     <Button
       onClick={handleInquiry}
       variant="outline"
       size="lg"
-      className="w-full border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300 transition-all shadow-sm hover:shadow-md"
+      className="w-full transition-colors"
     >
-      <MessageCircle className="mr-2 h-5 w-5" />
+      <MessageCircle aria-hidden="true" className="mr-2 h-5 w-5" />
       Inquire via WhatsApp
     </Button>
   );

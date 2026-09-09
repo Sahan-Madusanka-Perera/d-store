@@ -10,6 +10,7 @@ import { ShoppingCart, Star, Eye, Zap, Bell } from 'lucide-react';
 import { toast } from 'sonner';
 import WishlistButton from '@/components/product/WishlistButton';
 import { getCategoryLabel } from '@/lib/constants';
+import { chip, CHIP_NUMERIC } from '@/components/ui/chip';
 import { cn } from '@/lib/utils';
 
 interface ProductCardProps {
@@ -17,23 +18,14 @@ interface ProductCardProps {
 }
 
 /**
- * One vocabulary for every label that floats over the product image.
- *
- * These used to be seven saturated pills — indigo, violet, amber, teal, blue, rose,
- * slate — each with a drop shadow and an icon sitting next to a word that already said
- * the same thing. The palette in globals.css is 0% saturation end to end, so those hues
- * belonged to no design system, and with three stacked at once nothing read as more
- * important than anything else.
- *
- * So: no hue, no icon, no shadow. Weight is the only hierarchy — ink for the one fact
- * that moves a purchase, plate for state, ghost for taxonomy — and the plates are
- * translucent with a backdrop blur, which is honest depth over a photograph in a way a
- * box-shadow on an 18px pill is not.
+ * The labels floating over the image speak the same vocabulary as the ones on the
+ * product detail page — components/ui/chip.ts is where that reasoning now lives, so the
+ * two surfaces cannot drift apart again. `media` because these stand on a photograph;
+ * `sm` because at thumbnail size they must not out-shout the product.
  */
-const CHIP = 'inline-flex items-center rounded-md px-2 py-[3px] text-[10px] font-semibold uppercase tracking-[0.08em] leading-none';
-const CHIP_INK = `${CHIP} bg-foreground text-background`;
-const CHIP_PLATE = `${CHIP} bg-background/95 backdrop-blur-md text-foreground ring-1 ring-inset ring-foreground/10`;
-const CHIP_GHOST = `${CHIP} bg-background/95 backdrop-blur-md text-foreground/70 ring-1 ring-inset ring-foreground/10`;
+const CHIP_INK = chip('ink', { surface: 'media', size: 'sm' });
+const CHIP_PLATE = chip('plate', { surface: 'media', size: 'sm' });
+const CHIP_GHOST = chip('ghost', { surface: 'media', size: 'sm' });
 
 export default function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore(state => state.addItem);
@@ -224,7 +216,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div className="flex shrink-0 flex-col items-start gap-1.5">
             {stockLabel && <span className={stockLabel.tone}>{stockLabel.text}</span>}
             {savingPercent > 0 && productStatus === 'available' && (
-              <span className={cn(CHIP_INK, 'tracking-normal tabular-nums')}>-{savingPercent}%</span>
+              <span className={cn(CHIP_INK, CHIP_NUMERIC)}>-{savingPercent}%</span>
             )}
           </div>
           {/* Ghost weight — where the product lives, not something to act on. */}

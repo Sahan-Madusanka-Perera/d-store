@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Star, Loader2, Link as LinkIcon, RefreshCw } from 'lucide-react'
+import { Star, Loader2, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface ExternalRatingProps {
@@ -43,37 +43,39 @@ export default function ExternalRating({ productId, initialRating, initialCount 
         }
     }
 
-    const renderStars = (ratingValue: number) => {
-        const stars = [];
-        const fullStars = Math.floor(ratingValue);
-        const hasHalfStar = ratingValue % 1 >= 0.5;
-
-        for (let i = 0; i < 5; i++) {
-            if (i < fullStars) {
-                stars.push(<Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />);
-            } else if (i === fullStars && hasHalfStar) {
-                stars.push(<Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" style={{ clipPath: 'inset(0 50% 0 0)' }} />);
-                stars.push(<Star key={`${i}-empty`} className="w-4 h-4 text-muted-foreground/30 absolute" style={{ clipPath: 'inset(0 0 0 50%)' }} />);
-            } else {
-                stars.push(<Star key={i} className="w-4 h-4 text-muted-foreground/30" />);
-            }
-        }
-        return (
-            <div className="flex gap-0.5 relative items-center">
-                {stars.map((star, i) => (
-                    <div key={i} className="relative flex">
-                        {star}
-                    </div>
-                ))}
-            </div>
-        );
-    };
+    // Five positions, each an empty star with the filled one clipped over it to the
+    // exact fraction this rating earns. The previous version pushed a sixth, absolutely
+    // positioned star for the half case; it landed in its own zero-width flex slot at
+    // the end of the row and rendered as a sliver hanging off the last star.
+    const renderStars = (ratingValue: number) => (
+        <div
+            role="img"
+            aria-label={`Rated ${ratingValue.toFixed(1)} out of 5`}
+            className="flex items-center gap-0.5"
+        >
+            {Array.from({ length: 5 }, (_, i) => {
+                const fill = Math.max(0, Math.min(1, ratingValue - i));
+                return (
+                    <span key={i} className="relative block h-4 w-4">
+                        <Star aria-hidden="true" className="absolute inset-0 h-4 w-4 text-muted-foreground/30" />
+                        {fill > 0 && (
+                            <Star
+                                aria-hidden="true"
+                                className="absolute inset-0 h-4 w-4 fill-amber-400 text-amber-400"
+                                style={{ clipPath: `inset(0 ${(1 - fill) * 100}% 0 0)` }}
+                            />
+                        )}
+                    </span>
+                );
+            })}
+        </div>
+    );
 
     if (isLoading) {
         return (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground animate-pulse">
-                <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
-                <span>Fetching live ratings...</span>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />
+                <span>Loading rating…</span>
             </div>
         )
     }
@@ -88,28 +90,40 @@ export default function ExternalRating({ productId, initialRating, initialCount 
     };
     const sourceLabel = source ? SOURCE_LABELS[source] ?? null : null;
 
+    // A line of metadata under the title, not a card. The amber panel this used to sit
+    // in was the only amber thing on a page whose palette has no saturation in it, and
+    // its `sm:` row break answers the viewport while the box itself is 381px wide from
+    // lg up — so on a desktop the count wrapped to a second line inside the tint and
+    // left the panel lopsided against the wishlist button beside it. The stars keep
+    // their gold: that is a convention every shopper reads instantly, and it is the one
+    // hue here doing work no weight could do.
     return (
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 py-3 px-4 bg-amber-500/5 border border-amber-500/20 rounded-xl">
-            <div className="flex items-center gap-2">
-                {sourceLabel && (
-                    <div className="bg-white p-1 rounded-sm shadow-sm ring-1 ring-black/5">
-                        <span className="font-bold text-xs text-gray-800 tracking-tighter uppercase px-1">{sourceLabel}</span>
-                    </div>
-                )}
-                <div className="flex gap-1 items-center">
-                    {renderStars(rating)}
-                </div>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <div className="flex items-center gap-0.5">
+                {renderStars(rating)}
             </div>
 
-            <div className="flex items-center gap-3">
-                <span className="text-sm font-bold text-foreground">
-                    {rating.toFixed(1)} <span className="text-muted-foreground font-medium">({count?.toLocaleString()} reviews)</span>
+            <span className="text-sm font-semibold tabular-nums text-foreground">
+                {rating.toFixed(1)}
+            </span>
+
+            {count != null && (
+                <span className="text-sm text-muted-foreground">
+                    <span className="tabular-nums">{count.toLocaleString()}</span> ratings
+                    {sourceLabel && ` on ${sourceLabel}`}
                 </span>
+            )}
 
-                <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full hover:bg-amber-100/50" onClick={fetchRating} title="Refresh external ratings">
-                    <RefreshCw className="h-3 w-3 text-amber-600" />
-                </Button>
-            </div>
+            <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 rounded-full text-muted-foreground hover:text-foreground"
+                onClick={fetchRating}
+                aria-label="Refresh rating"
+                title="Refresh rating"
+            >
+                <RefreshCw aria-hidden="true" className="h-3 w-3" />
+            </Button>
         </div>
     )
 }

@@ -8,17 +8,17 @@ import WhatsAppInquiryButton from '@/components/product/WhatsAppInquiryButton';
 import ProductImageGallery from '@/components/product/ProductImageGallery';
 import ProductInfoAssistant from '@/components/product/ProductInfoAssistant';
 import ProductCard from '@/components/product/ProductCard';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Star, ChevronRight, Truck, Shield, RotateCcw, Heart, Sparkles, Clock, Zap, Bell, BookOpen, Languages, Calendar, Hash, Weight, Maximize, Palette, Brush, Gift, Ruler, Puzzle, Box, Battery, Factory, Info, Book, Globe, Lock, Tag } from 'lucide-react';
+import { chip, CHIP_NUMERIC } from '@/components/ui/chip';
+import { ChevronRight, Truck, Shield, Sparkles, BookOpen, Languages, Calendar, Hash, Weight, Maximize, Palette, Brush, Gift, Puzzle, Box, Battery, Factory, Info, Book, Globe, Lock, Tag } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import ExternalRating from '@/components/product/ExternalRating';
 import WishlistButton from '@/components/product/WishlistButton';
 import { getCategoryLabel } from '@/lib/constants';
 import { BUNDLE_DISCOUNT_BLURB } from '@/lib/bundle-discount';
 import type { Metadata } from 'next';
-import { cache } from 'react';
+import { cache, type ReactNode } from 'react';
 import {
   productJsonLd,
   breadcrumbJsonLd,
@@ -100,6 +100,58 @@ function mapDatabaseProduct(dbProduct: DatabaseProduct): Product {
 interface ProductPageProps {
   params: Promise<{ id: string }>
 }
+
+/**
+ * How a raw `specifications` key is presented. Previously an 18-branch if/else chain
+ * inside the render, which is why `batteriesRequired` reached the page as the label
+ * "Batteries Req?".
+ */
+const SPEC_META: Record<string, { label: string; icon: LucideIcon }> = {
+  publicationDate: { label: 'Publication Date', icon: Calendar },
+  language: { label: 'Language', icon: Languages },
+  printLength: { label: 'Print Length', icon: BookOpen },
+  isbn10: { label: 'ISBN-10', icon: Hash },
+  isbn13: { label: 'ISBN-13', icon: Hash },
+  itemWeight: { label: 'Item Weight', icon: Weight },
+  dimensions: { label: 'Dimensions', icon: Maximize },
+  itemDimensions: { label: 'Dimensions', icon: Maximize },
+  theme: { label: 'Theme', icon: Palette },
+  color: { label: 'Color', icon: Palette },
+  style: { label: 'Style', icon: Brush },
+  occasion: { label: 'Occasion', icon: Gift },
+  numberOfPieces: { label: 'Pieces', icon: Puzzle },
+  manufacturer: { label: 'Manufacturer', icon: Factory },
+  materialType: { label: 'Material Type', icon: Box },
+  asin: { label: 'ASIN', icon: Hash },
+  batteriesRequired: { label: 'Batteries Required', icon: Battery },
+  finishTypes: { label: 'Finish Types', icon: Sparkles },
+  ageRange: { label: 'Age Range', icon: Info },
+  itemTypeName: { label: 'Item Type', icon: Info },
+};
+
+type SpecRow = { key: string; label: string; icon: LucideIcon; value: ReactNode };
+
+/**
+ * A value that leads somewhere says so before you hover it: an underline in the border
+ * colour that firms up to the foreground on the way in. The old treatment announced
+ * itself only once the cursor had already arrived, and did it in an indigo this palette
+ * does not contain.
+ */
+const SPEC_LINK =
+  'underline decoration-border decoration-1 underline-offset-4 transition-colors hover:decoration-foreground';
+
+/**
+ * Values a shopper can act on — a character to browse, a size to look for. Not labels,
+ * so they keep their own capitalisation rather than being shouted in uppercase; the
+ * links invert to ink on hover, which is the same weight the chip vocabulary uses for
+ * "this one matters".
+ */
+const DATA_CHIP =
+  'inline-flex items-center rounded-md bg-secondary px-2.5 py-1 text-[13px] font-medium text-foreground ring-1 ring-inset ring-border';
+const DATA_CHIP_LINK =
+  `${DATA_CHIP} transition-colors hover:bg-foreground hover:text-background hover:ring-foreground`;
+const GROUP_LABEL =
+  'block text-[11px] font-semibold uppercase tracking-[0.09em] text-muted-foreground';
 
 /**
  * The product row, fetched once per request.
@@ -243,15 +295,89 @@ export default async function ProductPage({ params }: ProductPageProps) {
     }).format(price);
   };
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'manga': return 'bg-gradient-to-r from-indigo-500 to-blue-500 text-white border-0'
-      case 'figures': return 'bg-gradient-to-r from-violet-500 to-purple-500 text-white border-0'
-      case 'tshirts': return 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0'
-      case 'other': return 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white border-0'
-      default: return 'bg-gradient-to-r from-slate-500 to-gray-500 text-white border-0'
-    }
-  };
+  // Exactly one availability label, resolved in the order a shopper needs it: what
+  // changes how they buy, then what stops them buying, then what is running out. The
+  // four badges this replaced were mutually exclusive anyway, and two of them carried a
+  // `border-blue-200` / `border-amber-200` with no dark variant, so in dark mode they
+  // lit a pale ring around a dark chip.
+  const stockLabel: { text: string; tone: 'ink' | 'plate' } | null =
+    product.status === 'coming_soon' ? { text: 'Coming soon', tone: 'plate' } :
+    product.status === 'pre_order' ? { text: 'Pre-order', tone: 'plate' } :
+    product.status === 'out_of_stock' || product.stock === 0 ? { text: 'Sold out', tone: 'plate' } :
+    product.stock <= 5 ? { text: `Only ${product.stock} left`, tone: 'ink' } :
+    null;
+
+  // One table, not three boxes. The identifiers, the specification blob and the stock
+  // count are all facts about the same object and a shopper reads them as one list; as
+  // three separately bordered containers inside a bordered Card they were nested twice
+  // over, and on any listing with no brand, publisher, author or series — every
+  // t-shirt — the first container rendered as a bare hairline with nothing inside it.
+  const specRows: SpecRow[] = [];
+
+  if (product.brand) {
+    specRows.push({
+      key: 'brand', label: 'Brand', icon: Factory,
+      value: (
+        <Link className={SPEC_LINK} href={`/figures?brand=${encodeURIComponent(product.brand)}`}>
+          {product.brand}
+        </Link>
+      ),
+    });
+  }
+  if (product.category === 'manga' && product.publisher) {
+    specRows.push({
+      key: 'publisher', label: 'Publisher', icon: Book,
+      value: (
+        <Link className={SPEC_LINK} href={`/manga?publisher=${encodeURIComponent(product.publisher)}`}>
+          {product.publisher}
+        </Link>
+      ),
+    });
+  }
+  if (product.author) {
+    specRows.push({
+      key: 'author', label: 'Author', icon: Brush,
+      value: (
+        <Link className={SPEC_LINK} href={`/manga?search=${encodeURIComponent(product.author)}`}>
+          {product.author}
+        </Link>
+      ),
+    });
+  }
+  if (product.series && product.series !== 'Various') {
+    specRows.push({
+      key: 'series', label: 'Series', icon: BookOpen,
+      value: (
+        <Link className={SPEC_LINK} href={`/${product.category}?search=${encodeURIComponent(product.series)}`}>
+          {product.series}
+        </Link>
+      ),
+    });
+  }
+
+  for (const [key, value] of Object.entries(product.specifications ?? {})) {
+    if (!value) continue;
+    const meta = SPEC_META[key];
+    specRows.push({
+      key,
+      label: meta?.label ?? key,
+      icon: meta?.icon ?? Info,
+      value: String(value),
+    });
+  }
+
+  // Last, and phrased for the number it actually holds — this row read "1 units
+  // available" for every listing down to its final copy.
+  specRows.push({
+    key: 'availability', label: 'Availability', icon: Box,
+    value: product.stock === 0
+      ? <span className="text-destructive">Out of stock</span>
+      : `${product.stock} ${product.stock === 1 ? 'unit' : 'units'} available`,
+  });
+
+  const hasChipGroups = Boolean(
+    product.characterNames?.length || product.sizes?.length || product.colors?.length
+  );
 
   // Structured data. This is what turns a plain blue link into a result carrying the
   // price, the stock status and (where a genuine one exists) a star rating. For a shop
@@ -399,39 +525,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
           {/* Product Details */}
           <div className="space-y-8">
-            {/* Category and Stock Status */}
-            <div className="flex items-center gap-3 flex-wrap">
-              <Badge className={getCategoryColor(product.category)}>
-                {getCategoryLabel(product.category)}
-              </Badge>
-              {product.membersOnly && (
-                <Badge className="bg-foreground text-background border-0">
-                  <Lock className="h-3 w-3 mr-1" />
-                  Members Only
-                </Badge>
-              )}
-              {product.status === 'coming_soon' && (
-                <Badge className="bg-blue-500/10 text-blue-600 border-blue-200">
-                  <Clock className="h-3 w-3 mr-1" />
-                  Coming Soon
-                </Badge>
-              )}
-              {product.status === 'pre_order' && (
-                <Badge className="bg-violet-500/10 text-violet-600 border-violet-200">
-                  <Zap className="h-3 w-3 mr-1" />
-                  Pre-order Available
-                </Badge>
-              )}
-              {product.status === 'out_of_stock' && (
-                <Badge className="bg-red-500/10 text-red-600 border-red-200">
-                  Out of Stock
-                </Badge>
-              )}
-              {product.status === 'available' && product.stock > 0 && product.stock <= 5 && (
-                <Badge className="bg-amber-500/10 text-amber-600 border-amber-200">
-                  Only {product.stock} left in stock
-                </Badge>
-              )}
+            {/* Hierarchy by weight, not by hue: ink for the fact that changes how you
+                buy, plate for the fact you can only wait on, ghost for taxonomy. The
+                category chip stays even though the breadcrumb two rows up already names
+                the category — it keeps this row from emptying out on an ordinary
+                in-stock listing, which would jump the headline 40px between products. */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={chip('ghost')}>{getCategoryLabel(product.category)}</span>
+              {product.membersOnly && <span className={chip('ink')}>Members only</span>}
+              {stockLabel && <span className={chip(stockLabel.tone)}>{stockLabel.text}</span>}
             </div>
 
             {/* Title and External Rating */}
@@ -440,7 +542,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 {product.name}
               </h1>
 
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              {/* Wraps as a unit rather than at a `sm:` breakpoint. This column is
+                  381px wide from lg up whatever the viewport says, and the rating plus
+                  the wishlist button come to more than that — so the viewport-keyed row
+                  was still a row on a desktop and squeezed the rating until its refresh
+                  control fell onto a line of its own. */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                 <ExternalRating
                   productId={product.id}
                   initialRating={dbProduct.external_rating}
@@ -466,189 +573,107 @@ export default async function ProductPage({ params }: ProductPageProps) {
               )}
 
               {savingPercent > 0 && (
-                <Badge className="bg-gradient-to-r from-rose-500 to-pink-600 text-white border-0">
-                  -{savingPercent}% Off
-                </Badge>
+                <span className={chip('ink', { className: CHIP_NUMERIC })}>
+                  -{savingPercent}%
+                </span>
               )}
             </div>
 
             {/* The bundle promise, directly under the price where the shopper is
                 already looking. Counted across every eligible product in the basket. */}
             {product.discountEligible && (
-              <div className="flex items-start gap-2.5 rounded-xl border border-emerald-600/20 bg-emerald-50 px-4 py-3 dark:border-emerald-400/20 dark:bg-emerald-500/10">
-                <Tag className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-300" />
-                <p className="text-sm font-medium text-emerald-900 dark:text-emerald-200">
+              <div className="flex items-start gap-2.5 rounded-xl border border-border bg-muted/40 px-4 py-3">
+                <Tag aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                <p className="text-sm text-foreground">
                   {BUNDLE_DISCOUNT_BLURB}.
                 </p>
               </div>
             )}
 
-            {/* AI Character Assistant */}
-            <div className="bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10 rounded-xl p-5">
-              <div className="flex items-start gap-4">
-                <ProductInfoAssistant
-                  productName={product.name}
-                  productDescription={product.description}
-                  category={product.category}
-                />
-                <div className="flex-1">
-                  <p className="text-muted-foreground flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    <span className="font-medium">New to anime? Get character info powered by AI!</span>
-                  </p>
+            {/* Only rendered where there is something to look up. The assistant returns
+                null for apparel and goods, so the panel that framed it used to appear on
+                those pages as a gradient box offering character info with no button
+                underneath it. The offer now names what comes back instead of naming the
+                technology that fetches it. */}
+            {(product.category === 'manga' || product.category === 'figures') && (
+              <div className="rounded-xl border border-border bg-muted/40 p-4">
+                <p className="text-sm text-muted-foreground">
+                  {product.category === 'manga'
+                    ? 'New to this series? Get a short summary — the story, who wrote it, and how far it runs.'
+                    : "Don't know the character? Get a short summary of who they are and the series they come from."}
+                </p>
+                <div className="mt-3">
+                  <ProductInfoAssistant
+                    productName={product.name}
+                    productDescription={product.description}
+                    category={product.category}
+                  />
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Product Specifications */}
-            <Card className="border-border/50">
-              <CardHeader>
-                <CardTitle className="text-xl">Product Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                {/* Key Identifiers: Brand / Publisher / Author / Series */}
-                <div className="divide-y divide-border/40 border rounded-xl overflow-hidden">
-                  {product.brand && (
-                    <div className="flex items-center justify-between px-4 py-3.5 hover:bg-secondary/10 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <Factory className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <span className="text-sm text-muted-foreground font-medium">Brand</span>
+            {/* Product facts: a heading and one table. This was a Card wrapping three
+                separately bordered lists plus a filled availability block — four nested
+                containers deep on a page that already sits inside a column, which is why
+                the section read as a stack of boxes rather than a specification. */}
+            <section className="space-y-5">
+              <h2 className="text-xl font-semibold text-foreground">Product Details</h2>
+
+              <dl className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+                {specRows.map(row => (
+                  <div key={row.key} className="flex items-center justify-between gap-4 px-4 py-3">
+                    <dt className="flex min-w-0 items-center gap-2.5">
+                      <row.icon aria-hidden="true" className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="truncate text-sm text-muted-foreground">{row.label}</span>
+                    </dt>
+                    <dd className="min-w-0 truncate text-right text-sm font-medium text-foreground">
+                      {row.value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+
+              {hasChipGroups && (
+                <div className="space-y-4">
+                  {product.characterNames && product.characterNames.length > 0 && (
+                    <div>
+                      <span className={GROUP_LABEL}>Characters</span>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {product.characterNames.map(char => (
+                          <Link
+                            key={char}
+                            href={`/${product.category}?search=${encodeURIComponent(char)}`}
+                            className={DATA_CHIP_LINK}
+                          >
+                            {char}
+                          </Link>
+                        ))}
                       </div>
-                      <Link href={`/figures?brand=${encodeURIComponent(product.brand)}`}>
-                        <span className="text-sm font-semibold text-foreground hover:text-indigo-600 hover:underline transition-colors truncate">{product.brand}</span>
-                      </Link>
                     </div>
                   )}
-                  {product.category === 'manga' && product.publisher && (
-                    <div className="flex items-center justify-between px-4 py-3.5 hover:bg-secondary/10 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <Book className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <span className="text-sm text-muted-foreground font-medium">Publisher</span>
+                  {product.sizes && product.sizes.length > 0 && (
+                    <div>
+                      <span className={GROUP_LABEL}>Sizes</span>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {product.sizes.map(size => (
+                          <span key={size} className={DATA_CHIP}>{size}</span>
+                        ))}
                       </div>
-                      <Link href={`/manga?publisher=${encodeURIComponent(product.publisher)}`}>
-                        <span className="text-sm font-semibold text-foreground hover:text-indigo-600 hover:underline transition-colors truncate">{product.publisher}</span>
-                      </Link>
                     </div>
                   )}
-                  {product.author && (
-                    <div className="flex items-center justify-between px-4 py-3.5 hover:bg-secondary/10 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <Brush className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <span className="text-sm text-muted-foreground font-medium">Author</span>
+                  {product.colors && product.colors.length > 0 && (
+                    <div>
+                      <span className={GROUP_LABEL}>Colors</span>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {product.colors.map(color => (
+                          <span key={color} className={`${DATA_CHIP} capitalize`}>{color}</span>
+                        ))}
                       </div>
-                      <Link href={`/manga?search=${encodeURIComponent(product.author)}`}>
-                        <span className="text-sm font-semibold text-foreground hover:text-indigo-600 hover:underline transition-colors truncate">{product.author}</span>
-                      </Link>
-                    </div>
-                  )}
-                  {product.series && product.series !== 'Various' && (
-                    <div className="flex items-center justify-between px-4 py-3.5 hover:bg-secondary/10 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <BookOpen className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <span className="text-sm text-muted-foreground font-medium">Series</span>
-                      </div>
-                      <Link href={`/${product.category}?search=${encodeURIComponent(product.series)}`}>
-                        <span className="text-sm font-semibold text-foreground hover:text-indigo-600 hover:underline transition-colors">{product.series}</span>
-                      </Link>
                     </div>
                   )}
                 </div>
-
-                {/* Specifications JSON */}
-                {product.specifications && Object.entries(product.specifications).length > 0 && (
-                  <div className="divide-y divide-border/40 border rounded-xl overflow-hidden">
-                    {Object.entries(product.specifications).map(([key, value]) => {
-                      if (!value) return null;
-                      let label = key;
-                      let Icon = Info;
-                      if (key === 'publicationDate') { label = 'Publication Date'; Icon = Calendar; }
-                      else if (key === 'language') { label = 'Language'; Icon = Languages; }
-                      else if (key === 'printLength') { label = 'Print Length'; Icon = BookOpen; }
-                      else if (key === 'isbn10') { label = 'ISBN-10'; Icon = Hash; }
-                      else if (key === 'isbn13') { label = 'ISBN-13'; Icon = Hash; }
-                      else if (key === 'itemWeight') { label = 'Item Weight'; Icon = Weight; }
-                      else if (key === 'dimensions' || key === 'itemDimensions') { label = 'Dimensions'; Icon = Maximize; }
-                      else if (key === 'theme') { label = 'Theme'; Icon = Palette; }
-                      else if (key === 'color') { label = 'Color'; Icon = Palette; }
-                      else if (key === 'style') { label = 'Style'; Icon = Brush; }
-                      else if (key === 'occasion') { label = 'Occasion'; Icon = Gift; }
-                      else if (key === 'numberOfPieces') { label = 'Pieces'; Icon = Puzzle; }
-                      else if (key === 'manufacturer') { label = 'Manufacturer'; Icon = Factory; }
-                      else if (key === 'materialType') { label = 'Material Type'; Icon = Box; }
-                      else if (key === 'asin') { label = 'ASIN'; Icon = Hash; }
-                      else if (key === 'batteriesRequired') { label = 'Batteries Req?'; Icon = Battery; }
-                      else if (key === 'finishTypes') { label = 'Finish Types'; Icon = Sparkles; }
-                      else if (key === 'ageRange') { label = 'Age Range'; Icon = Info; }
-                      else if (key === 'itemTypeName') { label = 'Item Type'; Icon = Info; }
-                      return (
-                        <div key={key} className="flex items-center justify-between px-4 py-3.5 hover:bg-secondary/10 transition-colors">
-                          <div className="flex items-center gap-3">
-                            <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
-                            <span className="text-sm text-muted-foreground font-medium">{label}</span>
-                          </div>
-                          <span className="text-sm font-semibold text-foreground text-right">{String(value)}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Tags and Characters */}
-                {(product.characterNames && product.characterNames.length > 0) || (product.sizes && product.sizes.length > 0) || (product.colors && product.colors.length > 0) ? (
-                  <div className="space-y-3 border rounded-xl p-4">
-                    {product.characterNames && product.characterNames.length > 0 && (
-                      <div>
-                        <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider block mb-2">Characters</span>
-                        <div className="flex flex-wrap gap-1.5">
-                          {product.characterNames.map((char) => (
-                            <Link key={char} href={`/${product.category}?search=${encodeURIComponent(char)}`}>
-                              <span className="inline-block text-[13px] font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 hover:text-indigo-900 transition-colors rounded-md px-3 py-1 cursor-pointer">
-                                {char}
-                              </span>
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {product.sizes && product.sizes.length > 0 && (
-                      <div>
-                        <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider block mb-2">Sizes</span>
-                        <div className="flex flex-wrap gap-1.5">
-                          {product.sizes.map((size) => (
-                            <span key={size} className="inline-block text-[13px] font-semibold text-muted-foreground bg-muted rounded-md px-3 py-1">{size}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {product.colors && product.colors.length > 0 && (
-                      <div>
-                        <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider block mb-2">Colors</span>
-                        <div className="flex flex-wrap gap-1.5">
-                          {product.colors.map((color) => (
-                            <span key={color} className="inline-block text-[13px] font-semibold text-muted-foreground bg-muted rounded-md px-3 py-1 capitalize">{color}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : null}
-
-                <div className="flex justify-between items-center bg-secondary/20 p-4 rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <Box className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-foreground font-medium">Availability</span>
-                  </div>
-                  <span className={`font-bold text-lg ${product.stock === 0
-                    ? 'text-destructive'
-                    : product.stock <= 5
-                      ? 'text-amber-600'
-                      : 'text-emerald-600'
-                    }`}>
-                    {product.stock === 0 ? 'Out of Stock' : `${product.stock} units available`}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
+              )}
+            </section>
 
             {/* Add to Cart - Elegant */}
             <div className="space-y-5">
@@ -662,25 +687,24 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 productDescription={product.description}
               />
 
-              {/* Additional Info - Refined */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                <div className="flex items-center gap-3 text-sm font-semibold text-foreground p-3 bg-muted/50 border border-border rounded-xl">
-                  <Truck className="h-5 w-5 text-indigo-500 flex-shrink-0" />
-                  <span>Island-Wide Free Delivery</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm font-semibold text-foreground p-3 bg-muted/50 border border-border rounded-xl">
-                  <Shield className="h-5 w-5 text-emerald-500 flex-shrink-0" />
-                  <span>Authentic Products Guaranteed</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm font-semibold text-foreground p-3 bg-muted/50 border border-border rounded-xl">
-                  <Globe className="h-5 w-5 text-blue-500 flex-shrink-0" />
-                  <span>Officially Licensed</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm font-semibold text-foreground p-3 bg-muted/50 border border-border rounded-xl">
-                  <Lock className="h-5 w-5 text-rose-500 flex-shrink-0" />
-                  <span>Secure Shipping</span>
-                </div>
-              </div>
+              {/* One block with hairlines between the cells, not four floating tiles.
+                  The icons were indigo, emerald, blue and rose — four unrelated hues
+                  carrying no distinction, on a palette with no saturation in it. They
+                  are all muted now, which lets the wordmark-black Add to Cart above stay
+                  the loudest thing in the column. */}
+              <ul className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2">
+                {[
+                  { Icon: Truck, text: 'Free island-wide delivery' },
+                  { Icon: Shield, text: 'Guaranteed authentic' },
+                  { Icon: Globe, text: 'Officially licensed' },
+                  { Icon: Lock, text: 'Secure shipping' },
+                ].map(({ Icon, text }) => (
+                  <li key={text} className="flex items-center gap-2.5 bg-background px-3.5 py-3">
+                    <Icon aria-hidden="true" className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="text-[13px] font-medium text-foreground">{text}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>
@@ -693,7 +717,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               <div className="text-center max-w-2xl mx-auto mb-12">
                 <h2 className="text-3xl font-bold text-foreground mb-4">You might also like</h2>
                 <p className="text-muted-foreground text-lg">
-                  Discover more products in the {getCategoryLabel(product.category)} category
+                  More from {getCategoryLabel(product.category)}
                 </p>
               </div>
               

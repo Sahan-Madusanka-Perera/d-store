@@ -3,7 +3,7 @@
 import { useState, useEffect, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
-import { Badge } from '@/components/ui/badge';
+import { chip } from '@/components/ui/chip';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Expand, X } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -188,11 +188,14 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
           </>
         )}
 
+        {/* "Sold out" here, on the chip above the title and on the button — it was
+            three different phrasings of one fact, the loudest of them a saturated red
+            pill sitting dead centre of the photograph, louder than the price. */}
         {stock === 0 && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <Badge variant="destructive" className="text-lg px-4 py-2">
-              Out of Stock
-            </Badge>
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+            <span className={chip('plate', { surface: 'media', className: 'px-3.5 py-2 text-xs tracking-[0.12em]' })}>
+              Sold out
+            </span>
           </div>
         )}
         

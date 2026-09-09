@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Info, X, Sparkles, User, Tv, BookOpen } from 'lucide-react';
+import { Info, X, Sparkles, User, Tv, BookOpen, Loader2 } from 'lucide-react';
 
 interface CharacterInfo {
   // Shared
@@ -129,9 +129,8 @@ export default function ProductInfoAssistant({
         aria-expanded={isOpen}
         className="flex items-center gap-2 transition-colors duration-200"
       >
-        <Sparkles className="h-4 w-4" />
-        {isManga ? "Series Info" : "Character Info"}
-        <Info className="h-4 w-4" />
+        <Sparkles aria-hidden="true" className="h-4 w-4" />
+        {isManga ? 'Series info' : 'Character info'}
       </Button>
 
       {/* Info Modal.
@@ -163,7 +162,7 @@ export default function ProductInfoAssistant({
               </Button>
 
               <CardTitle className="flex items-center gap-2 pr-10 text-lg">
-                <Sparkles className="h-5 w-5 text-[#0284C7]" />
+                <Sparkles aria-hidden="true" className="h-5 w-5 text-muted-foreground" />
                 {isManga ? "AI Series Reference" : "AI Character Assistant"}
               </CardTitle>
               <CardDescription>
@@ -173,9 +172,13 @@ export default function ProductInfoAssistant({
 
             <CardContent className="space-y-4">
               {isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
-                  <span className="ml-3 text-muted-foreground">{isManga ? "Finding series details..." : "Analyzing character..."}</span>
+                <div className="flex items-center justify-center gap-3 py-8">
+                  {/* The project's spinner is lucide's, not a rounded div with one
+                      border edge on it — that trick draws a ring the design system
+                      never specified and lands a different weight than every other
+                      loading state in the app. */}
+                  <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <span className="text-muted-foreground">{isManga ? 'Finding series details…' : 'Analyzing character…'}</span>
                 </div>
               ) : characterInfo?.error ? (
                 <div className="text-center py-6 text-muted-foreground">
@@ -282,8 +285,8 @@ export default function ProductInfoAssistant({
 
                   {/* Popularity */}
                   {characterInfo.popularity && (
-                    <div className="text-xs text-muted-foreground italic text-center pt-2 border-t">
-                      💫 {characterInfo.popularity}
+                    <div className="border-t pt-3 text-center text-xs italic text-muted-foreground">
+                      {characterInfo.popularity}
                     </div>
                   )}
                 </div>
