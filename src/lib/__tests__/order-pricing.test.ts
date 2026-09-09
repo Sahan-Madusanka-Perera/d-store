@@ -45,7 +45,7 @@ describe('normaliseLines', () => {
   it('rejects a non-array', () => {
     expect(normaliseLines(null).ok).toBe(false);
     expect(normaliseLines('2 manga please').ok).toBe(false);
-    expect(normaliseLines({ productId: '1', quantity: 1 }).ok).toBe(false);
+    expect(normaliseLines({ productId: '1', quantity: 1, size: null, color: null }).ok).toBe(false);
   });
 
   it('rejects quantities that are not positive whole numbers', () => {
@@ -56,7 +56,7 @@ describe('normaliseLines', () => {
   });
 
   it('rejects a quantity above the per-line cap', () => {
-    expect(normaliseLines([{ productId: '1', quantity: MAX_LINE_QUANTITY + 1 }]).ok).toBe(false);
+    expect(normaliseLines([{ productId: '1', quantity: MAX_LINE_QUANTITY + 1, size: null, color: null }]).ok).toBe(false);
   });
 
   it('rejects more distinct products than the cap allows', () => {
@@ -71,30 +71,82 @@ describe('normaliseLines', () => {
     // Splitting a line was a way to stay under a stock check and to dodge the "3 or
     // more" threshold from the other direction. Both need the merged view.
     const result = normaliseLines([
-      { productId: '1', quantity: 2 },
-      { productId: '1', quantity: 3 },
-      { productId: '2', quantity: 1 },
+      { productId: '1', quantity: 2, size: null, color: null },
+      { productId: '1', quantity: 3, size: null, color: null },
+      { productId: '2', quantity: 1, size: null, color: null },
     ]);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.lines).toEqual([
-      { productId: '1', quantity: 5 },
-      { productId: '2', quantity: 1 },
+      { productId: '1', quantity: 5, size: null, color: null },
+      { productId: '2', quantity: 1, size: null, color: null },
     ]);
   });
 
   it('applies the per-line cap to the merged total, not each entry', () => {
     const half = Math.ceil(MAX_LINE_QUANTITY / 2) + 1;
     const result = normaliseLines([
-      { productId: '1', quantity: half },
-      { productId: '1', quantity: half },
+      { productId: '1', quantity: half, size: null, color: null },
+      { productId: '1', quantity: half, size: null, color: null },
+    ]);
+    expect(result.ok).toBe(false);
+  });
+
+  it('keeps different variants of the same product as separate lines', () => {
+    // The bug this guards: merging on productId alone collapsed a medium and a large
+    // into one line of quantity 2, throwing the size away entirely.
+    const result = normaliseLines([
+      { productId: '1', quantity: 1, size: 'M' },
+      { productId: '1', quantity: 1, size: 'L' },
+    ]);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.lines).toHaveLength(2);
+    expect(result.lines.map(l => l.size).sort()).toEqual(['L', 'M']);
+  });
+
+  it('merges only when product AND variant both match', () => {
+    const result = normaliseLines([
+      { productId: '1', quantity: 1, size: 'M' },
+      { productId: '1', quantity: 2, size: 'M' },
+      { productId: '1', quantity: 1, size: 'L' },
+    ]);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.lines).toHaveLength(2);
+    expect(result.lines.find(l => l.size === 'M')?.quantity).toBe(3);
+    expect(result.lines.find(l => l.size === 'L')?.quantity).toBe(1);
+  });
+
+  it('treats a blank variant label as no variant', () => {
+    const result = normaliseLines([
+      { productId: '1', quantity: 1, size: '' },
+      { productId: '1', quantity: 1, size: '   ' },
+      { productId: '1', quantity: 1 },
+    ]);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // All three are the same thing, so they merge.
+    expect(result.lines).toHaveLength(1);
+    expect(result.lines[0].quantity).toBe(3);
+    expect(result.lines[0].size).toBeNull();
+  });
+
+  it('applies the per-product cap across variants, not per line', () => {
+    // 60 mediums and 60 larges is 120 of one product against one stock pool.
+    const result = normaliseLines([
+      { productId: '1', quantity: 60, size: 'M' },
+      { productId: '1', quantity: 60, size: 'L' },
     ]);
     expect(result.ok).toBe(false);
   });
 
   it('accepts numeric product ids, since the products table uses integers', () => {
-    const result = normaliseLines([{ productId: 42, quantity: 1 }]);
+    const result = normaliseLines([{ productId: 42, quantity: 1, size: null, color: null }]);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.lines[0].productId).toBe('42');
@@ -105,7 +157,7 @@ describe('priceOrder — prices come from the database, never the request', () =
   it('prices a line from products.price', () => {
     const result = priceOrder({
       ...base,
-      lines: [{ productId: '1', quantity: 2 }],
+      lines: [{ productId: '1', quantity: 2, size: null, color: null }],
       products: [product({ price: 2500 })],
     });
 
@@ -119,7 +171,7 @@ describe('priceOrder — prices come from the database, never the request', () =
   it('refuses a product id that is not in the catalogue', () => {
     const result = priceOrder({
       ...base,
-      lines: [{ productId: '999', quantity: 1 }],
+      lines: [{ productId: '999', quantity: 1, size: null, color: null }],
       products: [product({ id: '1' })],
     });
     expect(result.ok).toBe(false);
@@ -130,7 +182,7 @@ describe('priceOrder — prices come from the database, never the request', () =
   it('refuses to sell more than the stock on hand', () => {
     const result = priceOrder({
       ...base,
-      lines: [{ productId: '1', quantity: 11 }],
+      lines: [{ productId: '1', quantity: 11, size: null, color: null }],
       products: [product({ stock: 10 })],
     });
     expect(result.ok).toBe(false);
@@ -139,10 +191,40 @@ describe('priceOrder — prices come from the database, never the request', () =
     expect(result.error).toContain('10');
   });
 
+  it('pools stock across variants of the same product', () => {
+    // 3 mediums and 3 larges each fit under a stock of 4 on their own; together they
+    // do not. Checking per line would have oversold by two.
+    const result = priceOrder({
+      ...base,
+      lines: [
+        { productId: '1', quantity: 3, size: 'M', color: null },
+        { productId: '1', quantity: 3, size: 'L', color: null },
+      ],
+      products: [product({ stock: 4, category: 'tshirts' })],
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.status).toBe(409);
+  });
+
+  it('carries the variant through to the priced line', () => {
+    const result = priceOrder({
+      ...base,
+      lines: [{ productId: '1', quantity: 1, size: 'XL', color: 'Black' }],
+      products: [product({ category: 'tshirts' })],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.order.lines[0].size).toBe('XL');
+    expect(result.order.lines[0].color).toBe('Black');
+  });
+
   it('sells exactly the last unit', () => {
     const result = priceOrder({
       ...base,
-      lines: [{ productId: '1', quantity: 10 }],
+      lines: [{ productId: '1', quantity: 10, size: null, color: null }],
       products: [product({ stock: 10 })],
     });
     expect(result.ok).toBe(true);
@@ -152,7 +234,7 @@ describe('priceOrder — prices come from the database, never the request', () =
     for (const status of ['coming_soon', 'pre_order', 'out_of_stock']) {
       const result = priceOrder({
         ...base,
-        lines: [{ productId: '1', quantity: 1 }],
+        lines: [{ productId: '1', quantity: 1, size: null, color: null }],
         products: [product({ status })],
       });
       expect(result.ok, `status ${status} should not be sellable`).toBe(false);
@@ -163,7 +245,7 @@ describe('priceOrder — prices come from the database, never the request', () =
     const result = priceOrder({
       ...base,
       isMember: false,
-      lines: [{ productId: '1', quantity: 1 }],
+      lines: [{ productId: '1', quantity: 1, size: null, color: null }],
       products: [product({ members_only: true })],
     });
     expect(result.ok).toBe(false);
@@ -175,7 +257,7 @@ describe('priceOrder — prices come from the database, never the request', () =
     const result = priceOrder({
       ...base,
       isMember: true,
-      lines: [{ productId: '1', quantity: 1 }],
+      lines: [{ productId: '1', quantity: 1, size: null, color: null }],
       products: [product({ members_only: true })],
     });
     expect(result.ok).toBe(true);
@@ -195,7 +277,7 @@ describe('priceOrder — discounts', () => {
   it('applies a percentage rule once the category threshold is met', () => {
     const result = priceOrder({
       ...base,
-      lines: [{ productId: '1', quantity: 3 }],
+      lines: [{ productId: '1', quantity: 3, size: null, color: null }],
       products: [product({ price: 1000 })],
       quantityRules: [rule()],
     });
@@ -209,7 +291,7 @@ describe('priceOrder — discounts', () => {
   it('does not apply a rule below its threshold', () => {
     const result = priceOrder({
       ...base,
-      lines: [{ productId: '1', quantity: 2 }],
+      lines: [{ productId: '1', quantity: 2, size: null, color: null }],
       products: [product({ price: 1000 })],
       quantityRules: [rule()],
     });
@@ -221,7 +303,7 @@ describe('priceOrder — discounts', () => {
   it('picks the highest threshold the basket qualifies for', () => {
     const result = priceOrder({
       ...base,
-      lines: [{ productId: '1', quantity: 10 }],
+      lines: [{ productId: '1', quantity: 10, size: null, color: null }],
       products: [product({ price: 1000 })],
       quantityRules: [
         rule({ id: 'small', min_quantity: 3, discount_percentage: 5 }),
@@ -239,7 +321,7 @@ describe('priceOrder — discounts', () => {
     // A Rs 5,000-off rule on a Rs 1,000 basket must not hand back Rs 4,000.
     const result = priceOrder({
       ...base,
-      lines: [{ productId: '1', quantity: 1 }],
+      lines: [{ productId: '1', quantity: 1, size: null, color: null }],
       products: [product({ price: 1000 })],
       quantityRules: [rule({ min_quantity: 1, discount_percentage: null, discount_fixed: 5000 })],
     });
@@ -253,7 +335,7 @@ describe('priceOrder — discounts', () => {
   it('never lets stacked discounts exceed the subtotal', () => {
     const result = priceOrder({
       ...base,
-      lines: [{ productId: '1', quantity: 3 }],
+      lines: [{ productId: '1', quantity: 3, size: null, color: null }],
       products: [product({ price: 1000, discount_eligible: true })],
       quantityRules: [rule({ min_quantity: 1, discount_percentage: 100 })],
     });
@@ -268,8 +350,8 @@ describe('priceOrder — discounts', () => {
     const result = priceOrder({
       ...base,
       lines: [
-        { productId: '1', quantity: 2 },
-        { productId: '2', quantity: 1 },
+        { productId: '1', quantity: 2, size: null, color: null },
+        { productId: '2', quantity: 1, size: null, color: null },
       ],
       products: [
         product({ id: '1', price: 1000, discount_eligible: true }),
@@ -287,8 +369,8 @@ describe('priceOrder — discounts', () => {
     const result = priceOrder({
       ...base,
       lines: [
-        { productId: '1', quantity: 3 },
-        { productId: '2', quantity: 1 },
+        { productId: '1', quantity: 3, size: null, color: null },
+        { productId: '2', quantity: 1, size: null, color: null },
       ],
       products: [
         product({ id: '1', price: 1000, discount_eligible: true }),
@@ -326,7 +408,7 @@ describe('shippingFor', () => {
       ...base,
       province: 'Central',
       city: 'Kandy',
-      lines: [{ productId: '1', quantity: 1 }],
+      lines: [{ productId: '1', quantity: 1, size: null, color: null }],
       products: [product({ price: 1000 })],
     });
 
@@ -341,7 +423,7 @@ describe('priceOrder — money is rounded to two decimal places', () => {
   it('does not leak floating point noise into a total', () => {
     const result = priceOrder({
       ...base,
-      lines: [{ productId: '1', quantity: 3 }],
+      lines: [{ productId: '1', quantity: 3, size: null, color: null }],
       products: [product({ price: 1010.1 })],
       quantityRules: [
         { id: 'r', category: 'manga', min_quantity: 3, discount_percentage: 7, discount_fixed: null },

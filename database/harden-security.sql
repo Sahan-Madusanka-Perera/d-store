@@ -369,11 +369,77 @@ CREATE POLICY "Admins read all order items"
 -- ---------------------------------------------------------------------------
 DO $build$
 DECLARE
-  v_product_id_type text;
+  v_product_id_type  text;
+  v_order_id_type    text;
+  v_shipping_expr    text;
+  v_item_cols        text;
+  v_item_vals        text;
 BEGIN
   SELECT atttypid::regtype::text INTO v_product_id_type
   FROM pg_attribute
   WHERE attrelid = 'public.products'::regclass AND attname = 'id' AND NOT attisdropped;
+
+  SELECT atttypid::regtype::text INTO v_order_id_type
+  FROM pg_attribute
+  WHERE attrelid = 'public.orders'::regclass AND attname = 'id' AND NOT attisdropped;
+
+  -- orders.shipping_address is jsonb in the live database but TEXT in
+  -- database/setup-orders.sql. Postgres has no implicit or assignment cast from text to
+  -- jsonb, so inserting the parameter unqualified fails outright on the real schema
+  -- ("column is of type jsonb but expression is of type text"). Cast only when needed —
+  -- ::jsonb against a text column would be just as wrong in the other direction.
+  SELECT CASE
+           WHEN atttypid::regtype::text IN ('jsonb', 'json')
+             THEN 'p_shipping_address::' || atttypid::regtype::text
+           ELSE 'p_shipping_address'
+         END
+    INTO v_shipping_expr
+  FROM pg_attribute
+  WHERE attrelid = 'public.orders'::regclass
+    AND attname = 'shipping_address' AND NOT attisdropped;
+
+  v_shipping_expr := COALESCE(v_shipping_expr, 'p_shipping_address');
+
+  -- order_items carries BOTH `price` and `price_at_time` in the live database, and
+  -- `price` is NOT NULL with no default — so an insert naming only price_at_time fails.
+  -- setup-orders.sql declares only price_at_time, so neither column can be assumed.
+  -- They hold the same figure: the unit price at the moment the order was placed.
+  IF EXISTS (
+    SELECT 1 FROM pg_attribute
+    WHERE attrelid = 'public.order_items'::regclass
+      AND attname = 'price' AND NOT attisdropped
+  ) THEN
+    v_item_cols := 'order_id, product_id, quantity, price, price_at_time';
+    v_item_vals := 'v_order_id, v_pid, v_qty, v_unit_price, v_unit_price';
+  ELSE
+    v_item_cols := 'order_id, product_id, quantity, price_at_time';
+    v_item_vals := 'v_order_id, v_pid, v_qty, v_unit_price';
+  END IF;
+
+  -- Which variant was bought. order_items has carried selected_size/selected_color from
+  -- the start and nothing ever wrote to them, so every t-shirt order reached the admin
+  -- panel with no size on it — unfulfillable without messaging the customer to ask.
+  -- Optional because setup-orders.sql declares neither column.
+  IF EXISTS (
+    SELECT 1 FROM pg_attribute
+    WHERE attrelid = 'public.order_items'::regclass
+      AND attname = 'selected_size' AND NOT attisdropped
+  ) THEN
+    v_item_cols := v_item_cols || ', selected_size';
+    v_item_vals := v_item_vals || ', v_size';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM pg_attribute
+    WHERE attrelid = 'public.order_items'::regclass
+      AND attname = 'selected_color' AND NOT attisdropped
+  ) THEN
+    v_item_cols := v_item_cols || ', selected_color';
+    v_item_vals := v_item_vals || ', v_color';
+  END IF;
+
+  RAISE NOTICE 'create_order: orders.id=%, products.id=%, shipping=%, item cols=(%)',
+    v_order_id_type, v_product_id_type, v_shipping_expr, v_item_cols;
 
   EXECUTE format($fn$
     CREATE OR REPLACE FUNCTION public.create_order(
@@ -392,12 +458,15 @@ BEGIN
     SET search_path = public, pg_temp
     AS $body$
     DECLARE
-      v_user_id  UUID := auth.uid();
-      v_order_id %1$s;
-      v_item     JSONB;
-      v_pid      %2$s;
-      v_qty      INTEGER;
-      v_updated  INTEGER;
+      v_user_id    UUID := auth.uid();
+      v_order_id   %1$s;
+      v_item       JSONB;
+      v_pid        %2$s;
+      v_qty        INTEGER;
+      v_unit_price NUMERIC;
+      v_size       TEXT;
+      v_color      TEXT;
+      v_updated    INTEGER;
     BEGIN
       IF v_user_id IS NULL THEN
         RAISE EXCEPTION 'NOT_AUTHENTICATED';
@@ -416,16 +485,23 @@ BEGIN
         shipping_address, city, province, postal_code, phone, payment_method
       ) VALUES (
         v_user_id, 'pending', p_total_amount, COALESCE(p_shipping_cost, 0),
-        p_shipping_address, p_city, p_province, p_postal_code, p_phone, 'bank_transfer'
+        %3$s, p_city, p_province, p_postal_code, p_phone, 'bank_transfer'
       )
       RETURNING id INTO v_order_id;
 
       FOR v_item IN SELECT * FROM jsonb_array_elements(p_items) LOOP
-        v_pid := (v_item->>'product_id')::%2$s;
-        v_qty := (v_item->>'quantity')::INTEGER;
+        v_pid        := (v_item->>'product_id')::%2$s;
+        v_qty        := (v_item->>'quantity')::INTEGER;
+        v_unit_price := (v_item->>'price_at_time')::NUMERIC;
+        -- ->> already yields SQL NULL for a JSON null, which is what "no variant" means.
+        v_size       := v_item->>'selected_size';
+        v_color      := v_item->>'selected_color';
 
         IF v_qty IS NULL OR v_qty < 1 THEN
           RAISE EXCEPTION 'INVALID_QUANTITY';
+        END IF;
+        IF v_unit_price IS NULL OR v_unit_price < 0 THEN
+          RAISE EXCEPTION 'INVALID_PRICE';
         END IF;
 
         -- Reserve the stock. Zero rows updated means someone else took it first.
@@ -440,18 +516,13 @@ BEGIN
           RAISE EXCEPTION 'INSUFFICIENT_STOCK for product %%', v_pid;
         END IF;
 
-        INSERT INTO public.order_items (order_id, product_id, quantity, price_at_time)
-        VALUES (v_order_id, v_pid, v_qty, (v_item->>'price_at_time')::NUMERIC);
+        INSERT INTO public.order_items (%4$s) VALUES (%5$s);
       END LOOP;
 
       RETURN jsonb_build_object('order_id', v_order_id);
     END;
     $body$;
-  $fn$,
-    (SELECT atttypid::regtype::text FROM pg_attribute
-      WHERE attrelid = 'public.orders'::regclass AND attname = 'id' AND NOT attisdropped),
-    v_product_id_type
-  );
+  $fn$, v_order_id_type, v_product_id_type, v_shipping_expr, v_item_cols, v_item_vals);
 END
 $build$;
 

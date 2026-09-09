@@ -22,16 +22,29 @@
 import { SHIPPING_RATES } from '@/lib/constants';
 import { BUNDLE_DISCOUNT_ID, BUNDLE_DISCOUNT_LABEL, bundleDiscountFor } from '@/lib/bundle-discount';
 
-/** No single line may exceed this. A basket asking for 10,000 of one figure is a mistake or an attack. */
+/**
+ * Cap on how many of one *product* an order may contain — counted across variants, not
+ * per line. `products.stock` is a single integer with no per-size breakdown, so three
+ * sizes of the same shirt draw on one pool and the cap has to be measured the same way.
+ */
 export const MAX_LINE_QUANTITY = 100;
+
+/** Size and colour are free text from the client; store them, but not unbounded. */
+const MAX_VARIANT_LABEL = 50;
 
 /** Distinct products in one order. Guards the `in` query and the request body size. */
 export const MAX_ORDER_LINES = 50;
 
-/** What the caller asked for. Only these two fields are ever trusted. */
+/**
+ * What the caller asked for. The product, the count, and which variant — nothing else
+ * from the request is trusted, and the variant labels are only ever stored and echoed
+ * back, never used to look up a price.
+ */
 export interface RequestedLine {
   productId: string;
   quantity: number;
+  size: string | null;
+  color: string | null;
 }
 
 /** A product row as the pricing rules need it. */
@@ -62,6 +75,9 @@ export interface PricedLine {
   /** Straight from `products.price` — never from the request. */
   unitPrice: number;
   lineTotal: number;
+  /** Carried through to order_items so the packer knows which shirt to put in the box. */
+  size: string | null;
+  color: string | null;
 }
 
 export interface AppliedDiscount {
@@ -91,29 +107,43 @@ function money(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
+/** Trim, collapse whitespace, cap. An empty label means "no variant", not "". */
+function variantLabel(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const cleaned = value.replace(/\s+/g, ' ').trim().slice(0, MAX_VARIANT_LABEL);
+  return cleaned || null;
+}
+
 /**
  * Validates the requested lines and collapses duplicates.
  *
- * Duplicates matter: a basket posting the same productId twice with quantity 1 each is
- * really quantity 2, and the discount thresholds have to see it that way or a shopper
- * could split a line to dodge a "3 or more" rule — or to stay under a stock check.
+ * Duplicates are merged on product **plus variant**, not on product alone. Two entries
+ * for the same shirt in the same size really are one line of quantity 2, and the
+ * discount thresholds have to see it that way or a shopper could split a line to dodge
+ * a "3 or more" rule. But the same shirt in M and in L are two genuinely different
+ * things to pick and pack, so those stay apart — merging them on productId would have
+ * silently thrown away the size and shipped one arbitrary variant twice.
  */
 export function normaliseLines(raw: unknown): { ok: true; lines: RequestedLine[] } | PricingFailure {
   if (!Array.isArray(raw) || raw.length === 0) {
     return { ok: false, status: 400, error: 'Your cart is empty.' };
   }
   if (raw.length > MAX_ORDER_LINES) {
-    return { ok: false, status: 400, error: `An order cannot contain more than ${MAX_ORDER_LINES} different products.` };
+    return { ok: false, status: 400, error: `An order cannot contain more than ${MAX_ORDER_LINES} different items.` };
   }
 
-  const merged = new Map<string, number>();
+  // Keyed by product+variant. JSON.stringify rather than a delimiter so a size
+  // containing the delimiter cannot collide two different variants into one.
+  const merged = new Map<string, RequestedLine>();
 
   for (const entry of raw) {
     if (typeof entry !== 'object' || entry === null) {
       return { ok: false, status: 400, error: 'Cart contains an invalid item.' };
     }
 
-    const { productId, quantity } = entry as { productId?: unknown; quantity?: unknown };
+    const { productId, quantity, size, color } = entry as {
+      productId?: unknown; quantity?: unknown; size?: unknown; color?: unknown;
+    };
 
     if (typeof productId !== 'string' && typeof productId !== 'number') {
       return { ok: false, status: 400, error: 'Cart contains an item with no product.' };
@@ -130,23 +160,35 @@ export function normaliseLines(raw: unknown): { ok: true; lines: RequestedLine[]
       return { ok: false, status: 400, error: 'Item quantities must be whole numbers of at least 1.' };
     }
 
-    merged.set(id, (merged.get(id) ?? 0) + qty);
+    const variantSize = variantLabel(size);
+    const variantColor = variantLabel(color);
+    const key = JSON.stringify([id, variantSize, variantColor]);
+
+    const existing = merged.get(key);
+    if (existing) {
+      existing.quantity += qty;
+    } else {
+      merged.set(key, { productId: id, quantity: qty, size: variantSize, color: variantColor });
+    }
   }
 
-  for (const [id, qty] of merged) {
-    if (qty > MAX_LINE_QUANTITY) {
+  // The cap is per product, summed across its variants: `products.stock` is one integer
+  // with no per-size breakdown, so 100 mediums and 100 larges is 200 off one pool.
+  const perProduct = new Map<string, number>();
+  for (const line of merged.values()) {
+    perProduct.set(line.productId, (perProduct.get(line.productId) ?? 0) + line.quantity);
+  }
+  for (const total of perProduct.values()) {
+    if (total > MAX_LINE_QUANTITY) {
       return {
         ok: false,
         status: 400,
         error: `You can order at most ${MAX_LINE_QUANTITY} of any one item. Contact us for bulk orders.`,
       };
     }
-    if (!id) {
-      return { ok: false, status: 400, error: 'Cart contains an item with no product.' };
-    }
   }
 
-  return { ok: true, lines: [...merged].map(([productId, quantity]) => ({ productId, quantity })) };
+  return { ok: true, lines: [...merged.values()] };
 }
 
 /**
@@ -184,6 +226,14 @@ export function priceOrder(args: {
   const byId = new Map(products.map(p => [String(p.id), p]));
   const priced: PricedLine[] = [];
 
+  // Stock is one integer per product, so a shirt ordered in two sizes draws on one pool.
+  // Checking each line against `product.stock` separately would pass 3 mediums and
+  // 3 larges against a stock of 4 — both lines individually fit, the order does not.
+  const wantedPerProduct = new Map<string, number>();
+  for (const line of lines) {
+    wantedPerProduct.set(line.productId, (wantedPerProduct.get(line.productId) ?? 0) + line.quantity);
+  }
+
   for (const line of lines) {
     const product = byId.get(line.productId);
 
@@ -207,7 +257,8 @@ export function priceOrder(args: {
       return { ok: false, status: 409, error: `"${product.name}" is not priced correctly. Please contact us.` };
     }
 
-    if (product.stock < line.quantity) {
+    const wanted = wantedPerProduct.get(line.productId) ?? line.quantity;
+    if (product.stock < wanted) {
       return {
         ok: false,
         status: 409,
@@ -223,6 +274,8 @@ export function priceOrder(args: {
       quantity: line.quantity,
       unitPrice: money(product.price),
       lineTotal: money(product.price * line.quantity),
+      size: line.size,
+      color: line.color,
     });
   }
 

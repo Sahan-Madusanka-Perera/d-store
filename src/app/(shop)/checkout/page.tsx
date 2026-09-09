@@ -110,7 +110,13 @@ export default function CheckoutPage() {
           items: items.map(item => ({
             productId: item.productId,
             quantity: item.quantity,
+            // priceAtTime is sent for the server to compare against its own figure, not
+            // to be trusted — see src/lib/order-pricing.ts.
             priceAtTime: item.priceAtTime,
+            // The cart has tracked these since the product page; this is the first
+            // place they were being dropped.
+            size: item.selectedSize ?? null,
+            color: item.selectedColor ?? null,
           })),
           shippingAddress: formData,
           shippingCost,

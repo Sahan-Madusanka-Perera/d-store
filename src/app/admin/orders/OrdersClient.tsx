@@ -297,8 +297,17 @@ export default function OrdersClient({ initialOrders }: { initialOrders: any[] }
                                                                                 </div>
                                                                                 <div className="flex-1 min-w-0">
                                                                                     <h5 className="font-bold text-gray-900 truncate">{item.products?.name || 'Unknown Product'}</h5>
-                                                                                    <div className="flex items-center gap-2 mt-1">
+                                                                                    <div className="flex items-center gap-2 mt-1 flex-wrap">
                                                                                         <Badge variant="secondary" className="font-mono text-xs bg-gray-100 text-gray-600">Qty: {item.quantity}</Badge>
+                                                                                        {/* Which variant to actually put in the box. Coloured differently from
+                                                                                            the quantity chip because picking the wrong size is the mistake
+                                                                                            this whole change exists to prevent. */}
+                                                                                        {item.selected_size && (
+                                                                                            <Badge className="font-mono text-xs bg-indigo-100 text-indigo-700 hover:bg-indigo-100">Size: {item.selected_size}</Badge>
+                                                                                        )}
+                                                                                        {item.selected_color && (
+                                                                                            <Badge className="font-mono text-xs bg-indigo-100 text-indigo-700 hover:bg-indigo-100">{item.selected_color}</Badge>
+                                                                                        )}
                                                                                         <span className="text-sm font-medium text-gray-500">@ {formatPrice(item.price_at_time)}</span>
                                                                                     </div>
                                                                                 </div>

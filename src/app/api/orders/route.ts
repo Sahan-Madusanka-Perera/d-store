@@ -202,6 +202,11 @@ export async function POST(request: NextRequest) {
         product_id: line.productId,
         quantity: line.quantity,
         price_at_time: line.unitPrice,
+        // Which variant to actually pick and pack. order_items has carried these two
+        // columns all along; nothing was writing to them, so a t-shirt order reached
+        // the admin panel with no size on it.
+        selected_size: line.size,
+        selected_color: line.color,
       })),
     });
 

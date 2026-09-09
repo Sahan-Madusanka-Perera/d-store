@@ -22,6 +22,8 @@ export default async function OrdersPage() {
         id,
         quantity,
         price_at_time,
+        selected_size,
+        selected_color,
         products (
           name,
           image_url
@@ -154,7 +156,13 @@ export default async function OrdersPage() {
                                                     <p className="text-sm font-medium text-blue-600 hover:text-blue-800 cursor-pointer">
                                                         {item.products?.name || 'Unknown Product'}
                                                     </p>
-                                                    <p className="text-sm text-muted-foreground mt-1">Qty: {item.quantity}</p>
+                                                    <p className="text-sm text-muted-foreground mt-1">
+                                                        Qty: {item.quantity}
+                                                        {/* So the customer can confirm they ordered the right size
+                                                            without having to ask. */}
+                                                        {item.selected_size && <span> &middot; Size {item.selected_size}</span>}
+                                                        {item.selected_color && <span> &middot; {item.selected_color}</span>}
+                                                    </p>
                                                 </div>
                                             </div>
                                             <div className="text-sm font-medium text-foreground">
