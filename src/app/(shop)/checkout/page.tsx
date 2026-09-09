@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useCartStore } from '@/store/cart';
-import { SL_PROVINCES, SHIPPING_RATES, BANK_DETAILS, getWhatsAppUrl } from '@/lib/constants';
+import { SL_PROVINCES, SHIPPING_RATES, BANK_DETAILS, bankDetailsConfigured, getWhatsAppUrl } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -505,12 +505,25 @@ I have a question about this order. Can you help me?`;
                   </p>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-4">
+                  {/* An unconfigured account number used to render as "XXXX XXXX XXXX",
+                      which reads as a real account until you try to pay into it. Say
+                      plainly that it is missing and give the customer a way through. */}
+                  {!bankDetailsConfigured && (
+                    <div className="p-4 bg-red-50 dark:bg-red-950/20 border border-red-300 dark:border-red-800 rounded-lg text-sm text-red-800 dark:text-red-200">
+                      <strong>Bank details are not set up yet.</strong>
+                      <span className="block mt-1">
+                        Your order is saved. Please message us on WhatsApp and we&apos;ll send you
+                        the account details to complete the transfer.
+                      </span>
+                    </div>
+                  )}
+
                   {[
                     { label: 'Bank Name', value: BANK_DETAILS.bankName, key: 'bank' },
                     { label: 'Account Name', value: BANK_DETAILS.accountName, key: 'name' },
                     { label: 'Account Number', value: BANK_DETAILS.accountNumber, key: 'number' },
                     { label: 'Branch', value: BANK_DETAILS.branch, key: 'branch' },
-                  ].map((detail) => (
+                  ].filter(() => bankDetailsConfigured).map((detail) => (
                     <div key={detail.key} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
                       <div>
                         <span className="block text-xs text-muted-foreground font-medium uppercase tracking-wider">{detail.label}</span>

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { renderNewsletterHtml, renderNewsletterText } from '@/lib/newsletter-template';
 import { buildUnsubscribeUrl } from '@/lib/newsletter-unsubscribe';
+import { enforce } from '@/lib/rate-limit';
 
 /**
  * Public newsletter signup — the storefront footer and the pre-launch splash both post
@@ -71,9 +72,20 @@ async function sendWelcome(email: string, siteUrl: string): Promise<void> {
 
 export async function POST(request: Request) {
     try {
+        // Each accepted signup sends a welcome mail through Resend to an address the
+        // caller chose. Unmetered, that is a mail-bombing tool pointed at strangers with
+        // your domain in the From line — and the fastest way to a poisoned sender
+        // reputation. The limit is per-IP and deliberately tight; nobody subscribes twice.
+        const limited = enforce(request, 'newsletter-subscribe', 3, 10 * 60_000,
+          'Too many signup attempts. Please try again in a few minutes.');
+        if (limited) return limited;
+
         const { email: rawEmail } = await request.json();
 
-        if (!rawEmail || typeof rawEmail !== 'string' || !rawEmail.includes('@')) {
+        // `includes('@')` accepted "@" on its own, and Resend would then reject it after
+        // the row was already written.
+        const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+        if (!rawEmail || typeof rawEmail !== 'string' || rawEmail.length > 254 || !EMAIL.test(rawEmail.trim())) {
             return NextResponse.json(
                 { error: 'Valid email address is required' },
                 { status: 400 }

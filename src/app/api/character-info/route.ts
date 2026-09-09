@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { enforce } from '@/lib/rate-limit';
 
 // Using Gemini API (free tier) - Gemini 2.5 Flash is completely free
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -12,12 +13,24 @@ interface CharacterInfoRequest {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('Character info API called');
+    // Unauthenticated, and every call spends Gemini quota on text the caller supplies.
+    // Without a limit this is a free LLM proxy for anyone who finds the URL — and the
+    // bill, or the quota exhaustion that takes the feature down, lands on this project.
+    const limited = enforce(request, 'character-info', 15, 60_000);
+    if (limited) return limited;
+
     const { productName, productDescription, category }: CharacterInfoRequest = await request.json();
-    console.log('Request data:', { productName, productDescription, category });
+
+    // The values are interpolated into a prompt, so cap them: an unbounded description
+    // is both a cost multiplier and the roomiest possible place to write an injection.
+    if (typeof productName !== 'string' || !productName.trim()) {
+      return NextResponse.json({ error: 'A product name is required.' }, { status: 400 });
+    }
+    if (productName.length > 200 || (productDescription ?? '').length > 1000) {
+      return NextResponse.json({ error: 'Product details are too long.' }, { status: 400 });
+    }
 
     if (!GEMINI_API_KEY) {
-      console.log('No Gemini API key found, using fallback');
       // Fallback to basic pattern matching if no API key
       return NextResponse.json({
         characterName: extractCharacterName(productName),
@@ -28,8 +41,6 @@ export async function POST(request: NextRequest) {
         genre: category === 'manga' ? ["Manga"] : category === 'figures' ? ["Anime", "Figure", "Collectible"] : ["Anime"]
       });
     }
-
-    console.log('Using Gemini API key:', GEMINI_API_KEY.substring(0, 10) + '...');
 
     // Create a comprehensive prompt for character analysis
     const isManga = category === 'manga';
@@ -82,7 +93,6 @@ Rules:
 
     const prompt = isManga ? mangaPrompt : figurePrompt;
 
-    console.log('Calling Gemini API...');
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
@@ -103,8 +113,6 @@ Rules:
       })
     });
 
-    console.log('Gemini API response status:', response.status);
-
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Gemini API error response:', errorText);
@@ -120,8 +128,6 @@ Rules:
     const aiResponse = data.candidates[0].content.parts[0].text;
 
     try {
-      console.log('Raw AI response:', aiResponse);
-
       // Clean the response - remove any markdown formatting or extra text
       let cleanResponse = aiResponse.trim();
 
@@ -133,8 +139,6 @@ Rules:
       if (jsonMatch) {
         cleanResponse = jsonMatch[0];
       }
-
-      console.log('Cleaned response:', cleanResponse);
 
       // Try to parse the JSON response
       const itemInfo = JSON.parse(cleanResponse);
@@ -187,10 +191,8 @@ Rules:
     console.error('Character info API error:', error);
 
     // Return a more detailed error response
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
     return NextResponse.json({
-      error: `Sorry, I couldn't analyze this character right now. Error: ${errorMessage}`
+      error: "Sorry, I couldn't analyse this product right now."
     }, { status: 500 });
   }
 }

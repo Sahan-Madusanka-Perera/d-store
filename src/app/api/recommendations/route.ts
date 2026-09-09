@@ -8,8 +8,11 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     
-    // Check if user is authenticated
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    // getUser(), not getSession(). getSession() only decodes the cookie the browser
+    // sent; it does not verify the signature against the auth server. Since the result
+    // decides whether members-only listings are included below, a forged cookie was
+    // enough to widen the catalogue. getUser() validates.
+    const { data: { user } } = await supabase.auth.getUser();
     
     const limit = Number(request.nextUrl.searchParams.get('limit')) || 8;
     
@@ -18,12 +21,12 @@ export async function GET(request: NextRequest) {
     const purchasedProductIds: string[] = [];
 
     // Strategy 1: History-Based Recommendations (If Authenticated)
-    if (session?.user) {
+    if (user) {
       // Find past purchased series and products to exclude
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .select('id')
-        .eq('user_id', session.user.id);
+        .eq('user_id', user.id);
 
       if (!orderError && orderData && orderData.length > 0) {
         const orderIds = orderData.map((order) => order.id);
@@ -86,7 +89,7 @@ export async function GET(request: NextRequest) {
         .order('created_at', { ascending: false }); // Fallback to newest drops as trending
 
       // Guests get the public catalogue only — members-only listings stay hidden
-      if (!session?.user) {
+      if (!user) {
         fallbackQuery = publicListingsOnly(fallbackQuery);
       }
 

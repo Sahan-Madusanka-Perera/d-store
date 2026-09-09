@@ -44,3 +44,4 @@ next-env.d.ts
 
 # Source media kept for re-encoding; the optimised web assets live in public/
 /media-src
+SECURITY.md

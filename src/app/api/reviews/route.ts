@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { cleanText, reviewsAdminClient } from '@/lib/reviews';
+import { enforce } from '@/lib/rate-limit';
 
 /**
  * Public review submission.
@@ -15,6 +16,12 @@ const MAX_BODY = 2000;
 
 export async function POST(request: Request) {
   try {
+    // Unauthenticated, and it writes with the service-role key. Without a brake, a script
+    // can fill the moderation queue (and the free tier's row budget) unattended.
+    const limited = enforce(request, 'reviews-submit', 3, 10 * 60_000,
+      'You have sent several reviews already. Please try again later.');
+    if (limited) return limited;
+
     const payload = await request.json().catch(() => null);
     if (!payload) {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });

@@ -13,6 +13,7 @@ import {
   Loader2, Filter, Search, Factory, Tag
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import type { CustomOrderStatus } from '@/lib/constants';
 
 interface CustomOrder {
   id: string;
@@ -32,7 +33,14 @@ interface CustomOrder {
   updated_at: string;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+// Keys must stay in step with CUSTOM_ORDER_STATUSES in src/lib/constants.ts, which is
+// what PATCH /api/custom-orders validates against.
+interface StatusStyle { label: string; color: string; icon: React.ReactNode }
+
+// Typed by CustomOrderStatus so TypeScript fails the build if a status is added to
+// CUSTOM_ORDER_STATUSES without a style here — the two used to be able to drift, and
+// PATCH /api/custom-orders validates against that same list.
+const STATUS_CONFIG: Record<CustomOrderStatus, StatusStyle> = {
   pending: { label: 'Pending', color: 'bg-amber-500/10 text-amber-600 border-amber-500/20', icon: <Clock className="w-3 h-3" /> },
   contacted: { label: 'Contacted', color: 'bg-blue-500/10 text-blue-600 border-blue-500/20', icon: <MessageCircle className="w-3 h-3" /> },
   fulfilled: { label: 'Fulfilled', color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20', icon: <CheckCircle className="w-3 h-3" /> },
@@ -187,7 +195,8 @@ export default function CustomOrderManager({ initialOrders }: { initialOrders: C
       ) : (
         <div className="space-y-3">
           {filteredOrders.map((order) => {
-            const statusInfo = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
+            const statusInfo: StatusStyle =
+              STATUS_CONFIG[order.status as CustomOrderStatus] ?? STATUS_CONFIG.pending;
             const isExpanded = expandedId === order.id;
 
             return (

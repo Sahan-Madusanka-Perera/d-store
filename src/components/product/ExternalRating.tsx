@@ -14,7 +14,9 @@ export default function ExternalRating({ productId, initialRating, initialCount 
     const [rating, setRating] = useState<number | null>(initialRating || null)
     const [count, setCount] = useState<number | null>(initialCount || null)
     const [isLoading, setIsLoading] = useState(!initialRating)
-    const [source, setSource] = useState('Amazon')
+    // No default label. It used to be 'Amazon', which meant a rating from MyAnimeList —
+    // or one an admin typed in — was badged as an Amazon rating.
+    const [source, setSource] = useState<string | null>(null)
 
     useEffect(() => {
         if (!initialRating) {
@@ -30,7 +32,7 @@ export default function ExternalRating({ productId, initialRating, initialCount 
                 const data = await res.json()
                 setRating(data.rating)
                 setCount(data.count)
-                if (data.source) setSource(data.source)
+                setSource(data.source ?? null)
             }
         } catch (error) {
             console.error('Failed to fetch external rating:', error)
@@ -78,13 +80,22 @@ export default function ExternalRating({ productId, initialRating, initialCount 
 
     if (rating === null) return null;
 
+    // Attribute honestly, or not at all.
+    const SOURCE_LABELS: Record<string, string> = {
+        myanimelist: 'MyAnimeList',
+        myfigurecollection: 'MFC',
+        store: 'D-Store',
+    };
+    const sourceLabel = source ? SOURCE_LABELS[source] ?? null : null;
+
     return (
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 py-3 px-4 bg-amber-500/5 border border-amber-500/20 rounded-xl">
             <div className="flex items-center gap-2">
-                <div className="bg-white p-1 rounded-sm shadow-sm ring-1 ring-black/5">
-                    {/* Simple Amazon-like logo or icon */}
-                    <span className="font-bold text-xs text-gray-800 tracking-tighter uppercase px-1">{source}</span>
-                </div>
+                {sourceLabel && (
+                    <div className="bg-white p-1 rounded-sm shadow-sm ring-1 ring-black/5">
+                        <span className="font-bold text-xs text-gray-800 tracking-tighter uppercase px-1">{sourceLabel}</span>
+                    </div>
+                )}
                 <div className="flex gap-1 items-center">
                     {renderStars(rating)}
                 </div>

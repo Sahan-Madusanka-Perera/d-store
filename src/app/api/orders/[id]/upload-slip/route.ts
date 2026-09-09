@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { enforce } from '@/lib/rate-limit';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const limited = enforce(request, 'upload-slip', 10, 10 * 60_000,
+      'Too many uploads. Please wait a few minutes and try again.');
+    if (limited) return limited;
+
     const supabase = await createClient();
     const resolvedParams = await params;
     const orderId = resolvedParams.id;
@@ -36,9 +41,15 @@ export async function POST(
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-    if (!allowedTypes.includes(file.type)) {
+    // Validate file type. The map doubles as the extension source below.
+    const allowedTypes: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+      'application/pdf': 'pdf',
+    };
+    const fileExt = allowedTypes[file.type];
+    if (!fileExt) {
       return NextResponse.json(
         { error: 'Invalid file type. Allowed: JPEG, PNG, WebP, PDF' },
         { status: 400 }
@@ -53,8 +64,22 @@ export async function POST(
       );
     }
 
-    // Upload to Supabase Storage
-    const fileExt = file.name.split('.').pop();
+    // One order does not need an unbounded pile of slips, and each one is a 5 MB object
+    // on a 1 GB free tier. A handful covers a genuine re-upload after a bad photo.
+    const { count: existingSlips } = await supabase
+      .from('bank_slips')
+      .select('id', { count: 'exact', head: true })
+      .eq('order_id', orderId);
+
+    if ((existingSlips ?? 0) >= 5) {
+      return NextResponse.json(
+        { error: 'This order already has several slips. Please contact us on WhatsApp instead.' },
+        { status: 409 }
+      );
+    }
+
+    // The path's first segment is the order id — the storage policy in
+    // database/harden-security.sql joins on it to decide who may read the object.
     const fileName = `${orderId}/${Date.now()}.${fileExt}`;
 
     const { data: uploadData, error: uploadError } = await supabase.storage
@@ -104,11 +129,8 @@ export async function POST(
       message: 'Bank slip uploaded successfully',
       slip,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error uploading slip:', error);
-    return NextResponse.json(
-      { error: error.message || 'Server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

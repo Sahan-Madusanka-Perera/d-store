@@ -90,8 +90,11 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
           image on phones, where an 80px side rail would eat a quarter of the width;
           from sm up the row direction turns them into the left-hand column. */}
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:gap-4">
+        {/* The rail narrows to 64px at lg rather than staying at 80: every pixel it
+            gives up goes straight to the main image, and a thumbnail is a target to
+            recognise and click, not something to read. */}
         {images.length > 1 && (
-          <ul className="scrollbar-hide flex shrink-0 gap-3 overflow-x-auto pb-1 sm:max-h-[450px] sm:w-20 sm:flex-col sm:overflow-x-visible sm:overflow-y-auto sm:pb-0 lg:max-h-[550px]">
+          <ul className="scrollbar-hide flex shrink-0 gap-3 overflow-x-auto pb-1 sm:max-h-[520px] sm:w-20 sm:flex-col sm:overflow-x-visible sm:overflow-y-auto sm:pb-0 lg:max-h-[780px] lg:w-16">
             {images.map((image, index) => (
               <li key={index} className="shrink-0 sm:w-full">
                 <button
@@ -109,7 +112,7 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
                     src={image}
                     alt=""
                     fill
-                    sizes="80px"
+                    sizes="(min-width: 1024px) 64px, 80px"
                     className="object-cover"
                   />
                 </button>
@@ -119,8 +122,17 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
         )}
 
         {/* Main Image with Navigation. min-w-0 so the flex child can shrink instead of
-            forcing the rail off the edge. */}
-        <div className="relative aspect-square min-w-0 flex-1 max-h-[450px] lg:max-h-[550px] bg-muted rounded-2xl overflow-hidden shadow-xl dark:shadow-black/30 group cursor-pointer">
+            forcing the rail off the edge.
+
+            The lg cap has to stay above the column's own width or it stops being a
+            safety net and starts cropping: the box is aspect-square, so a cap below the
+            available width squashes it into a letterbox and object-cover eats the rest
+            of the figure. The gallery column tops out at ~763px inside max-w-7xl, so 780
+            keeps the square intact for a lone image and only ever bites if the page
+            shell gets wider. The sm cap is deliberately the opposite — in the stacked
+            single-column range the gallery is near-viewport-wide, and a true square
+            there would push the price and buy button off the first screen. */}
+        <div className="relative aspect-square min-w-0 flex-1 max-h-[520px] lg:max-h-[780px] bg-muted rounded-2xl overflow-hidden shadow-xl dark:shadow-black/30 group cursor-pointer">
         <div className="overflow-hidden h-full" ref={emblaRef}>
           <div className="flex h-full touch-pan-y">
             {images.map((img, idx) => (
@@ -129,6 +141,10 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
                   src={img}
                   alt={`${productName} - Image ${idx + 1}`}
                   fill
+                  // Without this, `fill` assumes 100vw and fetches a desktop-width file
+                  // for a box that is never wider than the gallery column — worth
+                  // stating now that the box is bigger and the crop is sharper.
+                  sizes="(min-width: 1024px) 768px, (min-width: 640px) calc(100vw - 10rem), 100vw"
                   className="object-cover transition-[filter] duration-300 group-hover:brightness-110"
                   priority={idx === 0}
                   onClick={() => setIsFullScreen(true)}

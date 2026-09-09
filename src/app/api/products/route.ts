@@ -9,8 +9,14 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
     const search = searchParams.get('search');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const offset = parseInt(searchParams.get('offset') || '0');
+    // parseInt('abc') is NaN, and `.range(NaN, NaN)` is not an error PostgREST catches —
+    // it just misbehaves. An unbounded limit was worse: ?limit=1000000 dumped the whole
+    // catalogue in one request, which on a free tier is a denial-of-service with a URL.
+    const MAX_LIMIT = 100;
+    const rawLimit = Number(searchParams.get('limit'));
+    const rawOffset = Number(searchParams.get('offset'));
+    const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(Math.trunc(rawLimit), 1), MAX_LIMIT) : 10;
+    const offset = Number.isFinite(rawOffset) ? Math.max(Math.trunc(rawOffset), 0) : 0;
 
     let query = supabase.from('products').select('*', { count: 'exact' });
 
@@ -50,31 +56,6 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Products API error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    // Admin only - Create new product
-    const productData = await request.json();
-
-    // TODO: Validate admin authentication
-    // TODO: Validate product data
-    // TODO: Save to database
-
-    console.log('Creating new product:', productData);
-
-    return NextResponse.json(
-      { message: 'Product creation coming soon' },
-      { status: 501 }
-    );
-
-  } catch (error) {
-    console.error('Create product error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

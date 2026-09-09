@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import { WHATSAPP_NUMBER } from '@/lib/constants';
+import { createClient as createServiceClient } from '@supabase/supabase-js';
+import { WHATSAPP_NUMBER, CUSTOM_ORDER_STATUSES } from '@/lib/constants';
+import { requireAdmin } from '@/lib/auth';
+import { enforce } from '@/lib/rate-limit';
+
+/** requireAdmin() signals refusal by throwing; tell that apart from a real fault. */
+function isAccessDenied(error: unknown): boolean {
+  return error instanceof Error && error.message.startsWith('Access denied');
+}
 
 const CATEGORY_LABELS: Record<string, string> = {
   book: 'Book',
@@ -46,6 +54,12 @@ function buildWhatsAppUrl(data: {
 // POST — Public: submit a custom order
 export async function POST(request: NextRequest) {
   try {
+    // Public and unauthenticated, and every accepted call can store a 5 MB image. Left
+    // open, a script exhausts the free tier's 1 GB of storage in a few hundred requests.
+    const limited = enforce(request, 'custom-orders', 5, 10 * 60_000,
+      'Too many requests. Please try again in a few minutes.');
+    if (limited) return limited;
+
     const formData = await request.formData();
 
     const customer_name = (formData.get('customer_name') as string) || '';
@@ -91,12 +105,33 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Image too large. Maximum size is 5MB' }, { status: 400 });
       }
 
-      const fileExt = image.name.split('.').pop() || 'jpg';
+      // Derive the extension from the type we just validated, never from the filename.
+      // A caller controls image.name completely, and it reaches a storage key here.
+      const extByType: Record<string, string> = {
+        'image/jpeg': 'jpg',
+        'image/png': 'png',
+        'image/webp': 'webp',
+      };
+      const fileExt = extByType[image.type];
       const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
       const arrayBuffer = await image.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      // The bucket no longer accepts anonymous writes — this route is the only way in,
+      // and it is the thing that enforces the type and size limits above.
+      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (!serviceKey) {
+        console.error('[CUSTOM ORDERS] SUPABASE_SERVICE_ROLE_KEY is not set — cannot store reference images.');
+        return NextResponse.json(
+          { error: 'Reference image uploads are temporarily unavailable.' },
+          { status: 503 }
+        );
+      }
+      const storage = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+
+      const { data: uploadData, error: uploadError } = await storage.storage
         .from('custom-order-references')
         .upload(fileName, buffer, {
           contentType: image.type,
@@ -108,7 +143,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Failed to upload reference image' }, { status: 500 });
       }
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data: { publicUrl } } = storage.storage
         .from('custom-order-references')
         .getPublicUrl(uploadData.path);
       reference_image_url = publicUrl;
@@ -155,25 +190,21 @@ export async function POST(request: NextRequest) {
       order,
       whatsappUrl,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating custom order:', error);
-    return NextResponse.json(
-      { error: error.message || 'Server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
 
 // GET — Admin only: fetch all custom orders
 export async function GET() {
   try {
+    // Custom orders hold a stranger's name, phone number and email. The old check was
+    // `if (!user)`, i.e. *any* signed-up customer, with a comment noting RLS would also
+    // enforce admin. Relying on that meant a non-admin got an empty list rather than a
+    // refusal — and if the policy were ever loosened, the PII would simply flow. Check here.
+    await requireAdmin();
     const supabase = await createClient();
-
-    // Check if user is admin (RLS will also enforce this)
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    }
 
     const { data: orders, error } = await supabase
       .from('custom_orders')
@@ -186,27 +217,25 @@ export async function GET() {
     }
 
     return NextResponse.json(orders || []);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    if (isAccessDenied(error)) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     console.error('Error fetching custom orders:', error);
-    return NextResponse.json(
-      { error: error.message || 'Server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
 
 // PATCH — Admin only: update custom order status/notes
 export async function PATCH(request: NextRequest) {
   try {
+    await requireAdmin();
     const supabase = await createClient();
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    }
 
     const body = await request.json();
     const { id, status, admin_notes } = body;
+
+    if (status !== undefined && !(CUSTOM_ORDER_STATUSES as readonly string[]).includes(status)) {
+      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+    }
 
     if (!id) {
       return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
@@ -229,11 +258,9 @@ export async function PATCH(request: NextRequest) {
     }
 
     return NextResponse.json({ message: 'Custom order updated', order });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    if (isAccessDenied(error)) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     console.error('Error updating custom order:', error);
-    return NextResponse.json(
-      { error: error.message || 'Server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

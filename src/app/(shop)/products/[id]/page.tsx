@@ -197,7 +197,21 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[55%_45%] gap-12">
+        {/* fr tracks, not percentages: `55% 45%` resolves against the grid's content box
+            and then adds the 48px gap on top, so the old grid overflowed its container by
+            exactly one gap — the details column swallowed the page's right padding and the
+            whole thing sat off-centre from lg up. fr tracks split the space that's
+            actually left after the gap.
+
+            2fr/1fr hands the gallery two thirds of the row, leaving the details column
+            at 381px. That is about as far as this can go. The label-left/value-right
+            spec rows themselves survive down to ~347px and only wrap around 318px
+            (Dimensions and Publication Date go first), but the four trust tiles below
+            the buy button are on a 2-up grid, so they hit three lines well before that
+            and the row loses its shape. The gap tightens to 40px at lg to buy the image
+            back a little of the difference — the two columns differ enough in weight
+            that they don't need 48px between them. */}
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-10">
           {/* Product Images Gallery + Description (Left).
               The offset tracks the header height, which on this route is the nav pill
               alone — the promo ribbon is hidden on product pages (see Navbar). That
