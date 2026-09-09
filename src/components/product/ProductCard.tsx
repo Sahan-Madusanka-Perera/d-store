@@ -5,16 +5,35 @@ import Link from 'next/link';
 import { Product } from '@/types/product';
 import { useCartStore } from '@/store/cart';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Star, Eye, Sparkles, BookOpen, Shirt, ShoppingBag, Clock, Zap, Bell, Layers, Lock } from 'lucide-react';
+import { ShoppingCart, Star, Eye, Zap, Bell } from 'lucide-react';
 import { toast } from 'sonner';
 import WishlistButton from '@/components/product/WishlistButton';
 import { getCategoryLabel } from '@/lib/constants';
+import { cn } from '@/lib/utils';
 
 interface ProductCardProps {
   product: Product;
 }
+
+/**
+ * One vocabulary for every label that floats over the product image.
+ *
+ * These used to be seven saturated pills — indigo, violet, amber, teal, blue, rose,
+ * slate — each with a drop shadow and an icon sitting next to a word that already said
+ * the same thing. The palette in globals.css is 0% saturation end to end, so those hues
+ * belonged to no design system, and with three stacked at once nothing read as more
+ * important than anything else.
+ *
+ * So: no hue, no icon, no shadow. Weight is the only hierarchy — ink for the one fact
+ * that moves a purchase, plate for state, ghost for taxonomy — and the plates are
+ * translucent with a backdrop blur, which is honest depth over a photograph in a way a
+ * box-shadow on an 18px pill is not.
+ */
+const CHIP = 'inline-flex items-center rounded-md px-2 py-[3px] text-[10px] font-semibold uppercase tracking-[0.08em] leading-none';
+const CHIP_INK = `${CHIP} bg-foreground text-background`;
+const CHIP_PLATE = `${CHIP} bg-background/95 backdrop-blur-md text-foreground ring-1 ring-inset ring-foreground/10`;
+const CHIP_GHOST = `${CHIP} bg-background/95 backdrop-blur-md text-foreground/70 ring-1 ring-inset ring-foreground/10`;
 
 export default function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore(state => state.addItem);
@@ -74,26 +93,6 @@ export default function ProductCard({ product }: ProductCardProps) {
     return stars;
   };
 
-  const getCategoryIcon = (category: string) => {
-    switch (category.toLowerCase()) {
-      case 'figures': return <Sparkles className="h-3 w-3" />;
-      case 'manga': return <BookOpen className="h-3 w-3" />;
-      case 'tshirts': return <Shirt className="h-3 w-3" />;
-      case 'other': return <Layers className="h-3 w-3" />;
-      default: return <ShoppingBag className="h-3 w-3" />;
-    }
-  };
-
-  const getCategoryStyle = (category: string) => {
-    switch (category) {
-      case 'manga': return 'bg-indigo-500/90 text-white';
-      case 'figures': return 'bg-violet-500/90 text-white';
-      case 'tshirts': return 'bg-amber-500/90 text-white';
-      case 'other': return 'bg-teal-500/90 text-white';
-      default: return 'bg-slate-500/90 text-white';
-    }
-  };
-
   // The card shows the shelf price. Quantity and bundle discounts depend on what else
   // is in the basket, so they belong to the cart, not to a single card — the only
   // markdown expressible here is the compare-at price on the product itself.
@@ -106,6 +105,18 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   // Derive effective product status
   const productStatus = product.status || (product.stock === 0 ? 'out_of_stock' : 'available');
+
+  // Exactly one availability label, resolved in the order a shopper needs it: what
+  // changes how they buy, then what stops them buying, then what is running out. The
+  // stack of up to three pills said less than one does, and 'Sold out' now matches the
+  // button underneath it rather than reading 'Out of Stock' beside it.
+  const stockLabel: { text: string; tone: string } | null =
+    productStatus === 'coming_soon' ? { text: 'Coming soon', tone: CHIP_PLATE } :
+    productStatus === 'pre_order' ? { text: 'Pre-order', tone: CHIP_PLATE } :
+    productStatus === 'out_of_stock' || product.stock === 0 ? { text: 'Sold out', tone: CHIP_PLATE } :
+    product.membersOnly ? { text: 'Members only', tone: CHIP_INK } :
+    product.stock > 0 && product.stock <= 5 ? { text: `Only ${product.stock} left`, tone: CHIP_INK } :
+    null;
 
   // Button config per status
   const getActionButton = () => {
@@ -203,57 +214,24 @@ export default function ProductCard({ product }: ProductCardProps) {
           <WishlistButton productId={product.id} variant="icon" />
         </div>
 
-        {/* Top-left: stock + discount stacked */}
-        <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
-          {/* Only signed-in visitors ever receive this product, so the badge is a
-              reminder that it is not part of the public catalogue. */}
-          {product.membersOnly && (
-            <Badge className="text-[11px] px-2.5 py-1 bg-foreground text-background shadow-md border-0 font-semibold">
-              <Lock className="h-3 w-3 mr-1" />
-              Members Only
-            </Badge>
-          )}
-          {productStatus === 'coming_soon' && (
-            <Badge className="text-[11px] px-2.5 py-1 bg-blue-500 text-white shadow-md border-0 font-semibold">
-              <Clock className="h-3 w-3 mr-1" />
-              Coming Soon
-            </Badge>
-          )}
-          {productStatus === 'pre_order' && (
-            <Badge className="text-[11px] px-2.5 py-1 bg-violet-500 text-white shadow-md border-0 font-semibold">
-              <Zap className="h-3 w-3 mr-1" />
-              Pre-order
-            </Badge>
-          )}
-          {productStatus === 'available' && product.stock === 0 && (
-            <Badge variant="destructive" className="text-[11px] px-2.5 py-1 shadow-md font-semibold">
-              Out of Stock
-            </Badge>
-          )}
-          {productStatus === 'available' && product.stock > 0 && product.stock <= 5 && (
-            <Badge className="text-[11px] px-2.5 py-1 bg-amber-500 text-white shadow-md border-0 font-semibold">
-              Only {product.stock} left
-            </Badge>
-          )}
-          {productStatus === 'out_of_stock' && (
-            <Badge variant="destructive" className="text-[11px] px-2.5 py-1 shadow-md font-semibold">
-              Out of Stock
-            </Badge>
-          )}
-          {savingPercent > 0 && productStatus === 'available' && (
-            <Badge className="text-[11px] px-2.5 py-1 bg-rose-500 text-white shadow-md border-0 font-semibold">
-              -{savingPercent}%
-            </Badge>
-          )}
-        </div>
-
-        {/* Top-right: category */}
-        <Badge className={`absolute top-3 right-3 z-10 text-[11px] px-2.5 py-1 shadow-md border-0 font-semibold ${getCategoryStyle(product.category)}`}>
-          <span className="flex items-center gap-1">
-            {getCategoryIcon(product.category)}
-            {getCategoryLabel(product.category)}
+        {/* Labels over the image: availability and value on the left, category on the
+            right. One flex row rather than two absolutes — 'Members only' beside 'Other
+            Collectibles' comes to 279px, and the narrowest card this grid produces is
+            294px, so as absolutes they were 15px from overlapping. Here the category
+            gives ground instead. The row is pointer-events-none so the strip it covers
+            still clicks through to the product. */}
+        <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex items-start justify-between gap-2">
+          <div className="flex shrink-0 flex-col items-start gap-1.5">
+            {stockLabel && <span className={stockLabel.tone}>{stockLabel.text}</span>}
+            {savingPercent > 0 && productStatus === 'available' && (
+              <span className={cn(CHIP_INK, 'tracking-normal tabular-nums')}>-{savingPercent}%</span>
+            )}
+          </div>
+          {/* Ghost weight — where the product lives, not something to act on. */}
+          <span className={`${CHIP_GHOST} min-w-0`}>
+            <span className="min-w-0 truncate">{getCategoryLabel(product.category)}</span>
           </span>
-        </Badge>
+        </div>
       </div>
 
       {/* Content */}
