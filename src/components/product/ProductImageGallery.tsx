@@ -127,9 +127,11 @@ export default function ProductImageGallery({ images, productName, stock }: Prod
             The lg cap has to stay above the column's own width or it stops being a
             safety net and starts cropping: the box is aspect-square, so a cap below the
             available width squashes it into a letterbox and object-cover eats the rest
-            of the figure. The gallery column tops out at ~763px inside max-w-7xl, so 780
-            keeps the square intact for a lone image and only ever bites if the page
-            shell gets wider. The sm cap is deliberately the opposite — in the stacked
+            of the figure. Since the product shell was aligned to the navbar it keeps the
+            full 1280px, so the gallery column is ~827px and this box — the column less
+            the 64px rail and its 16px gap — is ~747px. 780 still clears it, but the
+            margin is now 33px rather than 100px: widening the shell again, or fattening
+            the thumbnail rail, is what would finally make this bite. The sm cap is deliberately the opposite — in the stacked
             single-column range the gallery is near-viewport-wide, and a true square
             there would push the price and buy button off the first screen. */}
         <div className="relative aspect-square min-w-0 flex-1 max-h-[520px] lg:max-h-[780px] bg-muted rounded-2xl overflow-hidden shadow-xl dark:shadow-black/30 group cursor-pointer">

@@ -12,11 +12,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Star, ArrowLeft, Truck, Shield, RotateCcw, Heart, Sparkles, Clock, Zap, Bell, BookOpen, Languages, Calendar, Hash, Weight, Maximize, Palette, Brush, Gift, Ruler, Puzzle, Box, Battery, Factory, Info, Book, Globe, Lock, Tag } from 'lucide-react';
+import { Star, ChevronRight, Truck, Shield, RotateCcw, Heart, Sparkles, Clock, Zap, Bell, BookOpen, Languages, Calendar, Hash, Weight, Maximize, Palette, Brush, Gift, Ruler, Puzzle, Box, Battery, Factory, Info, Book, Globe, Lock, Tag } from 'lucide-react';
 import ExternalRating from '@/components/product/ExternalRating';
 import WishlistButton from '@/components/product/WishlistButton';
 import { getCategoryLabel } from '@/lib/constants';
 import { BUNDLE_DISCOUNT_BLURB } from '@/lib/bundle-discount';
+import type { Metadata } from 'next';
+import { cache } from 'react';
+import {
+  productJsonLd,
+  breadcrumbJsonLd,
+  jsonLdScript,
+  absoluteUrl,
+  DEFAULT_OG_IMAGE,
+} from '@/lib/seo';
 
 interface DatabaseProduct {
   id: number;
@@ -92,8 +101,13 @@ interface ProductPageProps {
   params: Promise<{ id: string }>
 }
 
-export default async function ProductPage({ params }: ProductPageProps) {
-  const { id } = await params;
+/**
+ * The product row, fetched once per request.
+ *
+ * `cache()` dedupes this between generateMetadata and the page body — Next calls both
+ * for every render, and without it each product page would run the same query twice.
+ */
+const getProduct = cache(async (id: string) => {
   const supabase = await createClient();
   const canSeeMembersOnly = await viewerCanSeeMembersOnly(supabase);
 
@@ -104,7 +118,67 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   if (!canSeeMembersOnly) productQuery = publicListingsOnly(productQuery);
 
-  const { data: dbProduct, error } = await productQuery.single();
+  const { data, error } = await productQuery.single();
+  return { dbProduct: data, error, canSeeMembersOnly, supabase };
+});
+
+/**
+ * Per-product title, description and social card.
+ *
+ * Every product page previously inherited the site-wide title, so a few hundred pages
+ * all told Google they were "D-STORE | The Ultimate Hobby Store". That is the single
+ * biggest on-page SEO problem a catalogue can have: nothing distinguishes one product
+ * from another in the index, and none of them can rank for their own name.
+ */
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+  const { id } = await params;
+  const { dbProduct } = await getProduct(id);
+
+  if (!dbProduct) {
+    return { title: 'Product not found', robots: { index: false, follow: false } };
+  }
+
+  const product = mapDatabaseProduct(dbProduct);
+  const canonical = `/products/${dbProduct.id}`;
+
+  // Prefer the real description; fall back to something specific rather than generic.
+  const description = (product.description?.trim() || [
+    product.name,
+    product.brand || product.publisher,
+    product.series,
+  ].filter(Boolean).join(' — '))
+    .replace(/\s+/g, ' ')
+    .slice(0, 155);
+
+  const image = product.images[0] || DEFAULT_OG_IMAGE;
+
+  return {
+    title: product.name,
+    description,
+    alternates: { canonical },
+    // A members-only listing should not be advertised in search results.
+    robots: dbProduct.members_only
+      ? { index: false, follow: false }
+      : { index: true, follow: true },
+    openGraph: {
+      type: 'website',
+      title: product.name,
+      description,
+      url: absoluteUrl(canonical),
+      images: [{ url: image, alt: product.name }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: product.name,
+      description,
+      images: [image],
+    },
+  };
+}
+
+export default async function ProductPage({ params }: ProductPageProps) {
+  const { id } = await params;
+  const { dbProduct, error, canSeeMembersOnly, supabase } = await getProduct(id);
 
   // A members-only listing is indistinguishable from a missing one for guests.
   if (error || !dbProduct) {
@@ -179,23 +253,94 @@ export default async function ProductPage({ params }: ProductPageProps) {
     }
   };
 
+  // Structured data. This is what turns a plain blue link into a result carrying the
+  // price, the stock status and (where a genuine one exists) a star rating. For a shop
+  // competing on "buy <series> figure sri lanka", that is most of the click difference.
+  const jsonLd = [
+    productJsonLd({
+      id: dbProduct.id,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      images: product.images.map(src => (src.startsWith('http') ? src : absoluteUrl(src))),
+      category: product.category,
+      brand: product.brand,
+      author: product.author,
+      publisher: product.publisher,
+      isbn: product.isbn,
+      series: product.series,
+      stock: product.stock,
+      status: product.status,
+      externalRating: dbProduct.external_rating,
+      externalRatingCount: dbProduct.external_rating_count,
+    }),
+    breadcrumbJsonLd([
+      { name: 'Home', path: '/' },
+      { name: getCategoryLabel(product.category), path: `/${product.category}` },
+      { name: product.name, path: `/products/${dbProduct.id}` },
+    ]),
+  ];
+
   return (
     <div className="min-h-screen">
-      {/* Was the one shop page still on Tailwind's `container` with a flat px-4, which
-          gave it the tightest gutters on the site and let it run to 1536px on a wide
-          monitor. Now the same max-w-7xl shell the catalogue and cart use, with a
-          roomier padding ramp — this page is a two-column reading surface, so it wants
-          more air at the edges than a grid of cards does. */}
-      <div className="mx-auto w-full max-w-7xl px-5 py-8 sm:px-8 lg:px-12">
-        {/* Breadcrumb - Refined */}
-        <div className="mb-8">
-          <Button variant="ghost" size="sm" asChild className="hover:bg-primary/5">
-            <Link href="/products" className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Products
-            </Link>
-          </Button>
-        </div>
+      {/* Emitted as one <script> per graph. Google reads either shape; separate blocks
+          keep a malformed one from invalidating the other. */}
+      {jsonLd.map((graph, index) => (
+        <script
+          key={index}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={jsonLdScript(graph)}
+        />
+      ))}
+      {/* Aligned to the navbar, which is built as a padded wrapper around a max-w-7xl
+          pill: the gutter lives on the parent, so the pill's left edge IS the max-w-7xl
+          box edge. This page had the same max-w-7xl box but put its gutter *inside* it
+          (lg:px-12), so its content started 48px right of where the navbar started and
+          the thumbnail rail never lined up with anything.
+
+          Same structure here — gutter on the parent, max-w-7xl child — so the rail and
+          the pill share a left edge at every width. The page keeps its full 1280px, so
+          the gallery column goes ~763px -> ~827px and the main image ~683px -> ~747px,
+          still inside the 780px cap below, so the square survives uncropped.
+
+          pt-0 because the shop layout's pt-28/sm:pt-36 is sized for the taller navbar on
+          non-product pages; here the pill sits at top-3 and ends around 76px, so the
+          layout's own padding is already generous. */}
+      <div className="px-4 pb-8 sm:px-6">
+        <div className="mx-auto w-full max-w-7xl">
+        {/* Breadcrumbs, not a back button.
+            Two reasons beyond filling the empty band under the navbar. A back button
+            offers one destination; a trail shows where you are and gives you the
+            category and the homepage on the way out — and "back" is a thing the browser
+            already does. And Google asks that BreadcrumbList markup correspond to
+            breadcrumbs a visitor can actually see; the JSON-LD above emits exactly this
+            trail, so now it does. */}
+        <nav aria-label="Breadcrumb" className="mb-6 sm:mb-8">
+          <ol className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <li>
+              <Link href="/" className="transition-colors hover:text-foreground">
+                Home
+              </Link>
+            </li>
+            <li className="flex items-center gap-1.5">
+              <ChevronRight aria-hidden="true" className="h-3.5 w-3.5 shrink-0 opacity-60" />
+              <Link
+                href={`/${product.category}`}
+                className="transition-colors hover:text-foreground"
+              >
+                {getCategoryLabel(product.category)}
+              </Link>
+            </li>
+            {/* min-w-0 + truncate: product names here run to a full sentence, and without
+                it the trail pushes itself off the edge on a phone. */}
+            <li className="flex min-w-0 items-center gap-1.5">
+              <ChevronRight aria-hidden="true" className="h-3.5 w-3.5 shrink-0 opacity-60" />
+              <span aria-current="page" className="truncate font-medium text-foreground">
+                {product.name}
+              </span>
+            </li>
+          </ol>
+        </nav>
 
         {/* fr tracks, not percentages: `55% 45%` resolves against the grid's content box
             and then adds the 48px gap on top, so the old grid overflowed its container by
@@ -568,6 +713,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
           </>
         )}
+        </div>
       </div>
     </div>
   );

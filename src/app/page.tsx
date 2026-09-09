@@ -8,6 +8,7 @@ import { createClient } from '@/utils/supabase/server'
 import { viewerCanSeeMembersOnly, publicListingsOnly } from '@/lib/product-visibility';
 import { Shield, CheckCircle, Truck, Globe } from 'lucide-react';
 import CustomOrderForm from '@/components/sections/CustomOrderForm';
+import { organizationJsonLd, webSiteJsonLd, jsonLdScript } from '@/lib/seo';
 
 const FRESH_DROPS = [
   { id: '1', name: 'Jujutsu Kaisen Vol. 25', price: 'LKR 2,500', rating: 5, images: [] },
@@ -104,6 +105,11 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen">
+      {/* Identifies the business to Google: name, logo, and the social profiles that
+          confirm it is the same shop. Emitted only here, on the homepage, which is the
+          page these graphs describe. */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(organizationJsonLd())} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(webSiteJsonLd())} />
       <Navbar />
       <HeroCarousel initialSlides={initialSlides} />
       <RecommendedProducts />
