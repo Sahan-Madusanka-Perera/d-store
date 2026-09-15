@@ -141,7 +141,11 @@ export const config = {
      * never gets swept into the pre-launch redirect — a request for the splash's own
      * backdrop video is not a page view, and answering it with a redirect to
      * /coming-soon leaves the page with no backdrop at all.
+     *
+     * robots.txt and sitemap.xml are listed for the same reason, with higher stakes.
+     * Gated, both answered crawlers with a redirect to the splash, so Google read an HTML
+     * page where it expected rules and Search Console could not fetch the sitemap.
      */
-    '/((?!_next/static|_next/image|favicon.ico|api/webhook|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|mp4|webm)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|api/webhook|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|mp4|webm)$).*)',
   ],
 }

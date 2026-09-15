@@ -3,7 +3,8 @@ import type { Metadata } from 'next';
 import { Instagram, Facebook, MessageCircle } from 'lucide-react';
 import ComingSoonBackdrop from '@/components/sections/ComingSoonBackdrop';
 import ComingSoonSignup from '@/components/sections/ComingSoonSignup';
-import { BRAND_TAGLINE, SOCIAL_LINKS, getWhatsAppUrl } from '@/lib/constants';
+import { BRAND_NAME, BRAND_TAGLINE, SOCIAL_LINKS, getWhatsAppUrl } from '@/lib/constants';
+import { DEFAULT_OG_IMAGE, OG_LOCALE, jsonLdScript, organizationJsonLd, webSiteJsonLd } from '@/lib/seo';
 
 /**
  * Pre-launch splash. Everything except the admin panel and sign-in redirects here
@@ -22,9 +23,31 @@ import { BRAND_TAGLINE, SOCIAL_LINKS, getWhatsAppUrl } from '@/lib/constants';
  */
 
 export const metadata: Metadata = {
-  title: `D-STORE | Opening Soon`,
-  description: `${BRAND_TAGLINE}. Manga, figures and otaku apparel, landing in Sri Lanka soon.`,
-  robots: { index: false, follow: false },
+  // `absolute` bypasses the layout's "%s | D-Store" template, which rendered this as
+  // "D-STORE | Opening Soon | D-Store". Leads with what people actually type.
+  title: { absolute: `${BRAND_NAME} Sri Lanka | Anime Figures & Manga — Opening Soon` },
+  description:
+    `${BRAND_NAME} — ${BRAND_TAGLINE}. Anime figures, manga and otaku apparel, ` +
+    `opening soon in Sri Lanka. Join the list to hear first.`,
+
+  // While the gate is up this is the only page a search can land on, so it inherits the
+  // layout's index/follow rather than opting out.
+  //
+  // The canonical has to point at itself. The layout's is "/", and during the gate "/"
+  // redirects straight back here — Google ignores a canonical that leads into a redirect.
+  alternates: { canonical: '/coming-soon' },
+
+  // A page's openGraph replaces the layout's wholesale rather than merging, so every
+  // field is restated.
+  openGraph: {
+    type: 'website',
+    siteName: BRAND_NAME,
+    locale: OG_LOCALE,
+    url: '/coming-soon',
+    title: `${BRAND_NAME} | Opening Soon in Sri Lanka`,
+    description: 'Anime figures, manga and otaku apparel. Opening soon.',
+    images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: BRAND_NAME }],
+  },
 };
 
 const SOCIAL_ICONS: Record<string, typeof Instagram> = {
@@ -42,6 +65,12 @@ export default function ComingSoonPage() {
 
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-black px-6 py-12">
+      {/* Name, alternate spellings, logo and social profiles, so a brand search can tie
+          this page to the Instagram and Facebook accounts. No search action: the
+          catalogue it would point at is behind the gate. */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(organizationJsonLd())} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(webSiteJsonLd({ withSearch: false }))} />
+
       <ComingSoonBackdrop />
 
       {/* Brand hairline, the same cyan the newsletter masthead uses */}

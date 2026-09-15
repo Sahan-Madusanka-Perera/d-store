@@ -4,22 +4,43 @@ import { SITE_URL } from '@/lib/seo';
 /**
  * robots.txt, generated.
  *
- * The important line is the COMING_SOON branch. While the pre-launch gate is up, the
- * middleware redirects every URL except a handful to /coming-soon — Googlebot included.
- * Letting a crawler loose on that means it discovers a few hundred product URLs that all
- * 307 to the same splash page, which is how a site teaches Google that its catalogue is
- * one page of duplicate content. Far better to say "nothing to see yet" and open up in
- * one clean move on launch day.
+ * While the pre-launch gate is up, crawling stays open apart from the private paths. That
+ * is what lets Google follow `/` — the one URL it already knows — through its redirect to
+ * /coming-soon, and fetch the /_next/ CSS and JS it needs to render the splash. An
+ * earlier version disallowed everything but /coming-soon, which blocked both.
+ *
+ * The catalogue stays out of the index without a disallow: nothing on the splash links
+ * into it, and the gated sitemap lists only the splash.
  *
  * Like the middleware's own COMING_SOON read, this is evaluated at build time on Netlify.
  * Flipping the variable needs a redeploy before robots.txt changes.
  */
+
+// Nothing here should ever appear in a search result, gate or no gate.
+const PRIVATE_PATHS = [
+  '/admin',
+  '/api/',
+  '/profile',
+  '/checkout',
+  '/cart',
+  '/login',
+  '/signup',
+  '/forgot-password',
+  '/reset-password',
+  '/unauthorized',
+  '/auth/',
+  '/success',
+  '/cancel',
+  '/newsletter/unsubscribe',
+];
+
 export default function robots(): MetadataRoute.Robots {
   const comingSoon = process.env.COMING_SOON === 'true';
 
   if (comingSoon) {
     return {
-      rules: [{ userAgent: '*', allow: '/coming-soon', disallow: '/' }],
+      rules: [{ userAgent: '*', allow: '/', disallow: PRIVATE_PATHS }],
+      sitemap: `${SITE_URL}/sitemap.xml`,
       host: SITE_URL,
     };
   }
@@ -30,21 +51,7 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: '*',
         allow: '/',
         disallow: [
-          // Nothing here should ever appear in a search result.
-          '/admin',
-          '/api/',
-          '/profile',
-          '/checkout',
-          '/cart',
-          '/login',
-          '/signup',
-          '/forgot-password',
-          '/reset-password',
-          '/unauthorized',
-          '/auth/',
-          '/success',
-          '/cancel',
-          '/newsletter/unsubscribe',
+          ...PRIVATE_PATHS,
           // Faceted search URLs. Every combination of these is a near-duplicate of the
           // category page, and crawlers will happily enumerate all of them — spending
           // the crawl budget that should be going to product pages.

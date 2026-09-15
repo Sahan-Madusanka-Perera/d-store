@@ -44,6 +44,12 @@ export const DEFAULT_OG_IMAGE = absoluteUrl('/og-default.jpg');
 export const OG_LOCALE = 'en_LK';
 
 /**
+ * Other ways people write the brand. Offered to Google as alternate names, because a
+ * search for "dstore" does not otherwise match "D-Store" as the same business.
+ */
+const BRAND_ALTERNATE_NAMES = ['DStore', 'D Store', 'DStore LK'];
+
+/**
  * Organization schema, emitted once on the homepage.
  *
  * This is what lets Google associate the brand name with the site, the logo and the
@@ -55,6 +61,7 @@ export function organizationJsonLd() {
     '@context': 'https://schema.org',
     '@type': 'Store',
     name: BRAND_NAME,
+    alternateName: BRAND_ALTERNATE_NAMES,
     description: BRAND_TAGLINE,
     url: SITE_URL,
     logo: absoluteUrl('/Logo.Trns.png'),
@@ -74,22 +81,31 @@ export function organizationJsonLd() {
 /**
  * WebSite schema with a search action, which is what can earn a sitelinks search box in
  * the results. Harmless if Google chooses not to show one.
+ *
+ * Pass `withSearch: false` while the catalogue is gated — a search action whose target
+ * redirects to the splash is worse than none.
  */
-export function webSiteJsonLd() {
-  return {
+export function webSiteJsonLd({ withSearch = true }: { withSearch?: boolean } = {}) {
+  const schema: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: BRAND_NAME,
+    alternateName: BRAND_ALTERNATE_NAMES,
     url: SITE_URL,
-    potentialAction: {
+  };
+
+  if (withSearch) {
+    schema.potentialAction = {
       '@type': 'SearchAction',
       target: {
         '@type': 'EntryPoint',
         urlTemplate: `${SITE_URL}/products?search={search_term_string}`,
       },
       'query-input': 'required name=search_term_string',
-    },
-  };
+    };
+  }
+
+  return schema;
 }
 
 /** Maps the product `status` column onto the schema.org availability vocabulary. */
